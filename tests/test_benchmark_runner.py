@@ -18,6 +18,65 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(args.fixtures, Path("/tmp/fixtures"))
         self.assertEqual(args.runs_dir, Path("/tmp/runs"))
         self.assertEqual(args.state_db, Path("/tmp/state.db"))
+        self.assertEqual(args.max_attempts_per_player, 100)
+
+    def test_attempt_state_reserves_only_remaining_capacity(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            state_path = run_dir / "games/model-a/attempts.json"
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(json.dumps({
+                "player_slug": "model-a",
+                "target_valid_games": 36,
+                "max_attempts": 100,
+                "attempts_started": 96,
+                "retry_round": 2,
+                "pending_slots": [],
+            }), encoding="utf-8")
+            state = br.load_attempt_state(run_dir, "model-a", 100)
+
+            reserved = br.reserve_attempt_slots(state_path, state, [f"P:{i}" for i in range(8)])
+
+            self.assertEqual(reserved, ["P:0", "P:1", "P:2", "P:3"])
+            saved = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["attempts_started"], 100)
+            self.assertEqual(saved["pending_slots"], reserved)
+
+    def test_attempt_limit_rejects_less_than_target(self):
+        with self.assertRaisesRegex(ValueError, "at least 36"):
+            br.validate_attempt_limit(35, 36)
+        with self.assertRaises(SystemExit):
+            br.build_parser().parse_args(["--max-attempts-per-player", "35"])
+
+    def test_partial_summary_requires_retry(self):
+        self.assertTrue(br.summary_needs_retry({"valid_games": 17, "invalid_games": 19}, 36))
+        self.assertFalse(br.summary_needs_retry({"valid_games": 36, "invalid_games": 0}, 36))
+        self.assertFalse(br.summary_needs_retry({
+            "valid_games": 35,
+            "invalid_games": 1,
+            "attempt_limit_reached": True,
+        }, 36))
+
+    def test_retry_stop_state_marks_attempt_limit(self):
+        self.assertEqual(br.retry_stop_state(36, 36, 36, 100), (True, False))
+        self.assertEqual(br.retry_stop_state(35, 36, 99, 100), (False, False))
+        self.assertEqual(br.retry_stop_state(35, 36, 100, 100), (True, True))
+
+    def test_attempt_state_recovers_physical_attempt_count(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            paths = [
+                run_dir / "games/model-a/P1/trial-01/game.json",
+                run_dir / "games/model-a/P1/trial-01-retry-old/game.json",
+                run_dir / "retry-archives/pass-1/games/model-a/P2/trial-02/game.json",
+            ]
+            for path in paths:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}", encoding="utf-8")
+
+            state = br.load_attempt_state(run_dir, "model-a", 100)
+
+            self.assertEqual(state["attempts_started"], 3)
 
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
@@ -163,6 +222,8 @@ class BenchmarkRunnerTests(unittest.TestCase):
             invalid.mkdir(parents=True)
             (valid / "score.json").write_text(json.dumps({"validity": "valid", "status": "solved"}), encoding="utf-8")
             (invalid / "score.json").write_text(json.dumps({"validity": "invalid_host", "status": "solved"}), encoding="utf-8")
+            judge = invalid.parent / "judge.json"
+            judge.write_text("[]", encoding="utf-8")
             summary = run_dir / "summaries" / f"{player}.json"
             summary.parent.mkdir(parents=True)
             summary.write_text("{}", encoding="utf-8")
@@ -174,6 +235,8 @@ class BenchmarkRunnerTests(unittest.TestCase):
             self.assertTrue(valid.exists())
             self.assertFalse(invalid.exists())
             self.assertTrue((archive / "games" / player / "SPB-C-E-01" / "trial-02" / "score.json").exists())
+            self.assertFalse(judge.exists())
+            self.assertTrue((archive / "games" / player / "SPB-C-E-01" / "judge.json").exists())
             self.assertTrue((archive / "summaries" / f"{player}.json").exists())
             self.assertTrue((archive / "manifest.json").exists())
 
@@ -200,6 +263,60 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
 
 class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
+    async def test_run_player_requeues_only_invalid_slots(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            player = {
+                "slug": "model-a",
+                "provider": "test",
+                "model": "model-a",
+                "reasoning_effort": "max",
+            }
+            manifest = {"puzzles": [{"id": "P1", "path": "puzzles/P1.json"}]}
+            game_calls = []
+            finalize_calls = 0
+
+            async def fake_run_game(run_dir, player, puzzle, trial, timeout_s):
+                game_calls.append((puzzle["id"], trial))
+                trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True, exist_ok=True)
+                (trial_dir / "game.json").write_text(json.dumps({"status": "solved"}), encoding="utf-8")
+                (trial_dir / "preliminary.json").write_text("{}", encoding="utf-8")
+
+            async def fake_run_judge(run_dir, player, puzzle, timeout_s):
+                output = run_dir / "games" / player["slug"] / puzzle["id"] / "judge.json"
+                output.write_text("[]", encoding="utf-8")
+                return output
+
+            def fake_finalize(run_dir, player, manifest):
+                nonlocal finalize_calls
+                finalize_calls += 1
+                scores = []
+                for trial in (1, 2, 3):
+                    validity = "invalid_host" if finalize_calls == 1 and trial == 1 else "valid"
+                    score = {"puzzle_id": "P1", "trial": trial, "validity": validity, "status": "solved"}
+                    path = run_dir / "games" / player["slug"] / "P1" / f"trial-{trial:02d}" / "score.json"
+                    path.write_text(json.dumps(score), encoding="utf-8")
+                    scores.append(score)
+                return scores
+
+            def fake_aggregate(scores):
+                valid = sum(score["validity"] == "valid" for score in scores)
+                return {"valid_games": valid, "invalid_games": len(scores) - valid}
+
+            with (
+                mock.patch.object(br, "run_game", side_effect=fake_run_game),
+                mock.patch.object(br, "run_judge", side_effect=fake_run_judge),
+                mock.patch.object(br, "finalize_scores", side_effect=fake_finalize),
+                mock.patch.object(br, "aggregate_scores", side_effect=fake_aggregate),
+            ):
+                summary = await br.run_player(run_dir, player, manifest, 3, 3, 10, max_attempts=4)
+
+            self.assertEqual(game_calls, [("P1", 1), ("P1", 2), ("P1", 3), ("P1", 1)])
+            self.assertEqual(summary["valid_games"], 3)
+            self.assertEqual(summary["attempts_started"], 4)
+            self.assertFalse(summary["attempt_limit_reached"])
+
     async def test_judge_retries_when_cli_claims_success_without_output(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)

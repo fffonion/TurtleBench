@@ -50,6 +50,7 @@ PLAYER_MATRIX = [
 TERMINAL_STATES = {"solved", "max_rounds", "stopped", "error"}
 TERMINAL_VALIDITIES = {"valid", "invalid_host", "invalid_infrastructure"}
 SESSION_SOURCE = "turtle-bench"
+TARGET_VALID_GAMES = 36
 
 
 def now_iso() -> str:
@@ -65,6 +66,82 @@ def atomic_json(path: Path, data: Any) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
+
+
+def validate_attempt_limit(max_attempts: int, target_valid_games: int = TARGET_VALID_GAMES) -> None:
+    if max_attempts < target_valid_games:
+        raise ValueError(f"max attempts must be at least {target_valid_games}")
+
+
+def attempt_limit_arg(value: str) -> int:
+    parsed = int(value)
+    try:
+        validate_attempt_limit(parsed)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+    return parsed
+
+
+def summary_needs_retry(summary: dict[str, Any], target_valid_games: int) -> bool:
+    if summary.get("attempt_limit_reached"):
+        return False
+    return int(summary.get("valid_games", 0)) < target_valid_games
+
+
+def retry_stop_state(
+    valid_games: int,
+    target_valid_games: int,
+    attempts_started: int,
+    max_attempts: int,
+) -> tuple[bool, bool]:
+    limit_reached = attempts_started >= max_attempts and valid_games < target_valid_games
+    return valid_games >= target_valid_games or limit_reached, limit_reached
+
+
+def physical_attempt_count(run_dir: Path, player_slug: str) -> int:
+    paths = set((run_dir / "games" / player_slug).glob("*/trial*/game.json"))
+    paths.update((run_dir / "retry-archives").glob(f"**/games/{player_slug}/*/trial*/game.json"))
+    return len(paths)
+
+
+def load_attempt_state(
+    run_dir: Path,
+    player_slug: str,
+    max_attempts: int,
+    target_valid_games: int = TARGET_VALID_GAMES,
+) -> dict[str, Any]:
+    validate_attempt_limit(max_attempts, target_valid_games)
+    path = run_dir / "games" / player_slug / "attempts.json"
+    physical_count = physical_attempt_count(run_dir, player_slug)
+    if path.exists():
+        state = load_json(path)
+        state["max_attempts"] = max_attempts
+        state["target_valid_games"] = target_valid_games
+        state["attempts_started"] = max(int(state.get("attempts_started", 0)), physical_count)
+        state.setdefault("pending_slots", [])
+    else:
+        state = {
+            "player_slug": player_slug,
+            "target_valid_games": target_valid_games,
+            "max_attempts": max_attempts,
+            "attempts_started": physical_count,
+            "retry_round": 0,
+            "pending_slots": [],
+            "updated_at": now_iso(),
+        }
+    state["updated_at"] = now_iso()
+    atomic_json(path, state)
+    return state
+
+
+def reserve_attempt_slots(state_path: Path, state: dict[str, Any], slots: list[str]) -> list[str]:
+    remaining = max(0, int(state["max_attempts"]) - int(state["attempts_started"]))
+    reserved = slots[:remaining]
+    state["attempts_started"] = int(state["attempts_started"]) + len(reserved)
+    state["pending_slots"] = list(dict.fromkeys([*state.get("pending_slots", []), *reserved]))
+    state["updated_at"] = now_iso()
+    atomic_json(state_path, state)
+    return reserved
 
 
 def percentile(values: list[float], q: float) -> float:
@@ -163,7 +240,12 @@ def is_completed_score(path: Path) -> bool:
     return data.get("validity") in TERMINAL_VALIDITIES and data.get("status") in TERMINAL_STATES
 
 
-def archive_invalid_trials(run_dir: Path, player_slugs: list[str], archive_root: Path) -> dict[str, int]:
+def archive_invalid_trials(
+    run_dir: Path,
+    player_slugs: list[str],
+    archive_root: Path,
+    max_trials: int | None = None,
+) -> dict[str, int]:
     """Move invalid trial directories and stale player summaries aside for a clean retry."""
     counts: dict[str, int] = {}
     for slug in player_slugs:
@@ -173,11 +255,20 @@ def archive_invalid_trials(run_dir: Path, player_slugs: list[str], archive_root:
             score = load_json(score_path)
             if str(score.get("validity", "")).startswith("invalid_"):
                 invalid_trials.append(score_path.parent)
+        if max_trials is not None:
+            invalid_trials = invalid_trials[:max_trials]
         counts[slug] = len(invalid_trials)
+        affected_puzzles = {trial_dir.parent for trial_dir in invalid_trials}
         for trial_dir in invalid_trials:
             destination = archive_root / "games" / slug / trial_dir.relative_to(player_root)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(trial_dir), str(destination))
+        for puzzle_root in affected_puzzles:
+            judge = puzzle_root / "judge.json"
+            if judge.exists():
+                destination = archive_root / "games" / slug / puzzle_root.relative_to(player_root) / judge.name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(judge), str(destination))
         if invalid_trials:
             summary = run_dir / "summaries" / f"{slug}.json"
             if summary.exists():
@@ -519,21 +610,82 @@ def aggregate_scores(scores: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-async def run_player(run_dir: Path, player: dict[str, str], manifest: dict[str, Any], repeats: int, concurrency: int, timeout_s: int) -> dict[str, Any]:
+async def run_player(
+    run_dir: Path,
+    player: dict[str, str],
+    manifest: dict[str, Any],
+    repeats: int,
+    concurrency: int,
+    timeout_s: int,
+    max_attempts: int = 100,
+) -> dict[str, Any]:
     if repeats != 3:
         raise RuntimeError("current judge path requires exactly 3 repeats")
+    target_valid_games = len(manifest["puzzles"]) * repeats
+    validate_attempt_limit(max_attempts, target_valid_games)
+    state_path = run_dir / "games" / player["slug"] / "attempts.json"
+    state = load_attempt_state(run_dir, player["slug"], max_attempts, target_valid_games)
+    slots = {
+        f"{puzzle['id']}:{trial:02d}": (puzzle, trial)
+        for trial in range(1, repeats + 1)
+        for puzzle in manifest["puzzles"]
+    }
     semaphore = asyncio.Semaphore(concurrency)
+
     async def guarded(puzzle: dict[str, Any], trial: int):
         async with semaphore:
             return await run_game(run_dir, player, puzzle, trial, timeout_s)
-    for trial in range(1, repeats + 1):
-        await asyncio.gather(*(guarded(p, trial) for p in manifest["puzzles"]))
-    await asyncio.gather(*(run_judge(run_dir, player, p, timeout_s) for p in manifest["puzzles"]))
-    scores = finalize_scores(run_dir, player, manifest)
-    summary = aggregate_scores(scores)
-    summary["player"] = player
-    atomic_json(run_dir / "summaries" / f"{player['slug']}.json", summary)
-    return summary
+
+    while True:
+        pending = [key for key in state.get("pending_slots", []) if key in slots]
+        missing = []
+        resumable = []
+        for key, (puzzle, trial) in slots.items():
+            trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
+            game_path = trial_dir / "game.json"
+            preliminary_path = trial_dir / "preliminary.json"
+            if not game_path.exists():
+                if key not in pending:
+                    missing.append(key)
+            elif game_needs_run(game_path, preliminary_path):
+                resumable.append(key)
+        reserved = reserve_attempt_slots(state_path, state, missing) if missing else []
+        runnable = list(dict.fromkeys([*pending, *reserved, *resumable]))
+        if runnable:
+            await asyncio.gather(*(guarded(*slots[key]) for key in runnable))
+            state["pending_slots"] = []
+            state["updated_at"] = now_iso()
+            atomic_json(state_path, state)
+
+        await asyncio.gather(*(run_judge(run_dir, player, p, timeout_s) for p in manifest["puzzles"]))
+        scores = finalize_scores(run_dir, player, manifest)
+        valid_games = sum(score.get("validity") == "valid" for score in scores)
+        should_stop, limit_reached = retry_stop_state(
+            valid_games, target_valid_games, int(state["attempts_started"]), max_attempts
+        )
+        if should_stop:
+            summary = aggregate_scores(scores)
+            summary.update({
+                "player": player,
+                "target_valid_games": target_valid_games,
+                "attempts_started": int(state["attempts_started"]),
+                "max_attempts": max_attempts,
+                "attempt_limit_reached": limit_reached,
+            })
+            atomic_json(run_dir / "summaries" / f"{player['slug']}.json", summary)
+            return summary
+
+        remaining = max_attempts - int(state["attempts_started"])
+        state["retry_round"] = int(state.get("retry_round", 0)) + 1
+        state["updated_at"] = now_iso()
+        atomic_json(state_path, state)
+        archive_root = (
+            run_dir / "retry-archives" / "auto" / player["slug"] /
+            f"round-{state['retry_round']:03d}"
+        )
+        archived = archive_invalid_trials(run_dir, [player["slug"]], archive_root, max_trials=remaining)
+        if archived[player["slug"]] == 0:
+            raise RuntimeError(f"{player['slug']} has {valid_games}/{target_valid_games} valid games but no invalid trials to retry")
 
 
 def render_report(run_meta: dict[str, Any], summaries: list[dict[str, Any]]) -> str:
@@ -584,14 +736,19 @@ async def async_main(args: argparse.Namespace) -> None:
     if meta.get("session_source", SESSION_SOURCE) != SESSION_SOURCE:
         raise RuntimeError(f"run source mismatch: {meta.get('session_source')} != {SESSION_SOURCE}")
     meta["session_source"] = SESSION_SOURCE
+    meta["max_attempts_per_player"] = args.max_attempts_per_player
     atomic_json(meta_path, meta)
     summaries=[]
     for player in players:
         summary_path = run_dir / "summaries" / f"{player['slug']}.json"
-        if summary_path.exists():
-            summary=load_json(summary_path)
+        existing_summary = load_json(summary_path) if summary_path.exists() else None
+        if existing_summary is not None and not summary_needs_retry(existing_summary, TARGET_VALID_GAMES):
+            summary = existing_summary
         else:
-            summary=await run_player(run_dir, player, manifest, args.repeats, args.concurrency, args.timeout)
+            summary=await run_player(
+                run_dir, player, manifest, args.repeats, args.concurrency, args.timeout,
+                max_attempts=args.max_attempts_per_player,
+            )
         summaries.append(summary)
         if player["slug"] not in meta["completed_players"]:
             meta["completed_players"].append(player["slug"])
@@ -609,6 +766,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repeats",type=int,default=3)
     parser.add_argument("--concurrency",type=int,default=12)
     parser.add_argument("--timeout",type=int,default=7200)
+    parser.add_argument("--max-attempts-per-player", type=attempt_limit_arg, default=100)
     parser.add_argument("--fixtures", type=Path, default=DEFAULT_FIXTURES)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS)
     parser.add_argument("--state-db", type=Path, default=DEFAULT_STATE_DB)
