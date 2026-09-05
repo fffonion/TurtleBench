@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  averageTimePerGame,
   colorForFamily,
   formatBehaviorName,
   formatChartName,
@@ -62,6 +63,11 @@ test("known model families keep stable distinct colors", () => {
   assert.equal(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-luna"));
   assert.notEqual(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-sol"));
   assert.notEqual(colorForFamily("gpt-5.6-sol"), colorForFamily("grok-4.6"));
+});
+
+test("chart time uses the per-game average", () => {
+  assert.equal(averageTimePerGame({ active_time_s: 366, games: 3 }), 122);
+  assert.equal(averageTimePerGame({ active_time_s: 366, games: 0 }), null);
 });
 
 test("formatters keep resource values compact and explicit", () => {

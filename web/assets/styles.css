@@ -385,6 +385,7 @@ th:first-child {
 .model-primary,
 .provider-subtitle {
   display: block;
+  white-space: nowrap;
 }
 
 .provider-subtitle {
@@ -556,13 +557,12 @@ footer a {
 
   .model-cell,
   th:first-child {
-    width: 172px;
-    min-width: 172px;
-    max-width: 172px;
+    width: 1%;
+    min-width: 0;
+    max-width: none;
   }
 
   .model-cell {
-    white-space: normal;
     line-height: 1.25;
   }
 

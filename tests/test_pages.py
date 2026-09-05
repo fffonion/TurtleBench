@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -109,7 +110,68 @@ class PublicResultTests(unittest.TestCase):
 
             result = pages.build_public_run(run, pricing={})
 
-        self.assertEqual(result["models"][0]["behavior"]["hints_median"], 1)
+        self.assertEqual(result["models"][0]["behavior"]["hints_median"], 1.0)
+
+    def test_compression_time_is_removed_from_public_active_time(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run = self.make_run(root)
+            summary_path = run / "summaries" / "luna-max.json"
+            summary = json.loads(summary_path.read_text())
+            summary["player_resources"]["player_active_time_s"] = 142
+            summary_path.write_text(json.dumps(summary))
+
+            score_path = run / "games" / "luna-max" / "PUZZLE" / "trial-01" / "score.json"
+            score = json.loads(score_path.read_text())
+            score["raw"]["player_usage"] = {"session_id": "session-one"}
+            score_path.write_text(json.dumps(score))
+            (score_path.parent / "player.log").write_text("compacting context…\n")
+
+            db_path = root / "state.db"
+            connection = sqlite3.connect(db_path)
+            connection.execute(
+                "CREATE TABLE messages (id INTEGER PRIMARY KEY, session_id TEXT, timestamp REAL)"
+            )
+            connection.executemany(
+                "INSERT INTO messages(id, session_id, timestamp) VALUES (?, ?, ?)",
+                [
+                    (1, "session-one", 0.0),
+                    (2, "session-one", 10.0),
+                    (3, "session-one", 100.0),
+                    (4, "session-one", 100.000001),
+                    (5, "session-one", 100.000002),
+                    (6, "session-one", 110.0),
+                ],
+            )
+            connection.commit()
+            connection.close()
+
+            result = pages.build_public_run(run, pricing={}, state_db=db_path)
+
+        model = result["models"][0]
+        self.assertEqual(model["compression_time_s"], 90.0)
+        self.assertEqual(model["active_time_s"], 52.0)
+
+    def test_session_compression_time_sums_multiple_compactions(self):
+        with tempfile.TemporaryDirectory() as temp:
+            db_path = Path(temp) / "state.db"
+            connection = sqlite3.connect(db_path)
+            connection.execute(
+                "CREATE TABLE messages (id INTEGER PRIMARY KEY, session_id TEXT, timestamp REAL)"
+            )
+            connection.executemany(
+                "INSERT INTO messages(id, session_id, timestamp) VALUES (?, ?, ?)",
+                [
+                    (1, "s", 0.0), (2, "s", 10.0),
+                    (3, "s", 40.0), (4, "s", 40.000001), (5, "s", 40.000002),
+                    (6, "s", 50.0),
+                    (7, "s", 70.0), (8, "s", 70.000001), (9, "s", 70.000002),
+                ],
+            )
+            connection.commit()
+            connection.close()
+
+            self.assertEqual(pages.session_compression_time(db_path, "s"), 50.0)
 
     def test_build_public_run_calculates_price_from_snapshot(self):
         snapshot = {

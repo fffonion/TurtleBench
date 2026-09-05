@@ -103,6 +103,11 @@ export function formatChartName(row) {
   return `${splitDisplayName(row.name).model} · ${row.reasoning_effort}`;
 }
 
+export function averageTimePerGame(model) {
+  if (!Number.isFinite(model.active_time_s) || !Number.isFinite(model.games) || model.games <= 0) return null;
+  return model.active_time_s / model.games;
+}
+
 function formatNumber(value) {
   if (value == null || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("zh-CN").format(value);
@@ -128,7 +133,7 @@ function colorMap(models) {
 }
 
 function chartMetric(model, axis) {
-  return axis === "price" ? model.price_usd?.total : model.active_time_s;
+  return axis === "price" ? model.price_usd?.total : averageTimePerGame(model);
 }
 
 function chartLabel(value, axis) {
@@ -164,7 +169,7 @@ function renderChart(models, axis) {
   const svg = svgElement("svg", {
     viewBox: `0 0 ${width} ${height}`,
     role: "img",
-    "aria-label": `综合分与${axis === "price" ? "总价格" : "总耗时"}关系图`,
+    "aria-label": `综合分与${axis === "price" ? "总价格" : "每局平均耗时"}关系图`,
   });
   svg.classList.add("score-chart");
 
@@ -189,7 +194,7 @@ function renderChart(models, axis) {
   yTitle.textContent = "综合分";
   svg.append(yTitle);
   const xTitle = svgElement("text", { x: margin.left + plotWidth / 2, y: height - 16, class: "axis-title", "text-anchor": "middle" });
-  xTitle.textContent = axis === "price" ? "总价格（USD）" : "总耗时";
+  xTitle.textContent = axis === "price" ? "总价格（USD）" : "每局平均耗时";
   svg.append(xTitle);
 
   const colors = colorMap(models);

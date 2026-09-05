@@ -6,6 +6,7 @@ import argparse
 import json
 import re
 import shutil
+import sqlite3
 import statistics
 import subprocess
 import tempfile
@@ -158,7 +159,64 @@ def _valid_hint_values(run_dir: Path, slug: str) -> list[int | float]:
     return values
 
 
-def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any]) -> dict[str, Any]:
+def session_compression_time(db_path: str | Path, session_id: str) -> float:
+    """Estimate in-place compaction time from synthetic same-timestamp message clusters."""
+
+    path = Path(db_path)
+    if not path.is_file() or not session_id:
+        return 0.0
+    try:
+        with sqlite3.connect(path) as connection:
+            rows = connection.execute(
+                "SELECT timestamp FROM messages WHERE session_id = ? ORDER BY id",
+                (session_id,),
+            ).fetchall()
+    except sqlite3.Error:
+        return 0.0
+
+    timestamps = [float(row[0]) for row in rows]
+    total = 0.0
+    index = 1
+    while index < len(timestamps):
+        cluster_end = index + 1
+        while (
+            cluster_end < len(timestamps)
+            and timestamps[cluster_end] - timestamps[index] <= 0.01
+        ):
+            cluster_end += 1
+        if cluster_end - index >= 3:
+            total += max(0.0, timestamps[index] - timestamps[index - 1])
+            index = cluster_end
+        else:
+            index += 1
+    return round(total, 3)
+
+
+def _model_compression_time(run_dir: Path, slug: str, state_db: str | Path | None) -> float:
+    if state_db is None:
+        return 0.0
+    sessions: set[str] = set()
+    for score_path in (run_dir / "games" / slug).glob("*/trial-*/score.json"):
+        if not _TRIAL_DIR.fullmatch(score_path.parent.name):
+            continue
+        log_path = score_path.parent / "player.log"
+        if not log_path.is_file() or "compacting context" not in log_path.read_text(
+            encoding="utf-8", errors="replace"
+        ):
+            continue
+        score = _read_json(score_path)
+        usage = score.get("raw", {}).get("player_usage")
+        if isinstance(usage, dict) and isinstance(usage.get("session_id"), str):
+            sessions.add(usage["session_id"])
+    return round(sum(session_compression_time(state_db, session_id) for session_id in sessions), 3)
+
+
+def _public_model(
+    run_dir: Path,
+    summary: dict[str, Any],
+    pricing: dict[str, Any],
+    state_db: str | Path | None,
+) -> dict[str, Any]:
     player = summary.get("player")
     resources = summary.get("player_resources")
     if not isinstance(player, dict) or not isinstance(resources, dict):
@@ -176,6 +234,9 @@ def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any
     model_id = str(player["model"])
     price_snapshot = pricing.get(slug)
     price_usd = calculate_price(tokens, price_snapshot) if isinstance(price_snapshot, dict) else None
+    compression_time = _model_compression_time(run_dir, slug, state_db)
+    raw_active_time = float(resources.get("player_active_time_s", 0.0))
+    net_active_time = round(max(0.0, raw_active_time - compression_time), 3)
     return {
         "slug": slug,
         "name": _public_name(str(player["provider"]), model_id),
@@ -185,7 +246,8 @@ def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any
         "reasoning_effort": str(player["reasoning_effort"]),
         "overall_score": float(summary["overall_score"]),
         "games": int(resources.get("games", summary.get("valid_games", 0))),
-        "active_time_s": float(resources.get("player_active_time_s", 0.0)),
+        "active_time_s": net_active_time,
+        "compression_time_s": compression_time,
         "tokens": tokens,
         "price_usd": price_usd,
         "pricing": price_snapshot,
@@ -198,7 +260,11 @@ def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any
     }
 
 
-def build_public_run(run_dir: str | Path, pricing: dict[str, Any]) -> dict[str, Any]:
+def build_public_run(
+    run_dir: str | Path,
+    pricing: dict[str, Any],
+    state_db: str | Path | None = None,
+) -> dict[str, Any]:
     """Build an allowlisted public aggregate from one benchmark run directory."""
 
     run_path = Path(run_dir)
@@ -206,7 +272,7 @@ def build_public_run(run_dir: str | Path, pricing: dict[str, Any]) -> dict[str, 
     if not summaries_dir.is_dir():
         raise ValueError(f"missing summaries directory: {summaries_dir}")
     models = [
-        _public_model(run_path, _read_json(path), pricing)
+        _public_model(run_path, _read_json(path), pricing, state_db)
         for path in sorted(summaries_dir.glob("*.json"))
     ]
     if not models:
@@ -219,6 +285,7 @@ def prepare_public_run(
     mapping: dict[str, Any],
     catalog: dict[str, Any],
     fetched_at: str,
+    state_db: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build one publishable run with pinned models.dev pricing."""
 
@@ -254,7 +321,7 @@ def prepare_public_run(
                 if model_dir.is_dir():
                     puzzle_ids.update(path.name for path in model_dir.iterdir() if path.is_dir())
 
-    public = build_public_run(run_path, pricing)
+    public = build_public_run(run_path, pricing, state_db=state_db)
     public.update(
         {
             "title": run_path.name,
@@ -378,6 +445,7 @@ def _prepare_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
         load_mapping(mapping_path),
         _load_catalog(args.catalog),
         _utc_now(),
+        state_db=Path(args.state_db).expanduser() if args.state_db else None,
     )
     if args.title:
         run["title"] = args.title
@@ -447,6 +515,11 @@ def build_parser() -> argparse.ArgumentParser:
         subparser.add_argument("--repo")
         subparser.add_argument("--mapping")
         subparser.add_argument("--catalog", help="local models.dev api.json; fetch live when omitted")
+        subparser.add_argument(
+            "--state-db",
+            default="~/.hermes/state.db",
+            help="Hermes state database used to remove context-compaction time",
+        )
         subparser.add_argument("--title")
         if command == "build":
             subparser.add_argument("--output", required=True)
