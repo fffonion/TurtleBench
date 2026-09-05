@@ -74,8 +74,7 @@ h1 {
   letter-spacing: -0.045em;
 }
 
-.site-header p,
-.section-note {
+.site-header p {
   margin-bottom: 0;
   color: var(--muted);
 }
@@ -194,12 +193,6 @@ h2 {
 
 .status.error {
   color: var(--error);
-}
-
-.chart-note {
-  margin: -8px 0 8px;
-  color: var(--muted);
-  font-size: 0.76rem;
 }
 
 .chart-frame {
@@ -410,30 +403,9 @@ th:first-child {
   font-weight: 450;
 }
 
-.scroll-hint {
-  display: none;
-  margin-bottom: 8px;
-  color: var(--muted);
-  font-size: 0.74rem;
-  text-align: right;
-}
-
-.chart-scroll-hint {
-  display: none;
-  margin: -4px 0 8px;
-  color: var(--muted);
-  font-size: 0.74rem;
-  text-align: right;
-}
-
 .behavior-section .section-header {
   align-items: flex-end;
   margin-bottom: 18px;
-}
-
-.section-note {
-  margin-top: 5px;
-  font-size: 0.8rem;
 }
 
 footer {
@@ -526,11 +498,6 @@ footer a {
   .score-chart {
     width: 760px;
     min-height: 360px;
-  }
-
-  .scroll-hint,
-  .chart-scroll-hint {
-    display: block;
   }
 
   .table-scroll {
