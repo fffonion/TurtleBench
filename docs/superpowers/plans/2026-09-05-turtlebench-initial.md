@@ -290,7 +290,7 @@ git add docs/superpowers/plans/2026-09-05-turtlebench-initial.md
 git commit -m "Complete TurtleBench implementation plan"
 ```
 
-- [ ] **Step 5: Verify branch and remote identities**
+- [x] **Step 5: Verify branch and remote identities**
 
 ```bash
 git branch --show-current
@@ -301,7 +301,7 @@ git ls-remote --symref origin HEAD
 
 Expected local branch: `main`. Expected origin: `git@github.com:fffonion/TurtleBench.git`.
 
-- [ ] **Step 6: Push and verify the remote commit**
+- [x] **Step 6: Push and verify the remote commit**
 
 ```bash
 git push -u origin HEAD:main
