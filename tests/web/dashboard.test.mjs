@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -68,6 +69,14 @@ test("known model families keep stable distinct colors", () => {
 test("chart time uses the per-game average", () => {
   assert.equal(averageTimePerGame({ active_time_s: 366, games: 3 }), 122);
   assert.equal(averageTimePerGame({ active_time_s: 366, games: 0 }), null);
+});
+
+test("price is the first and default chart axis", () => {
+  const html = readFileSync(new URL("../../web/index.html", import.meta.url), "utf8");
+  const price = html.indexOf('data-value="price" aria-pressed="true"');
+  const time = html.indexOf('data-value="time" aria-pressed="false"');
+  assert.ok(price >= 0);
+  assert.ok(time > price);
 });
 
 test("formatters keep resource values compact and explicit", () => {
