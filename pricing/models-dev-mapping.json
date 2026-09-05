@@ -9,6 +9,11 @@
     "model": "MiniMax-M3",
     "canonical_model": "minimax/MiniMax-M3"
   },
+  "openrouter:minimax/minimax-m3:free": {
+    "provider": "minimax-cn",
+    "model": "MiniMax-M3",
+    "canonical_model": "minimax/MiniMax-M3"
+  },
   "commandcode:deepseek-ai/deepseek-v4-flash": {
     "provider": "deepseek",
     "model": "deepseek-v4-flash",

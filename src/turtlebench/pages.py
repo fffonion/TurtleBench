@@ -130,13 +130,15 @@ _PROVIDER_NAMES = {
     "commandcode": "CommandCode",
     "deepseek": "DeepSeek",
     "minimax-cn": "MiniMax",
+    "openrouter": "OpenRouter",
     "openai-codex": "OpenAI Codex",
     "xai-oauth": "xAI",
 }
 
 
 def _public_name(provider: str, model_id: str) -> str:
-    return f"{_PROVIDER_NAMES.get(provider, provider)} / {_public_model_name(model_id)}"
+    display_model = model_id.removesuffix(":free")
+    return f"{_PROVIDER_NAMES.get(provider, provider)} / {_public_model_name(display_model)}"
 
 
 def _valid_hint_values(run_dir: Path, slug: str) -> list[int | float]:

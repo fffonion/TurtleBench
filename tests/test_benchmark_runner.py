@@ -25,6 +25,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
             ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-6-astra-high", "grok-4-6-high"],
         )
 
+    def test_minimax_uses_openrouter_free_route(self):
+        minimax = next(p for p in br.PLAYER_MATRIX if p["slug"] == "minimax-m3-max")
+        self.assertEqual(minimax["provider"], "openrouter")
+        self.assertEqual(minimax["model"], "minimax/minimax-m3:free")
+        self.assertEqual(minimax["reasoning_effort"], "max")
+
     def test_deepseek_uses_commandcode_model_id(self):
         deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "deepseek-v4-flash-max")
         self.assertEqual(deepseek["provider"], "commandcode")

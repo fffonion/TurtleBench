@@ -39,7 +39,7 @@ JUDGE = HOST.copy()
 PLAYER_MATRIX = [
     {"slug": "luna-max", "display_name": "Luna max baseline", "provider": "openai-codex", "model": "gpt-5.6-luna", "reasoning_effort": "max"},
     {"slug": "luna-high", "display_name": "Luna high baseline", "provider": "openai-codex", "model": "gpt-5.6-luna", "reasoning_effort": "high"},
-    {"slug": "minimax-m3-max", "display_name": "MiniMax provider / MiniMax M3 max", "provider": "minimax-cn", "model": "minimax-m3", "reasoning_effort": "max"},
+    {"slug": "minimax-m3-max", "display_name": "OpenRouter / MiniMax M3 max", "provider": "openrouter", "model": "minimax/minimax-m3:free", "reasoning_effort": "max"},
     {"slug": "deepseek-v4-flash-max", "display_name": "CommandCode / DeepSeek V4 Flash max", "provider": "commandcode", "model": "deepseek-ai/deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "deepseek-provider-v4-flash-max", "display_name": "DeepSeek provider / DeepSeek V4 Flash max", "provider": "deepseek", "model": "deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "claude-sonnet-5-high", "display_name": "Anthropic / Claude Sonnet 5 high", "provider": "anthropic", "model": "claude-sonnet-5", "reasoning_effort": "high"},
