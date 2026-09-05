@@ -88,13 +88,19 @@ export function formatMoney(value) {
   return `$${value.toFixed(4)}`;
 }
 
+export function splitDisplayName(name) {
+  const separator = " / ";
+  if (!name.includes(separator)) return { provider: "", model: name };
+  const [provider, ...modelParts] = name.split(separator);
+  return { provider, model: modelParts.join(separator) };
+}
+
 export function formatBehaviorName(row) {
   return `${row.name} · ${row.reasoning_effort}`;
 }
 
 export function formatChartName(row) {
-  const modelName = row.name.includes(" / ") ? row.name.split(" / ").slice(1).join(" / ") : row.name;
-  return `${modelName} · ${row.reasoning_effort}`;
+  return `${splitDisplayName(row.name).model} · ${row.reasoning_effort}`;
 }
 
 function formatNumber(value) {
@@ -279,8 +285,24 @@ function renderTable(table, rows, columns, state) {
     columns.forEach(([, key, formatter], columnIndex) => {
       const td = document.createElement("td");
       if (columnIndex === 0) td.className = "sticky-cell model-cell";
-      if (key === "reasoning_effort") td.classList.add("effort-cell");
-      td.textContent = formatter(row);
+      if (key === "name") {
+        const parts = splitDisplayName(row.name);
+        const primary = document.createElement("span");
+        primary.className = "model-primary";
+        primary.textContent = parts.model;
+        td.append(primary);
+        if (parts.provider) {
+          const provider = document.createElement("small");
+          provider.className = "provider-subtitle";
+          provider.textContent = columns === BEHAVIOR_COLUMNS
+            ? `${parts.provider} · ${row.reasoning_effort}`
+            : parts.provider;
+          td.append(provider);
+        }
+      } else {
+        if (key === "reasoning_effort") td.classList.add("effort-cell");
+        td.textContent = formatter(row);
+      }
       if (key === "price_usd.total" && row.price_usd) {
         const detail = document.createElement("small");
         detail.className = "price-detail";

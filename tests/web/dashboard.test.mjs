@@ -8,6 +8,7 @@ import {
   formatDuration,
   formatMoney,
   groupByFamily,
+  splitDisplayName,
   sortRows,
 } from "../../web/assets/app.js";
 
@@ -70,4 +71,8 @@ test("formatters keep resource values compact and explicit", () => {
   assert.equal(formatMoney(null), "—");
   assert.equal(formatBehaviorName(rows[0]), "Luna · max");
   assert.equal(formatChartName({ ...rows[0], name: "OpenAI Codex / GPT-5.6 Luna" }), "GPT-5.6 Luna · max");
+  assert.deepEqual(splitDisplayName("OpenAI Codex / GPT-5.6 Luna"), {
+    provider: "OpenAI Codex",
+    model: "GPT-5.6 Luna",
+  });
 });

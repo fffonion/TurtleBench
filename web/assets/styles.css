@@ -382,6 +382,19 @@ th:first-child {
   font-weight: 650;
 }
 
+.model-primary,
+.provider-subtitle {
+  display: block;
+}
+
+.provider-subtitle {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 .effort-cell {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -543,9 +556,9 @@ footer a {
 
   .model-cell,
   th:first-child {
-    width: 210px;
-    min-width: 210px;
-    max-width: 210px;
+    width: 172px;
+    min-width: 172px;
+    max-width: 172px;
   }
 
   .model-cell {
