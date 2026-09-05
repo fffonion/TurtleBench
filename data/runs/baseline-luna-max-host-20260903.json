@@ -30,7 +30,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-6-astra",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 10.0,
           "output": 50.0,
@@ -74,7 +74,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
@@ -118,7 +118,7 @@
         "source": "https://models.dev",
         "source_model_id": "xai/grok-4.6",
         "source_provider_id": "xai",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 6.0,
@@ -162,7 +162,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -206,7 +206,7 @@
         "source": "https://models.dev",
         "source_model_id": "anthropic/claude-sonnet-5",
         "source_provider_id": "anthropic",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 10.0,
@@ -250,7 +250,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -294,7 +294,7 @@
         "source": "https://models.dev",
         "source_model_id": "minimax/MiniMax-M3",
         "source_provider_id": "minimax-cn",
-        "fetched_at": "2026-09-05T08:48:04Z",
+        "fetched_at": "2026-09-05T08:55:10Z",
         "usd_per_million_tokens": {
           "input": 0.3,
           "output": 1.2,
@@ -315,5 +315,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-05T08:48:04Z"
+  "published_at": "2026-09-05T08:55:10Z"
 }
