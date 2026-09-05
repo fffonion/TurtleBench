@@ -1,6 +1,6 @@
 # TurtleBench
 
-TurtleBench runs a fixed situation-puzzle benchmark through [Hermes Agent](https://hermes-agent.nousresearch.com/docs). It includes the benchmark runner, mailbox protocol, tests, and the `fixed-v1` fixture suite. Benchmark results are intentionally excluded.
+TurtleBench runs a fixed situation-puzzle benchmark through [Hermes Agent](https://hermes-agent.nousresearch.com/docs). It includes the runner, mailbox protocol, and validation code. Private puzzle files and generated results are excluded from Git history.
 
 ## Requirements
 
@@ -36,6 +36,18 @@ node --test tests/web/dashboard.test.mjs
 
 The tests validate the mailbox protocol, scoring helpers, model matrix, runner resume behavior, fixture schema, fixture SHA-256 values, public result export, models.dev pricing, and dashboard data logic.
 
+## Install the private fixture suite
+
+The encrypted fixture archive is attached to GitHub Release `fixtures-v1`.
+
+```bash
+bash scripts/install-fixtures.sh
+```
+
+ZIP password: `123456`
+
+The script verifies the published SHA-256 digest and installs the suite under `fixtures/fixed-v1/`.
+
 ## Run
 
 ```bash
@@ -53,7 +65,7 @@ Hermes session usage is read from `~/.hermes/state.db` by default. Override it w
 
 ## Fixtures
 
-`fixtures/fixed-v1/manifest.json` declares 12 puzzles across two puzzle types and three difficulty levels. Every manifest entry records the puzzle path and SHA-256 digest. Puzzle JSON includes the private solution data required by the isolated host and judge.
+After installation, `fixtures/fixed-v1/manifest.json` declares 12 puzzles across two puzzle types and three difficulty levels. Every manifest entry records the puzzle path and SHA-256 digest.
 
 ## Output
 

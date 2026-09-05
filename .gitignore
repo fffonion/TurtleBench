@@ -1,6 +1,7 @@
 # Runtime output
 runs/
 results/
+fixtures/fixed-v1/
 *.log
 *.lock
 *.db

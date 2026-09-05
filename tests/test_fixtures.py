@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import unittest
 from collections import Counter
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_ROOT = ROOT / "fixtures" / "fixed-v1"
+FIXTURE_ROOT = Path(os.environ.get("TURTLEBENCH_FIXTURES", ROOT / "fixtures" / "fixed-v1"))
 
 
 class FixtureTests(unittest.TestCase):
     def setUp(self) -> None:
+        if not (FIXTURE_ROOT / "manifest.json").exists():
+            self.skipTest("private fixtures are installed separately from Git")
         self.manifest = json.loads((FIXTURE_ROOT / "manifest.json").read_text(encoding="utf-8"))
 
     def test_manifest_has_twelve_unique_puzzles(self) -> None:
@@ -40,6 +43,17 @@ class FixtureTests(unittest.TestCase):
             self.assertEqual(puzzle["difficulty"], item["difficulty"])
             self.assertGreaterEqual(len(puzzle["hints"]), 3)
             self.assertGreaterEqual(len(puzzle["key_facts"]), 5)
+
+
+class FixtureDistributionTests(unittest.TestCase):
+    def test_private_json_is_absent_from_repository(self) -> None:
+        self.assertEqual(list((ROOT / "fixtures").rglob("*.json")), [])
+
+    def test_installer_documents_release_password_and_digest(self) -> None:
+        script = (ROOT / "scripts" / "install-fixtures.sh").read_text(encoding="utf-8")
+        self.assertIn("fixtures-v1", script)
+        self.assertIn('PASSWORD="123456"', script)
+        self.assertIn("c28746c7b8296a2b8eb36aef6c6cff5ae9418283409c291eaac139c772646069", script)
 
 
 if __name__ == "__main__":
