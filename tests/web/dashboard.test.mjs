@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  formatBehaviorName,
+  formatChartName,
   formatDuration,
   formatMoney,
   groupByFamily,
@@ -59,4 +61,6 @@ test("formatters keep resource values compact and explicit", () => {
   assert.equal(formatDuration(3661), "1时 1分");
   assert.equal(formatMoney(1.23456), "$1.2346");
   assert.equal(formatMoney(null), "—");
+  assert.equal(formatBehaviorName(rows[0]), "Luna · max");
+  assert.equal(formatChartName({ ...rows[0], name: "OpenAI Codex / GPT-5.6 Luna" }), "GPT-5.6 Luna · max");
 });

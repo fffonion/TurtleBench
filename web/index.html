@@ -30,11 +30,14 @@
         <div class="section-header">
           <h2 id="performance-title">综合表现</h2>
           <div class="section-controls">
-            <div class="segmented" aria-label="展示方式">
-              <button type="button" class="selected" data-view data-value="chart" aria-pressed="true">图表</button>
-              <button type="button" data-view data-value="table" aria-pressed="false">表格</button>
+            <div class="control-group">
+              <span>视图</span>
+              <div class="segmented" aria-label="综合表现展示方式">
+                <button type="button" class="selected" data-view data-value="chart" aria-pressed="true">图表</button>
+                <button type="button" data-view data-value="table" aria-pressed="false">表格</button>
+              </div>
             </div>
-            <div id="axis-control" class="axis-control">
+            <div id="axis-control" class="control-group">
               <span>X 轴</span>
               <div class="segmented compact" aria-label="图表横轴">
                 <button type="button" class="selected" data-axis data-value="time" aria-pressed="true">总耗时</button>
@@ -45,6 +48,8 @@
         </div>
 
         <div id="chart-view">
+          <p class="chart-note">同一模型的不同推理等级由线连接</p>
+          <p class="chart-scroll-hint">左右滑动查看全部图表</p>
           <div id="chart" class="chart-frame"></div>
         </div>
 

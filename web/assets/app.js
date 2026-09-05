@@ -71,6 +71,15 @@ export function formatMoney(value) {
   return `$${value.toFixed(4)}`;
 }
 
+export function formatBehaviorName(row) {
+  return `${row.name} · ${row.reasoning_effort}`;
+}
+
+export function formatChartName(row) {
+  const modelName = row.name.includes(" / ") ? row.name.split(" / ").slice(1).join(" / ") : row.name;
+  return `${modelName} · ${row.reasoning_effort}`;
+}
+
 function formatNumber(value) {
   if (value == null || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("zh-CN").format(value);
@@ -121,7 +130,7 @@ function renderChart(models, axis) {
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const xValues = plotted.map((model) => chartMetric(model, axis));
-  const maxX = Math.max(...xValues, 1);
+  const maxX = Math.max(...xValues, 1) * 1.12;
   const minScore = Math.min(...plotted.map((model) => model.overall_score));
   const maxScore = Math.max(...plotted.map((model) => model.overall_score));
   const yMin = Math.max(0, Math.floor((minScore - 8) / 10) * 10);
@@ -173,13 +182,15 @@ function renderChart(models, axis) {
     const xPosition = x(chartMetric(model, axis));
     const yPosition = y(model.overall_score);
     svg.append(svgElement("circle", { cx: xPosition, cy: yPosition, r: 6.5, fill: colors.get(family), class: "chart-point" }));
+    const nearRight = xPosition > margin.left + plotWidth * 0.76;
     const label = svgElement("text", {
-      x: xPosition + 11,
+      x: xPosition + (nearRight ? -11 : 11),
       y: yPosition + (index % 2 ? 18 : -11),
       class: "point-label",
       fill: colors.get(family),
+      "text-anchor": nearRight ? "end" : "start",
     });
-    label.textContent = `${model.name} ${model.reasoning_effort}`;
+    label.textContent = formatChartName(model);
     svg.append(label);
   });
   host.append(svg);
@@ -200,7 +211,7 @@ const RESOURCE_COLUMNS = [
 ];
 
 const BEHAVIOR_COLUMNS = [
-  ["名字", "name", (row) => row.name],
+  ["名字", "name", (row) => formatBehaviorName(row)],
   ["综合分", "overall_score", (row) => formatScore(row.overall_score)],
   ["解出率", "behavior.solve_rate", (row) => formatPercent(row.behavior.solve_rate)],
   ["轮数中位数", "behavior.rounds_median", (row) => formatNumber(row.behavior.rounds_median)],
@@ -231,6 +242,11 @@ function renderTable(table, rows, columns, state) {
       button.append(mark);
     } else {
       th.setAttribute("aria-sort", "none");
+      const mark = document.createElement("span");
+      mark.className = "sort-mark inactive";
+      mark.setAttribute("aria-hidden", "true");
+      mark.textContent = "↕";
+      button.append(mark);
     }
     button.addEventListener("click", () => {
       state.direction = state.key === key && state.direction === "desc" ? "asc" : "desc";
@@ -329,6 +345,7 @@ async function startDashboard() {
       const chartView = value === "chart";
       document.querySelector("#chart-view").hidden = !chartView;
       document.querySelector("#table-view").hidden = chartView;
+      document.querySelector("#axis-control").hidden = !chartView;
     });
     bindSegmentedControl("[data-axis]", (value) => {
       axis = value;
