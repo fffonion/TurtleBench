@@ -1,6 +1,6 @@
 # TurtleBench Initial Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use codex-superpowers-subagent-driven-development (recommended) or codex-superpowers-executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use codex-superpowers-subagent-driven-development (recommended) or codex-superpowers-executing-plans to implement this plan task-by-task. Completed steps use checked boxes for tracking.
 
 **Goal:** Publish a portable TurtleBench Python project with the fixed-v1 fixture suite, automated tests, a situation-puzzle-skill submodule, and no benchmark results or credentials.
 
@@ -20,7 +20,7 @@
 - Create: `fixtures/fixed-v1/manifest.json`
 - Create: `fixtures/fixed-v1/puzzles/*.json`
 
-- [ ] **Step 1: Write the fixture tests**
+- [x] **Step 1: Write the fixture tests**
 
 Create tests that load `fixtures/fixed-v1/manifest.json`, require 12 unique IDs, require two entries in every type/difficulty stratum, and compare every declared SHA-256 value with the referenced file.
 
@@ -36,13 +36,13 @@ def test_manifest_hashes_match(self):
         self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"])
 ```
 
-- [ ] **Step 2: Run the fixture test and confirm failure**
+- [x] **Step 2: Run the fixture test and confirm failure**
 
 Run: `python3 -m unittest tests.test_fixtures -v`
 
 Expected: failure because the fixture tree has not been checked in.
 
-- [ ] **Step 3: Add package metadata, ignore rules, and fixtures**
+- [x] **Step 3: Add package metadata, ignore rules, and fixtures**
 
 Use a setuptools `src` layout with this script entry:
 
@@ -59,13 +59,13 @@ turtlebench = "turtlebench.benchmark_runner:main"
 
 Ignore `runs/`, `results/`, logs, local databases, virtual environments, dotenv files, private-key extensions, Python caches, and build output. Copy only the 13 fixed-v1 JSON files; do not copy any run directory.
 
-- [ ] **Step 4: Run fixture tests**
+- [x] **Step 4: Run fixture tests**
 
 Run: `python3 -m unittest tests.test_fixtures -v`
 
 Expected: all fixture tests pass.
 
-- [ ] **Step 5: Commit fixture foundation**
+- [x] **Step 5: Commit fixture foundation**
 
 ```bash
 git add pyproject.toml .gitignore src/turtlebench/__init__.py fixtures tests/test_fixtures.py
@@ -78,7 +78,7 @@ git commit -m "Add TurtleBench fixtures and package metadata"
 - Create: `src/turtlebench/game_mailbox.py`
 - Create: `tests/test_game_mailbox.py`
 
-- [ ] **Step 1: Port mailbox tests before implementation**
+- [x] **Step 1: Port mailbox tests before implementation**
 
 Copy the protocol tests and change imports to:
 
@@ -88,23 +88,23 @@ from turtlebench import game_mailbox as mailbox
 
 Retain assertions for lock/revision concurrency, turn order, hint controls, solved exits, maximum rounds, stop wake-up, and CLI timeout exit codes.
 
-- [ ] **Step 2: Run mailbox tests and confirm failure**
+- [x] **Step 2: Run mailbox tests and confirm failure**
 
 Run: `PYTHONPATH=src python3 -m unittest tests.test_game_mailbox -v`
 
 Expected: import failure because `game_mailbox.py` is absent.
 
-- [ ] **Step 3: Port the mailbox implementation**
+- [x] **Step 3: Port the mailbox implementation**
 
 Move the file-backed state machine into `src/turtlebench/game_mailbox.py`. Preserve the public Python functions and CLI subcommands. Replace script-path subprocess calls in tests with `python -m turtlebench.game_mailbox` where applicable.
 
-- [ ] **Step 4: Run mailbox tests**
+- [x] **Step 4: Run mailbox tests**
 
 Run: `PYTHONPATH=src python3 -m unittest tests.test_game_mailbox -v`
 
 Expected: all mailbox tests pass.
 
-- [ ] **Step 5: Commit mailbox protocol**
+- [x] **Step 5: Commit mailbox protocol**
 
 ```bash
 git add src/turtlebench/game_mailbox.py tests/test_game_mailbox.py
@@ -118,7 +118,7 @@ git commit -m "Add file-backed game mailbox"
 - Create: `src/turtlebench/__main__.py`
 - Create: `tests/test_benchmark_runner.py`
 
-- [ ] **Step 1: Port runner tests before implementation**
+- [x] **Step 1: Port runner tests before implementation**
 
 Change imports to `from turtlebench import benchmark_runner as runner`. Keep metric, aggregate, model matrix, usage, resume, API-failure, judge-retry, and invalid-archive tests. Add path configuration assertions:
 
@@ -134,13 +134,13 @@ def test_parser_accepts_fixture_and_run_paths(self):
     self.assertEqual(args.state_db, Path("/tmp/state.db"))
 ```
 
-- [ ] **Step 2: Run runner tests and confirm failure**
+- [x] **Step 2: Run runner tests and confirm failure**
 
 Run: `PYTHONPATH=src python3 -m unittest tests.test_benchmark_runner -v`
 
 Expected: import failure because `benchmark_runner.py` is absent.
 
-- [ ] **Step 3: Port and parameterize the runner**
+- [x] **Step 3: Port and parameterize the runner**
 
 Replace fixed global paths with a runtime configuration object:
 
@@ -164,7 +164,7 @@ MAILBOX_COMMAND = [sys.executable, "-m", "turtlebench.game_mailbox"]
 
 Add parser options `--fixtures`, `--runs-dir`, and `--state-db`. Thread `RuntimePaths` through suite verification, prompts, game execution, judging, and output creation. Preserve the nine current model configurations and all scoring formulas.
 
-- [ ] **Step 4: Add package entry point**
+- [x] **Step 4: Add package entry point**
 
 `src/turtlebench/__main__.py` calls `benchmark_runner.main()` so both commands work:
 
@@ -173,7 +173,7 @@ python -m turtlebench --help
 turtlebench --help
 ```
 
-- [ ] **Step 5: Run runner and full tests**
+- [x] **Step 5: Run runner and full tests**
 
 Run:
 
@@ -184,7 +184,7 @@ PYTHONPATH=src python3 -m turtlebench --help
 
 Expected: all tests pass and CLI help lists fixture, runs, state database, player, repeat, concurrency, and timeout options.
 
-- [ ] **Step 6: Commit benchmark runner**
+- [x] **Step 6: Commit benchmark runner**
 
 ```bash
 git add src/turtlebench/benchmark_runner.py src/turtlebench/__main__.py tests/test_benchmark_runner.py
@@ -200,7 +200,7 @@ git commit -m "Add portable benchmark runner"
 - Create: `README.md`
 - Create: `LICENSE`
 
-- [ ] **Step 1: Write submodule declaration test**
+- [x] **Step 1: Write submodule declaration test**
 
 ```python
 def test_skill_submodule_url(self):
@@ -212,13 +212,13 @@ def test_skill_submodule_url(self):
 
 Also assert that `skills/situation-puzzle/SKILL.md` exists after recursive checkout.
 
-- [ ] **Step 2: Run the submodule test and confirm failure**
+- [x] **Step 2: Run the submodule test and confirm failure**
 
 Run: `PYTHONPATH=src python3 -m unittest tests.test_skill_submodule -v`
 
 Expected: failure because `.gitmodules` and the submodule are absent.
 
-- [ ] **Step 3: Add the existing skill repository as a submodule**
+- [x] **Step 3: Add the existing skill repository as a submodule**
 
 Run with the GitHub HTTPS rewrite disabled for this command:
 
@@ -228,7 +228,7 @@ GIT_CONFIG_GLOBAL=/dev/null git submodule add https://github.com/fffonion/situat
 
 Keep the recorded URL exactly as supplied and pin the checked-out upstream commit.
 
-- [ ] **Step 4: Write README and license**
+- [x] **Step 4: Write README and license**
 
 README sections: purpose, requirements, recursive clone, editable install, unit tests, one benchmark command, fixture layout, output layout, and credential policy. Use this benchmark example:
 
@@ -241,7 +241,7 @@ python -m turtlebench \
   --concurrency 12
 ```
 
-- [ ] **Step 5: Run submodule and full tests**
+- [x] **Step 5: Run submodule and full tests**
 
 Run:
 
@@ -251,7 +251,7 @@ PYTHONPATH=src python3 -m unittest discover -v
 
 Expected: all tests pass.
 
-- [ ] **Step 6: Commit submodule and docs**
+- [x] **Step 6: Commit submodule and docs**
 
 ```bash
 git add .gitmodules skills/situation-puzzle README.md LICENSE tests/test_skill_submodule.py
@@ -264,7 +264,7 @@ git commit -m "Add situation puzzle skill submodule and usage docs"
 - Verify all tracked files
 - Update: `docs/superpowers/plans/2026-09-05-turtlebench-initial.md` checkboxes
 
-- [ ] **Step 1: Run final package checks**
+- [x] **Step 1: Run final package checks**
 
 ```bash
 python3 -m venv .venv
@@ -275,15 +275,15 @@ python3 -m venv .venv
 
 Expected: installation succeeds, all tests pass, and CLI help exits with status 0.
 
-- [ ] **Step 2: Verify fixture checksums independently**
+- [x] **Step 2: Verify fixture checksums independently**
 
 Run the fixture test from the installed environment and confirm all 12 files match the manifest.
 
-- [ ] **Step 3: Scan tracked content and staged changes**
+- [x] **Step 3: Scan tracked content and staged changes**
 
 List tracked files and confirm no path is under `runs/`, `results/`, caches, or local private storage. Search tracked text for private-key headers and credential assignments. Inspect `.gitmodules`, `git status --short`, and `git diff --check`.
 
-- [ ] **Step 4: Commit completed plan state**
+- [x] **Step 4: Commit completed plan state**
 
 ```bash
 git add docs/superpowers/plans/2026-09-05-turtlebench-initial.md
