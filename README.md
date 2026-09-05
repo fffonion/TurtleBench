@@ -36,17 +36,17 @@ node --test tests/web/dashboard.test.mjs
 
 The tests validate the mailbox protocol, scoring helpers, model matrix, runner resume behavior, fixture schema, fixture SHA-256 values, public result export, models.dev pricing, and dashboard data logic.
 
-## Install the private fixture suite
+## Private fixture suite
 
-The encrypted fixture archive is attached to GitHub Release `fixtures-v1`.
+When the configured fixture directory is absent, TurtleBench automatically downloads the encrypted `fixtures-v1` Release asset, verifies its SHA-256 digest, and extracts it with the published password. An existing fixture directory is used in place and is never downloaded again or overwritten.
+
+To preinstall it manually:
 
 ```bash
 bash scripts/install-fixtures.sh
 ```
 
 ZIP password: `123456`
-
-The script verifies the published SHA-256 digest and installs the suite under `fixtures/fixed-v1/`.
 
 ## Run
 

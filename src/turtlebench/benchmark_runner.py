@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
+import http.client
 import json
 import math
 import os
@@ -14,6 +15,10 @@ import sqlite3
 import statistics
 import subprocess
 import sys
+import tempfile
+import time
+import urllib.request
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -51,6 +56,9 @@ TERMINAL_STATES = {"solved", "max_rounds", "stopped", "error"}
 TERMINAL_VALIDITIES = {"valid", "invalid_host", "invalid_infrastructure"}
 SESSION_SOURCE = "turtle-bench"
 TARGET_VALID_GAMES = 36
+FIXTURE_RELEASE_URL = "https://github.com/fffonion/TurtleBench/releases/download/fixtures-v1/turtlebench-fixed-v1.zip"
+FIXTURE_ARCHIVE_SHA256 = "c28746c7b8296a2b8eb36aef6c6cff5ae9418283409c291eaac139c772646069"
+FIXTURE_ARCHIVE_PASSWORD = "123456"
 
 
 def now_iso() -> str:
@@ -66,6 +74,65 @@ def atomic_json(path: Path, data: Any) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
+
+
+def download_verified_archive(url: str, destination: Path, expected_sha256: str, attempts: int = 8) -> None:
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            offset = destination.stat().st_size if destination.exists() else 0
+            headers = {"User-Agent": "TurtleBench/0.1"}
+            if offset:
+                headers["Range"] = f"bytes={offset}-"
+            request = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(request, timeout=60) as response:
+                append = offset > 0 and response.status == 206
+                with destination.open("ab" if append else "wb") as output:
+                    shutil.copyfileobj(response, output)
+            digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+            if digest != expected_sha256:
+                raise RuntimeError(f"fixture archive hash mismatch: {digest}")
+            return
+        except (OSError, RuntimeError, http.client.HTTPException) as exc:
+            last_error = exc
+            if attempt + 1 < attempts:
+                time.sleep(min(2**attempt, 8))
+    destination.unlink(missing_ok=True)
+    raise RuntimeError(f"failed to download fixture archive after {attempts} attempts") from last_error
+
+
+def ensure_suite(
+    suite_dir: Path,
+    archive_url: str = FIXTURE_RELEASE_URL,
+    expected_sha256: str = FIXTURE_ARCHIVE_SHA256,
+    password: str = FIXTURE_ARCHIVE_PASSWORD,
+) -> Path:
+    if suite_dir.exists():
+        return suite_dir
+
+    suite_dir.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="turtlebench-fixtures-", dir=suite_dir.parent) as td:
+        temporary_dir = Path(td)
+        archive = temporary_dir / "turtlebench-fixed-v1.zip"
+        download_verified_archive(archive_url, archive, expected_sha256)
+
+        with zipfile.ZipFile(archive) as bundle:
+            members = bundle.namelist()
+            if not members or any(
+                name.startswith("/") or ".." in Path(name).parts or not name.startswith("fixed-v1/")
+                for name in members
+            ):
+                raise RuntimeError("fixture archive has an invalid layout")
+            bundle.extractall(temporary_dir, pwd=password.encode())
+
+        extracted = temporary_dir / "fixed-v1"
+        if not (extracted / "manifest.json").is_file():
+            raise RuntimeError("fixture archive is missing fixed-v1/manifest.json")
+        try:
+            os.replace(extracted, suite_dir)
+        except FileExistsError:
+            pass
+    return suite_dir
 
 
 def validate_attempt_limit(max_attempts: int, target_valid_games: int = TARGET_VALID_GAMES) -> None:
@@ -717,6 +784,7 @@ async def async_main(args: argparse.Namespace) -> None:
         runs_dir=args.runs_dir.expanduser().resolve(),
         state_db=args.state_db.expanduser().resolve(),
     )
+    ensure_suite(RUNTIME.fixtures)
     manifest = verify_suite(RUNTIME.fixtures)
     run_id = args.run_id or f"baseline-luna-max-host-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     run_dir = RUNTIME.runs_dir / run_id

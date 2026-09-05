@@ -1,6 +1,10 @@
+import hashlib
+import http.server
 import json
 import sqlite3
+import subprocess
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -9,6 +13,94 @@ from turtlebench import benchmark_runner as br
 
 
 class BenchmarkRunnerTests(unittest.TestCase):
+    def test_ensure_suite_downloads_and_extracts_missing_fixture_directory(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "source" / "fixed-v1"
+            source.mkdir(parents=True)
+            (source / "manifest.json").write_text('{"puzzles": []}\n', encoding="utf-8")
+            archive = root / "fixtures.zip"
+            subprocess.run(
+                ["zip", "-q", "-r", "-P", "123456", str(archive), "fixed-v1"],
+                cwd=source.parent,
+                check=True,
+            )
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            destination = root / "install" / "fixed-v1"
+
+            result = br.ensure_suite(destination, archive.as_uri(), digest, "123456")
+
+            self.assertEqual(result, destination)
+            self.assertEqual(
+                (destination / "manifest.json").read_text(encoding="utf-8"),
+                '{"puzzles": []}\n',
+            )
+
+    def test_ensure_suite_keeps_existing_fixture_directory_without_download(self):
+        with tempfile.TemporaryDirectory() as td:
+            destination = Path(td) / "fixed-v1"
+            destination.mkdir()
+            marker = destination / "local-marker"
+            marker.write_text("keep", encoding="utf-8")
+
+            result = br.ensure_suite(
+                destination,
+                "file:///this/path/must/not/be-opened.zip",
+                "0" * 64,
+                "wrong-password",
+            )
+
+            self.assertEqual(result, destination)
+            self.assertEqual(marker.read_text(encoding="utf-8"), "keep")
+
+    def test_ensure_suite_retries_a_truncated_download(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "source" / "fixed-v1"
+            source.mkdir(parents=True)
+            (source / "manifest.json").write_text('{"puzzles": []}\n', encoding="utf-8")
+            archive = root / "fixtures.zip"
+            subprocess.run(
+                ["zip", "-q", "-r", "-P", "123456", str(archive), "fixed-v1"],
+                cwd=source.parent,
+                check=True,
+            )
+            payload = archive.read_bytes()
+
+            class Handler(http.server.BaseHTTPRequestHandler):
+                requests = 0
+
+                def do_GET(self):
+                    type(self).requests += 1
+                    body = payload[: len(payload) // 2] if self.requests == 1 else payload
+                    self.send_response(200)
+                    self.send_header("Content-Length", str(len(payload)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    self.close_connection = True
+
+                def log_message(self, format, *args):
+                    pass
+
+            server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                destination = root / "install" / "fixed-v1"
+                result = br.ensure_suite(
+                    destination,
+                    f"http://127.0.0.1:{server.server_port}/fixtures.zip",
+                    hashlib.sha256(payload).hexdigest(),
+                    "123456",
+                )
+            finally:
+                server.shutdown()
+                thread.join()
+                server.server_close()
+
+            self.assertEqual(result, destination)
+            self.assertEqual(Handler.requests, 2)
+
     def test_parser_accepts_runtime_paths(self):
         args = br.build_parser().parse_args([
             "--fixtures", "/tmp/fixtures",
