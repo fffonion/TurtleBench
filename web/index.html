@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="TurtleBench 海龟汤模型基准结果">
+    <title>TurtleBench · 海龟汤模型基准</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <script type="module" src="assets/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <h1>TurtleBench</h1>
+        <p>海龟汤模型基准</p>
+      </div>
+      <div class="header-meta">
+        <span id="suite-meta">正在读取结果…</span>
+        <label id="run-picker" hidden>
+          <span>结果批次</span>
+          <select id="run-select"></select>
+        </label>
+      </div>
+    </header>
+
+    <main>
+      <p id="status" class="status" role="status">正在读取结果…</p>
+
+      <section aria-labelledby="performance-title">
+        <div class="section-header">
+          <h2 id="performance-title">综合表现</h2>
+          <div class="section-controls">
+            <div class="segmented" aria-label="展示方式">
+              <button type="button" class="selected" data-view data-value="chart" aria-pressed="true">图表</button>
+              <button type="button" data-view data-value="table" aria-pressed="false">表格</button>
+            </div>
+            <div id="axis-control" class="axis-control">
+              <span>X 轴</span>
+              <div class="segmented compact" aria-label="图表横轴">
+                <button type="button" class="selected" data-axis data-value="time" aria-pressed="true">总耗时</button>
+                <button type="button" data-axis data-value="price" aria-pressed="false">总价格</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="chart-view">
+          <div id="chart" class="chart-frame"></div>
+        </div>
+
+        <div id="table-view" hidden>
+          <p class="scroll-hint">左右滑动查看更多</p>
+          <div class="table-scroll">
+            <table id="resource-table">
+              <thead><tr></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="behavior-section" aria-labelledby="behavior-title">
+        <div class="section-header">
+          <div>
+            <h2 id="behavior-title">模型行为</h2>
+            <p class="section-note">仅统计有效局</p>
+          </div>
+        </div>
+        <p class="scroll-hint">左右滑动查看更多</p>
+        <div class="table-scroll">
+          <table id="behavior-table">
+            <thead><tr></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>价格来源：models.dev</span>
+      <a href="https://github.com/fffonion/TurtleBench">GitHub</a>
+    </footer>
+  </body>
+</html>
