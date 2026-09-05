@@ -1,0 +1,29 @@
+# Runtime output
+runs/
+results/
+*.log
+*.lock
+*.db
+*.db-shm
+*.db-wal
+
+# Credentials and local configuration
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
