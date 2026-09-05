@@ -1,0 +1,42 @@
+{
+  "openai-codex:gpt-5.6-luna": {
+    "provider": "openai",
+    "model": "gpt-5.6-luna",
+    "canonical_model": "openai/gpt-5.6-luna"
+  },
+  "minimax-cn:minimax-m3": {
+    "provider": "minimax-cn",
+    "model": "MiniMax-M3",
+    "canonical_model": "minimax/MiniMax-M3"
+  },
+  "commandcode:deepseek-ai/deepseek-v4-flash": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "canonical_model": "deepseek/deepseek-v4-flash"
+  },
+  "deepseek:deepseek-v4-flash": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "canonical_model": "deepseek/deepseek-v4-flash"
+  },
+  "anthropic:claude-sonnet-5": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "canonical_model": "anthropic/claude-sonnet-5"
+  },
+  "openai-codex:gpt-5.6-sol": {
+    "provider": "openai",
+    "model": "gpt-5.6-sol",
+    "canonical_model": "openai/gpt-5.6-sol"
+  },
+  "xai-oauth:grok-4.6": {
+    "provider": "xai",
+    "model": "grok-4.6",
+    "canonical_model": "xai/grok-4.6"
+  },
+  "openai-codex:gpt-6-astra": {
+    "provider": "openai",
+    "model": "gpt-6-astra",
+    "canonical_model": "openai/gpt-6-astra"
+  }
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import statistics
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,82 @@ def _read_json(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(f"expected JSON object: {path}")
     return value
+
+
+def load_mapping(path: str | Path) -> dict[str, Any]:
+    """Load the versioned benchmark-to-models.dev identity mapping."""
+
+    return _read_json(Path(path))
+
+
+def resolve_pricing(
+    provider: str,
+    model: str,
+    mapping: dict[str, Any],
+    catalog: dict[str, Any],
+    fetched_at: str,
+) -> dict[str, Any]:
+    """Resolve a benchmark identity to a non-promotional models.dev rate snapshot."""
+
+    source = mapping.get(f"{provider}:{model}")
+    if not isinstance(source, dict):
+        raise ValueError(f"missing models.dev mapping for {provider}:{model}")
+    source_provider = str(source["provider"])
+    source_model = str(source["model"])
+    if any(term in source_provider.lower() for term in ("token-plan", "free")):
+        raise ValueError(f"refusing plan price from {source_provider}")
+    try:
+        entry = catalog[source_provider]["models"][source_model]
+        cost = entry["cost"]
+    except (KeyError, TypeError) as exc:
+        raise ValueError(f"missing models.dev price for {source_provider}:{source_model}") from exc
+    if not isinstance(cost, dict):
+        raise ValueError(f"missing models.dev cost object for {source_provider}:{source_model}")
+    if any(key in cost for key in ("discount", "promotion", "promotional", "trial")):
+        raise ValueError(f"refusing promotional price for {source_provider}:{source_model}")
+
+    selected = dict(cost)
+    for key in ("off_peak", "offpeak"):
+        if isinstance(cost.get(key), dict):
+            selected.update(cost[key])
+            break
+    if selected.get("input") == 0 and selected.get("output") == 0:
+        raise ValueError(f"refusing free-plan price for {source_provider}:{source_model}")
+
+    rates: dict[str, float | None] = {}
+    for category in ("input", "output", "cache_read", "cache_write"):
+        value = selected.get(category)
+        rates[category] = float(value) if isinstance(value, (int, float)) else None
+    return {
+        "source": "https://models.dev",
+        "source_model_id": str(source["canonical_model"]),
+        "source_provider_id": source_provider,
+        "fetched_at": fetched_at,
+        "usd_per_million_tokens": rates,
+    }
+
+
+def calculate_price(tokens: dict[str, int], pricing: dict[str, Any]) -> dict[str, float | None]:
+    """Calculate USD token-category costs from a models.dev rate snapshot."""
+
+    rates = pricing.get("usd_per_million_tokens")
+    if not isinstance(rates, dict):
+        raise ValueError("pricing snapshot requires usd_per_million_tokens")
+    result: dict[str, float | None] = {}
+    for category in ("input", "output", "cache_read", "cache_write"):
+        count = int(tokens.get(category, 0))
+        rate = rates.get(category)
+        if rate is None:
+            result[category] = 0.0 if count == 0 else None
+            continue
+        amount = Decimal(count) * Decimal(str(rate)) / Decimal(1_000_000)
+        result[category] = round(float(amount), 12)
+    components = [result[key] for key in ("input", "output", "cache_read", "cache_write")]
+    if any(value is None for value in components):
+        result["total"] = None
+    else:
+        result["total"] = round(sum(value for value in components if value is not None), 12)
+    return result
 
 
 def _public_model_name(model_id: str) -> str:
@@ -77,6 +154,8 @@ def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any
     hints = _valid_hint_values(run_dir, slug)
     tokens = {"total": sum(token_counts.values()), **token_counts}
     model_id = str(player["model"])
+    price_snapshot = pricing.get(slug)
+    price_usd = calculate_price(tokens, price_snapshot) if isinstance(price_snapshot, dict) else None
     return {
         "slug": slug,
         "name": _public_model_name(model_id),
@@ -88,7 +167,8 @@ def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any
         "games": int(resources.get("games", summary.get("valid_games", 0))),
         "active_time_s": float(resources.get("player_active_time_s", 0.0)),
         "tokens": tokens,
-        "price_usd": pricing.get(slug),
+        "price_usd": price_usd,
+        "pricing": price_snapshot,
         "behavior": {
             "solve_rate": float(summary["success_rate"]),
             "rounds_median": float(summary["rounds_median"]),
