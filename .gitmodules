@@ -1,0 +1,3 @@
+[submodule "skills/situation-puzzle"]
+	path = skills/situation-puzzle
+	url = https://github.com/fffonion/situation-puzzle-skill
