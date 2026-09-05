@@ -302,7 +302,7 @@ def verify_suite(fixtures: Path | None = None) -> dict[str, Any]:
 
 
 def host_prompt(puzzle: Path, game: Path, game_id: str) -> str:
-    return f"""你是海龟汤 benchmark 主持人，只能通过带锁邮箱与玩家通信。不得向用户提问、调用子代理或使用消息平台。
+    return f"""你是海龟汤固定题组主持人，只能通过带锁邮箱与玩家通信。不得向用户提问、调用子代理或使用消息平台。
 私密题目：{puzzle}
 使用 Python json 模块读取私密题目的全部字段。
 公共邮箱：{game}
@@ -319,7 +319,7 @@ game_id={game_id}，max_rounds=50。
 
 
 def player_prompt(game: Path, game_id: str) -> str:
-    return f"""你是海龟汤 benchmark 隔离玩家，只能通过带锁邮箱与主持人通信。不得向用户提问、调用子代理或使用消息平台。
+    return f"""你是海龟汤固定题组隔离玩家，只能通过带锁邮箱与主持人通信。不得向用户提问、调用子代理或使用消息平台。
 公共邮箱：{game}
 邮箱命令：python -m turtlebench.game_mailbox
 game_id={game_id}，max_rounds=50，自主提示上限2。
@@ -427,7 +427,7 @@ async def run_game(run_dir: Path, player: dict[str, str], puzzle: dict[str, Any]
 
 def judge_prompt(puzzle_path: Path, trial_dirs: list[Path], output_path: Path, player: dict[str, str]) -> str:
     games = "\n".join(f"- trial {i+1}: {d / 'game.json'}" for i, d in enumerate(trial_dirs))
-    return f"""你是海龟汤 benchmark 评分员。只评估公开轨迹及主持判定质量，不参与游戏。
+    return f"""你是海龟汤固定题组评分员。只分析公开轨迹及主持判定质量，不参与游戏。
 私密题目：{puzzle_path}
 三个公开邮箱：
 {games}

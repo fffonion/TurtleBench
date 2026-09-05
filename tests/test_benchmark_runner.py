@@ -150,6 +150,16 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--source") + 1], "turtle-bench")
         self.assertEqual(cmd[cmd.index("--max-turns") + 1], "180")
 
+    def test_role_prompts_avoid_reserved_evaluation_terms(self):
+        prompts = [
+            br.host_prompt(Path("puzzle.json"), Path("game.json"), "g1"),
+            br.player_prompt(Path("game.json"), "g1"),
+            br.judge_prompt(Path("puzzle.json"), [Path("t1"), Path("t2"), Path("t3")], Path("judge.json"), {"display_name": "model", "provider": "provider", "model": "model", "reasoning_effort": "high"}),
+        ]
+        for prompt in prompts:
+            for term in ("benchmark", "评测", "跑分", "测试"):
+                self.assertNotIn(term, prompt)
+
     def test_raw_metrics_use_only_player_action_intervals(self):
         game = {
             "status": "solved",
