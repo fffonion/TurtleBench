@@ -67,7 +67,7 @@ class PublicResultTests(unittest.TestCase):
         self.assertEqual(len(result["models"]), 1)
         model = result["models"][0]
         self.assertEqual(model["slug"], "luna-max")
-        self.assertEqual(model["name"], "GPT-5.6 Luna")
+        self.assertEqual(model["name"], "OpenAI Codex / GPT-5.6 Luna")
         self.assertEqual(model["family"], "gpt-5.6-luna")
         self.assertEqual(model["reasoning_effort"], "max")
         self.assertEqual(model["overall_score"], 85.9)
@@ -262,6 +262,128 @@ class PricingTests(unittest.TestCase):
             "openai-codex:gpt-6-astra",
         }
         self.assertTrue(expected.issubset(mapping))
+
+
+class SiteBuildTests(unittest.TestCase):
+    def public_run(self, run_id: str) -> dict:
+        return {
+            "run_id": run_id,
+            "title": run_id,
+            "suite_version": "fixed-v1",
+            "puzzle_count": 12,
+            "repeats": 3,
+            "published_at": "2026-09-05T00:00:00Z",
+            "models": [],
+        }
+
+    def test_write_site_preserves_history_and_selects_latest_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "site"
+            pages.write_site(output, self.public_run("run-one"), ROOT / "web")
+            pages.write_site(output, self.public_run("run-two"), ROOT / "web")
+
+            index = json.loads((output / "data" / "index.json").read_text())
+
+            self.assertEqual(index["default_run"], "run-two")
+            self.assertEqual([run["id"] for run in index["runs"]], ["run-two", "run-one"])
+            self.assertEqual(index["runs"][0]["file"], "data/runs/run-two.json")
+            self.assertTrue((output / "index.html").exists())
+            self.assertTrue((output / "assets" / "app.js").exists())
+            self.assertTrue((output / ".nojekyll").exists())
+            self.assertTrue((output / "data" / "runs" / "run-one.json").exists())
+
+    def test_write_site_replaces_matching_run_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "site"
+            first = self.public_run("same-run")
+            pages.write_site(output, first, ROOT / "web")
+            second = self.public_run("same-run")
+            second["models"] = [{"slug": "updated"}]
+            pages.write_site(output, second, ROOT / "web")
+
+            stored = json.loads((output / "data" / "runs" / "same-run.json").read_text())
+            index = json.loads((output / "data" / "index.json").read_text())
+
+        self.assertEqual(stored["models"], [{"slug": "updated"}])
+        self.assertEqual(len(index["runs"]), 1)
+
+    def test_public_safety_rejects_private_fields_and_paths(self):
+        for unsafe in (
+            {"session_id": "abc"},
+            {"surface": "secret prompt"},
+            {"value": "/home/wow/private"},
+            {"api_key": "hidden"},
+        ):
+            with self.subTest(unsafe=unsafe):
+                with self.assertRaises(ValueError):
+                    pages.assert_public_safe(unsafe)
+
+    def test_prepare_public_run_adds_metadata_and_prices(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = PublicResultTests().make_run(Path(tmp))
+            (run / "summary.json").write_text(
+                json.dumps(
+                    {
+                        "run": {
+                            "status": "completed",
+                            "suite_version": "fixed-v1",
+                            "repeats": 3,
+                            "started_at": "2026-09-03T08:17:19Z",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            mapping = {
+                "openai-codex:gpt-5.6-luna": {
+                    "provider": "openai",
+                    "model": "gpt-5.6-luna",
+                    "canonical_model": "openai/gpt-5.6-luna",
+                }
+            }
+            catalog = {
+                "openai": {
+                    "models": {
+                        "gpt-5.6-luna": {
+                            "cost": {
+                                "input": 1,
+                                "output": 10,
+                                "cache_read": 0.1,
+                                "cache_write": 2,
+                            }
+                        }
+                    }
+                }
+            }
+
+            result = pages.prepare_public_run(
+                run, mapping, catalog, "2026-09-05T00:00:00Z"
+            )
+
+        self.assertEqual(result["suite_version"], "fixed-v1")
+        self.assertEqual(result["repeats"], 3)
+        self.assertEqual(result["puzzle_count"], 1)
+        self.assertEqual(result["published_at"], "2026-09-05T00:00:00Z")
+        self.assertEqual(result["models"][0]["price_usd"]["total"], 0.00034)
+
+    def test_prepare_public_run_rejects_incomplete_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = PublicResultTests().make_run(Path(tmp))
+            (run / "summary.json").write_text(
+                json.dumps({"run": {"status": "running"}}), encoding="utf-8"
+            )
+            with self.assertRaises(ValueError):
+                pages.prepare_public_run(run, {}, {}, "2026-09-05T00:00:00Z")
+
+    def test_page_cli_has_build_and_publish_commands(self):
+        parser = pages.build_parser()
+        build = parser.parse_args(["build", "--run-dir", "/tmp/run", "--output", "/tmp/site"])
+        publish = parser.parse_args(["publish", "--run-dir", "/tmp/run"])
+
+        self.assertEqual(build.command, "build")
+        self.assertEqual(build.output, "/tmp/site")
+        self.assertEqual(publish.command, "publish")
+        self.assertEqual(publish.branch, "gh-pages")
 
 
 if __name__ == "__main__":

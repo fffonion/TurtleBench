@@ -31,9 +31,10 @@ The situation-puzzle skill is pinned at `skills/situation-puzzle` from <https://
 
 ```bash
 .venv/bin/python -m unittest discover -v
+node --test tests/web/dashboard.test.mjs
 ```
 
-The tests validate the mailbox protocol, scoring helpers, model matrix, runner resume behavior, fixture schema, and all fixture SHA-256 values.
+The tests validate the mailbox protocol, scoring helpers, model matrix, runner resume behavior, fixture schema, fixture SHA-256 values, public result export, models.dev pricing, and dashboard data logic.
 
 ## Run
 
@@ -57,6 +58,27 @@ Hermes session usage is read from `~/.hermes/state.db` by default. Override it w
 ## Output
 
 Each run is written below `runs/<run-id>/` unless `--runs-dir` is changed. Run directories contain game mailboxes, process logs, per-trial scores, model summaries, and `REPORT.md`. The `runs/` and `results/` directories are ignored by Git.
+
+## Publish the dashboard
+
+Only completed runs can be published. The publisher reads current regular prices from models.dev, writes a sanitized aggregate, preserves older published runs, commits the static site to `gh-pages`, and pushes that branch:
+
+```bash
+.venv/bin/python -m turtlebench.pages publish \
+  --run-dir /absolute/path/to/runs/<run-id> \
+  --title "2026-09 benchmark"
+```
+
+For a local preview without Git operations:
+
+```bash
+.venv/bin/python -m turtlebench.pages build \
+  --run-dir /absolute/path/to/runs/<run-id> \
+  --output /tmp/turtlebench-site
+python3 -m http.server 8000 --directory /tmp/turtlebench-site
+```
+
+The public branch contains static assets and allowlisted aggregates only. Raw trials, logs, prompts, private puzzle data, local paths, lock files, and credentials remain outside the branch. Each run document pins the models.dev model identity, source URL, retrieval time, and four token rates used for its price calculation.
 
 ## License
 

@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
+import shutil
 import statistics
+import subprocess
+import tempfile
+import urllib.request
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -118,6 +124,20 @@ def _public_model_name(model_id: str) -> str:
     return " ".join(word.capitalize() for word in words)
 
 
+_PROVIDER_NAMES = {
+    "anthropic": "Anthropic",
+    "commandcode": "CommandCode",
+    "deepseek": "DeepSeek",
+    "minimax-cn": "MiniMax",
+    "openai-codex": "OpenAI Codex",
+    "xai-oauth": "xAI",
+}
+
+
+def _public_name(provider: str, model_id: str) -> str:
+    return f"{_PROVIDER_NAMES.get(provider, provider)} / {_public_model_name(model_id)}"
+
+
 def _valid_hint_values(run_dir: Path, slug: str) -> list[int | float]:
     values: list[int | float] = []
     games_dir = run_dir / "games" / slug
@@ -158,7 +178,7 @@ def _public_model(run_dir: Path, summary: dict[str, Any], pricing: dict[str, Any
     price_usd = calculate_price(tokens, price_snapshot) if isinstance(price_snapshot, dict) else None
     return {
         "slug": slug,
-        "name": _public_model_name(model_id),
+        "name": _public_name(str(player["provider"]), model_id),
         "provider": str(player["provider"]),
         "model": model_id,
         "family": model_id.rsplit("/", 1)[-1],
@@ -192,3 +212,260 @@ def build_public_run(run_dir: str | Path, pricing: dict[str, Any]) -> dict[str, 
     if not models:
         raise ValueError("run has no model summaries")
     return {"run_id": run_path.name, "models": models}
+
+
+def prepare_public_run(
+    run_dir: str | Path,
+    mapping: dict[str, Any],
+    catalog: dict[str, Any],
+    fetched_at: str,
+) -> dict[str, Any]:
+    """Build one publishable run with pinned models.dev pricing."""
+
+    run_path = Path(run_dir)
+    summary = _read_json(run_path / "summary.json")
+    metadata = summary.get("run", {})
+    if not isinstance(metadata, dict) or metadata.get("status") != "completed":
+        raise ValueError("only completed benchmark runs can be published")
+
+    pricing: dict[str, Any] = {}
+    puzzle_ids: set[str] = set()
+    for summary_path in sorted((run_path / "summaries").glob("*.json")):
+        model_summary = _read_json(summary_path)
+        player = model_summary.get("player", {})
+        if isinstance(player, dict):
+            try:
+                pricing[summary_path.stem] = resolve_pricing(
+                    str(player["provider"]),
+                    str(player["model"]),
+                    mapping,
+                    catalog,
+                    fetched_at,
+                )
+            except (KeyError, TypeError, ValueError):
+                pass
+        puzzles = model_summary.get("puzzles", {})
+        if isinstance(puzzles, dict):
+            puzzle_ids.update(str(key) for key in puzzles)
+    if not puzzle_ids:
+        games_dir = run_path / "games"
+        if games_dir.is_dir():
+            for model_dir in games_dir.iterdir():
+                if model_dir.is_dir():
+                    puzzle_ids.update(path.name for path in model_dir.iterdir() if path.is_dir())
+
+    public = build_public_run(run_path, pricing)
+    public.update(
+        {
+            "title": run_path.name,
+            "suite_version": metadata.get("suite_version"),
+            "puzzle_count": len(puzzle_ids),
+            "repeats": metadata.get("repeats"),
+            "started_at": metadata.get("started_at"),
+            "published_at": fetched_at,
+        }
+    )
+    public["models"].sort(key=lambda model: model["overall_score"], reverse=True)
+    assert_public_safe(public)
+    return public
+
+
+_PRIVATE_KEYS = {
+    "api_key",
+    "key_facts",
+    "messages",
+    "notes",
+    "prompt",
+    "session_id",
+    "solution",
+    "surface",
+    "transcript",
+    "validity_reason",
+}
+_PRIVATE_PATH = re.compile(r"(?:^|[\\/])(?:home|Users|mnt|root)[\\/]", re.IGNORECASE)
+
+
+def assert_public_safe(value: Any, path: str = "root") -> None:
+    """Reject private benchmark fields and local filesystem paths."""
+
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized = str(key).lower()
+            if normalized in _PRIVATE_KEYS or normalized.endswith(("_api_key", "_secret", "_password")):
+                raise ValueError(f"private field at {path}.{key}")
+            assert_public_safe(child, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            assert_public_safe(child, f"{path}[{index}]")
+    elif isinstance(value, str) and _PRIVATE_PATH.search(value):
+        raise ValueError(f"local path at {path}")
+
+
+def _write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def write_site(output_dir: str | Path, run: dict[str, Any], web_dir: str | Path) -> None:
+    """Write static assets and append or replace one sanitized run document."""
+
+    assert_public_safe(run)
+    run_id = str(run.get("run_id", ""))
+    if not run_id or not re.fullmatch(r"[A-Za-z0-9._-]+", run_id):
+        raise ValueError("run_id must contain only letters, digits, dot, underscore, or hyphen")
+    output = Path(output_dir)
+    web = Path(web_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(web / "index.html", output / "index.html")
+    shutil.copytree(web / "assets", output / "assets", dirs_exist_ok=True)
+    (output / ".nojekyll").touch()
+
+    run_file = output / "data" / "runs" / f"{run_id}.json"
+    _write_json(run_file, run)
+    index_path = output / "data" / "index.json"
+    if index_path.exists():
+        index = _read_json(index_path)
+        prior_runs = index.get("runs", [])
+    else:
+        prior_runs = []
+    if not isinstance(prior_runs, list):
+        raise ValueError("data/index.json runs must be an array")
+    entry = {
+        "id": run_id,
+        "title": str(run.get("title") or run_id),
+        "file": f"data/runs/{run_id}.json",
+        "suite_version": run.get("suite_version"),
+        "puzzle_count": run.get("puzzle_count"),
+        "repeats": run.get("repeats"),
+        "published_at": run.get("published_at"),
+    }
+    runs = [entry, *[item for item in prior_runs if isinstance(item, dict) and item.get("id") != run_id]]
+    _write_json(index_path, {"default_run": run_id, "runs": runs})
+
+
+MODELS_DEV_URL = "https://models.dev/api.json"
+
+
+def fetch_catalog(url: str = MODELS_DEV_URL) -> dict[str, Any]:
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Mozilla/5.0 TurtleBench-Publisher/1.0"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.load(response)
+    if not isinstance(payload, dict):
+        raise ValueError("models.dev catalog must be a JSON object")
+    return payload
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _load_catalog(path: str | None) -> dict[str, Any]:
+    return _read_json(Path(path)) if path else fetch_catalog()
+
+
+def _prepare_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
+    root = Path(args.repo).resolve() if args.repo else _repo_root()
+    mapping_path = Path(args.mapping) if args.mapping else root / "pricing" / "models-dev-mapping.json"
+    run = prepare_public_run(
+        args.run_dir,
+        load_mapping(mapping_path),
+        _load_catalog(args.catalog),
+        _utc_now(),
+    )
+    if args.title:
+        run["title"] = args.title
+    return run, root
+
+
+def _git(repo: Path, *arguments: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(repo), *arguments],
+        check=check,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _clear_worktree(path: Path) -> None:
+    for child in path.iterdir():
+        if child.name == ".git":
+            continue
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+
+
+def publish_site(
+    repository: str | Path,
+    branch: str,
+    run: dict[str, Any],
+    web_dir: str | Path,
+) -> str:
+    """Build, commit, and push the dashboard from an isolated branch worktree."""
+
+    repo = Path(repository).resolve()
+    _git(repo, "fetch", "origin", branch, check=False)
+    local = _git(repo, "show-ref", "--verify", "--quiet", f"refs/heads/{branch}", check=False)
+    remote = _git(repo, "show-ref", "--verify", "--quiet", f"refs/remotes/origin/{branch}", check=False)
+
+    with tempfile.TemporaryDirectory(prefix="turtlebench-pages-") as temporary:
+        worktree = Path(temporary) / "site"
+        if local.returncode == 0:
+            _git(repo, "worktree", "add", str(worktree), branch)
+        elif remote.returncode == 0:
+            _git(repo, "worktree", "add", "-b", branch, str(worktree), f"origin/{branch}")
+        else:
+            _git(repo, "worktree", "add", "--detach", str(worktree), "HEAD")
+            _git(worktree, "checkout", "--orphan", branch)
+            _clear_worktree(worktree)
+        try:
+            write_site(worktree, run, web_dir)
+            _git(worktree, "add", "-A")
+            changes = _git(worktree, "status", "--porcelain").stdout.strip()
+            if changes:
+                _git(worktree, "commit", "-m", f"Publish benchmark {run['run_id']}")
+            _git(worktree, "push", "-u", "origin", branch)
+            return _git(worktree, "rev-parse", "HEAD").stdout.strip()
+        finally:
+            _git(repo, "worktree", "remove", "--force", str(worktree), check=False)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Build and publish the TurtleBench dashboard")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    for command in ("build", "publish"):
+        subparser = subparsers.add_parser(command)
+        subparser.add_argument("--run-dir", required=True)
+        subparser.add_argument("--repo")
+        subparser.add_argument("--mapping")
+        subparser.add_argument("--catalog", help="local models.dev api.json; fetch live when omitted")
+        subparser.add_argument("--title")
+        if command == "build":
+            subparser.add_argument("--output", required=True)
+        else:
+            subparser.add_argument("--branch", default="gh-pages")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    run, root = _prepare_from_args(args)
+    web_dir = root / "web"
+    if args.command == "build":
+        write_site(args.output, run, web_dir)
+        print(Path(args.output).resolve())
+    else:
+        print(publish_site(root, args.branch, run, web_dir))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
