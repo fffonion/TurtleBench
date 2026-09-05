@@ -1,0 +1,269 @@
+{
+  "run_id": "baseline-luna-max-host-20260903",
+  "models": [
+    {
+      "slug": "gpt-6-astra-high",
+      "name": "OpenAI Codex / GPT-6 Astra",
+      "provider": "openai-codex",
+      "model": "gpt-6-astra",
+      "family": "gpt-6-astra",
+      "reasoning_effort": "high",
+      "overall_score": 91.3,
+      "games": 36,
+      "active_time_s": 6797.808,
+      "tokens": {
+        "total": 7662452,
+        "input": 815153,
+        "output": 115139,
+        "cache_read": 6732160,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 8.15153,
+        "output": 5.75695,
+        "cache_read": 6.73216,
+        "cache_write": 0.0,
+        "total": 20.64064
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-6-astra",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-05T06:23:09Z",
+        "usd_per_million_tokens": {
+          "input": 10.0,
+          "output": 50.0,
+          "cache_read": 1.0,
+          "cache_write": 12.5
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.968,
+        "rounds_median": 7.0,
+        "hints_median": 0,
+        "samples": 31
+      }
+    },
+    {
+      "slug": "gpt-5-6-sol-high",
+      "name": "OpenAI Codex / GPT-5.6 Sol",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "family": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "overall_score": 88.8,
+      "games": 36,
+      "active_time_s": 6019.452,
+      "tokens": {
+        "total": 62020082,
+        "input": 3595020,
+        "output": 281574,
+        "cache_read": 58143488,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 14.38008,
+        "output": 5.63148,
+        "cache_read": 23.2573952,
+        "cache_write": 0.0,
+        "total": 43.2689552
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-sol",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-05T06:23:09Z",
+        "usd_per_million_tokens": {
+          "input": 4.0,
+          "output": 20.0,
+          "cache_read": 0.4,
+          "cache_write": 5.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.929,
+        "rounds_median": 11.5,
+        "hints_median": 0.0,
+        "samples": 28
+      }
+    },
+    {
+      "slug": "grok-4-6-high",
+      "name": "xAI / Grok 4.6",
+      "provider": "xai-oauth",
+      "model": "grok-4.6",
+      "family": "grok-4.6",
+      "reasoning_effort": "high",
+      "overall_score": 88.2,
+      "games": 36,
+      "active_time_s": 12795.192,
+      "tokens": {
+        "total": 89272285,
+        "input": 9384929,
+        "output": 581756,
+        "cache_read": 79305600,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 18.769858,
+        "output": 3.490536,
+        "cache_read": 39.6528,
+        "cache_write": 0.0,
+        "total": 61.913194
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "xai/grok-4.6",
+        "source_provider_id": "xai",
+        "fetched_at": "2026-09-05T06:23:09Z",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 6.0,
+          "cache_read": 0.5,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.931,
+        "rounds_median": 22.0,
+        "hints_median": 0,
+        "samples": 29
+      }
+    },
+    {
+      "slug": "luna-max",
+      "name": "OpenAI Codex / GPT-5.6 Luna",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "family": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "overall_score": 85.9,
+      "games": 36,
+      "active_time_s": 15966.958,
+      "tokens": {
+        "total": 99964085,
+        "input": 5887689,
+        "output": 639468,
+        "cache_read": 93436928,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.1775378,
+        "output": 0.7673616,
+        "cache_read": 1.86873856,
+        "cache_write": 0.0,
+        "total": 3.81363796
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-luna",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-05T06:23:09Z",
+        "usd_per_million_tokens": {
+          "input": 0.2,
+          "output": 1.2,
+          "cache_read": 0.02,
+          "cache_write": 0.25
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.861,
+        "rounds_median": 22.0,
+        "hints_median": 1.0,
+        "samples": 36
+      }
+    },
+    {
+      "slug": "claude-sonnet-5-high",
+      "name": "Anthropic / Claude Sonnet 5",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "family": "claude-sonnet-5",
+      "reasoning_effort": "high",
+      "overall_score": 79.8,
+      "games": 36,
+      "active_time_s": 33842.637,
+      "tokens": {
+        "total": 178651201,
+        "input": 4342,
+        "output": 2799685,
+        "cache_read": 163189138,
+        "cache_write": 12658036
+      },
+      "price_usd": {
+        "input": 0.008684,
+        "output": 27.99685,
+        "cache_read": 32.6378276,
+        "cache_write": 31.64509,
+        "total": 92.2884516
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "anthropic/claude-sonnet-5",
+        "source_provider_id": "anthropic",
+        "fetched_at": "2026-09-05T06:23:09Z",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 10.0,
+          "cache_read": 0.2,
+          "cache_write": 2.5
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.88,
+        "rounds_median": 22.0,
+        "hints_median": 1,
+        "samples": 25
+      }
+    },
+    {
+      "slug": "luna-high",
+      "name": "OpenAI Codex / GPT-5.6 Luna",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "family": "gpt-5.6-luna",
+      "reasoning_effort": "high",
+      "overall_score": 79.0,
+      "games": 36,
+      "active_time_s": 15798.465,
+      "tokens": {
+        "total": 127926187,
+        "input": 6792776,
+        "output": 534883,
+        "cache_read": 120598528,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.3585552,
+        "output": 0.6418596,
+        "cache_read": 2.41197056,
+        "cache_write": 0.0,
+        "total": 4.41238536
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-luna",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-05T06:23:09Z",
+        "usd_per_million_tokens": {
+          "input": 0.2,
+          "output": 1.2,
+          "cache_read": 0.02,
+          "cache_write": 0.25
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.806,
+        "rounds_median": 25.0,
+        "hints_median": 2.0,
+        "samples": 36
+      }
+    }
+  ],
+  "title": "2026-09-03 基准结果",
+  "suite_version": "fixed-v1",
+  "puzzle_count": 12,
+  "repeats": 3,
+  "started_at": "2026-09-03T08:17:19.752358+00:00",
+  "published_at": "2026-09-05T06:23:09Z"
+}

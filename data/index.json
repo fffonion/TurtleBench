@@ -1,0 +1,14 @@
+{
+  "default_run": "baseline-luna-max-host-20260903",
+  "runs": [
+    {
+      "id": "baseline-luna-max-host-20260903",
+      "title": "2026-09-03 基准结果",
+      "file": "data/runs/baseline-luna-max-host-20260903.json",
+      "suite_version": "fixed-v1",
+      "puzzle_count": 12,
+      "repeats": 3,
+      "published_at": "2026-09-05T06:23:09Z"
+    }
+  ]
+}
