@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  colorForFamily,
   formatBehaviorName,
   formatChartName,
   formatDuration,
@@ -54,6 +55,12 @@ test("groupByFamily orders reasoning levels for connected chart lines", () => {
     ["high", "max"],
   );
   assert.equal(groups.get("deepseek-v4-flash").length, 1);
+});
+
+test("known model families keep stable distinct colors", () => {
+  assert.equal(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-luna"));
+  assert.notEqual(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-sol"));
+  assert.notEqual(colorForFamily("gpt-5.6-sol"), colorForFamily("grok-4.6"));
 });
 
 test("formatters keep resource values compact and explicit", () => {
