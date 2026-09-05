@@ -21,6 +21,23 @@ const FAMILY_COLORS = [
   "#50657a",
 ];
 
+const FIXED_FAMILY_COLORS = new Map([
+  ["gpt-5.6-luna", "#173b63"],
+  ["minimax-m3", "#0f766e"],
+  ["deepseek-v4-flash", "#c2553d"],
+  ["claude-sonnet-5", "#6d4ca1"],
+  ["gpt-5.6-sol", "#a06b13"],
+  ["gpt-6-astra", "#2774a8"],
+  ["grok-4.6", "#9c3f69"],
+]);
+
+export function colorForFamily(family) {
+  if (FIXED_FAMILY_COLORS.has(family)) return FIXED_FAMILY_COLORS.get(family);
+  let hash = 0;
+  for (const character of family) hash = (hash * 31 + character.codePointAt(0)) >>> 0;
+  return FAMILY_COLORS[hash % FAMILY_COLORS.length];
+}
+
 function nestedValue(row, path) {
   return path.split(".").reduce((value, key) => value?.[key], row);
 }
@@ -101,7 +118,7 @@ function svgElement(name, attributes = {}) {
 
 function colorMap(models) {
   const families = [...new Set(models.map((model) => model.family || model.model))];
-  return new Map(families.map((family, index) => [family, FAMILY_COLORS[index % FAMILY_COLORS.length]]));
+  return new Map(families.map((family) => [family, colorForFamily(family)]));
 }
 
 function chartMetric(model, axis) {
