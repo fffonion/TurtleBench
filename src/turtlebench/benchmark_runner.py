@@ -13,22 +13,24 @@ import re
 import shutil
 import sqlite3
 import statistics
-import subprocess
-import sys
 import tempfile
 import time
+import urllib.error
+import urllib.parse
 import urllib.request
+import uuid
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import game_mailbox
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_FIXTURES = PROJECT_ROOT / "fixtures" / "fixed-v1"
 DEFAULT_RUNS = Path.cwd() / "runs"
 DEFAULT_STATE_DB = Path.home() / ".hermes" / "state.db"
-MAILBOX_COMMAND = [sys.executable, "-m", "turtlebench.game_mailbox"]
 
 
 @dataclass(frozen=True)
@@ -54,11 +56,193 @@ PLAYER_MATRIX = [
 ]
 TERMINAL_STATES = {"solved", "max_rounds", "stopped", "error"}
 TERMINAL_VALIDITIES = {"valid", "invalid_host", "invalid_infrastructure"}
-SESSION_SOURCE = "turtle-bench"
+SESSION_SOURCE = "turtle-soup"
 TARGET_VALID_GAMES = 36
 FIXTURE_RELEASE_URL = "https://github.com/fffonion/TurtleBench/releases/download/fixtures-v1/turtlebench-fixed-v1.zip"
 FIXTURE_ARCHIVE_SHA256 = "c28746c7b8296a2b8eb36aef6c6cff5ae9418283409c291eaac139c772646069"
 FIXTURE_ARCHIVE_PASSWORD = "123456"
+
+
+class HermesApiError(RuntimeError):
+    def __init__(self, status: int | None, detail: str, retry_after: float | None = None):
+        super().__init__(detail)
+        self.status = status
+        self.retry_after = retry_after
+
+
+@dataclass(frozen=True)
+class HermesTurnResult:
+    output: str
+    usage: dict[str, Any]
+    run_id: str
+
+
+class HermesApiClient:
+    """Small synchronous client for Hermes API Server's persisted run API."""
+
+    def __init__(self, base_url: str, api_key: str, poll_interval: float = 0.1):
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.poll_interval = poll_interval
+        self._disabled_toolsets: list[str] | None = None
+
+    def _url(self, path: str) -> str:
+        return f"{self.base_url}/{path.lstrip('/')}"
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        expected: tuple[int, ...] = (200,),
+    ) -> dict[str, Any]:
+        body = None if payload is None else json.dumps(payload).encode()
+        headers = {"Accept": "application/json"}
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        request = urllib.request.Request(self._url(path), data=body, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                status = response.status
+                response_body = response.read()
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            retry_after = exc.headers.get("Retry-After")
+            raise HermesApiError(
+                exc.code,
+                f"Hermes API HTTP {exc.code}: {detail}",
+                float(retry_after) if retry_after else None,
+            ) from exc
+        except urllib.error.URLError as exc:
+            raise HermesApiError(None, f"Hermes API connection failed: {exc.reason}") from exc
+        if status not in expected:
+            raise HermesApiError(status, f"Hermes API HTTP {status}")
+        if not response_body.strip():
+            return {}
+        return json.loads(response_body)
+
+    def _session_usage(self, session_id: str) -> dict[str, Any]:
+        value = self._request("GET", f"api/sessions/{urllib.parse.quote(session_id, safe='')}")
+        session = value.get("session", value)
+        keys = (
+            "api_call_count", "input_tokens", "output_tokens", "cache_read_tokens",
+            "cache_write_tokens", "reasoning_tokens",
+        )
+        return {
+            "session_id": session_id,
+            "provider": str(session.get("provider", "")),
+            "model": str(session.get("model", "")),
+            **{key: int(session.get(key, 0) or 0) for key in keys},
+        }
+
+    def _ensure_session(self, session_id: str, title: str, model: str) -> None:
+        try:
+            self._session_usage(session_id)
+            return
+        except HermesApiError as exc:
+            if exc.status != 404:
+                raise
+        self._request("POST", "api/sessions", {
+            "id": session_id,
+            "title": title[:100],
+            "model": model,
+            "source": SESSION_SOURCE,
+        }, expected=(201, 409))
+
+    def _terminal_disabled_toolsets(self) -> list[str]:
+        if self._disabled_toolsets is None:
+            value = self._request("GET", "v1/toolsets")
+            names = [
+                str(item.get("name", "")).strip()
+                for item in value.get("data", [])
+                if isinstance(item, dict)
+            ]
+            names.extend(("memory", "skills"))
+            self._disabled_toolsets = sorted({name for name in names if name and name != "terminal"})
+        return self._disabled_toolsets
+
+    def health(self) -> None:
+        self._request("GET", "v1/models")
+
+    @staticmethod
+    def _usage_delta(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
+        keys = (
+            "api_call_count", "input_tokens", "output_tokens", "cache_read_tokens",
+            "cache_write_tokens", "reasoning_tokens",
+        )
+        return {
+            "session_id": after["session_id"],
+            "provider": after.get("provider", ""),
+            "model": after.get("model", ""),
+            **{key: max(0, int(after.get(key, 0)) - int(before.get(key, 0))) for key in keys},
+        }
+
+    def turn(
+        self,
+        *,
+        session_id: str,
+        session_title: str,
+        provider: str,
+        model: str,
+        reasoning: str,
+        prompt: str,
+        timeout_s: int,
+    ) -> HermesTurnResult:
+        deadline = time.monotonic() + timeout_s
+        self._ensure_session(session_id, session_title, model)
+        before = self._session_usage(session_id)
+        messages = self._request(
+            "GET", f"api/sessions/{urllib.parse.quote(session_id, safe='')}/messages"
+        ).get("data", [])
+        body = {
+            "input": prompt,
+            "session_id": session_id,
+            "conversation_history": messages,
+            "provider": provider,
+            "model": model,
+            "model_options": {"reasoning_effort": reasoning},
+            "skip_memory": True,
+            "skip_context_files": True,
+            "disabled_toolsets": self._terminal_disabled_toolsets(),
+            "fail_fast_on_nonretryable_429": True,
+        }
+        while True:
+            try:
+                started = self._request("POST", "v1/runs", body, expected=(202,))
+                break
+            except HermesApiError as exc:
+                if exc.status != 429 or time.monotonic() >= deadline:
+                    raise
+                time.sleep(min(exc.retry_after or self.poll_interval, max(0.0, deadline - time.monotonic())))
+        run_id = str(started.get("run_id", ""))
+        if not run_id:
+            raise HermesApiError(None, "Hermes API run response omitted run_id")
+        run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
+        while time.monotonic() < deadline:
+            status = self._request("GET", run_path)
+            state = str(status.get("status", ""))
+            if state == "completed":
+                output = str(status.get("output", "")).strip()
+                if not output:
+                    raise HermesApiError(None, f"Hermes API run {run_id} completed without output")
+                after = self._session_usage(session_id)
+                return HermesTurnResult(output, self._usage_delta(before, after), run_id)
+            if state == "waiting_for_approval":
+                self._request(
+                    "POST", f"{run_path}/approval", {"choice": "session", "all": True},
+                    expected=(200,),
+                )
+            elif state in {"failed", "stopped", "cancelled"}:
+                detail = status.get("error") or status.get("message") or "no error detail"
+                raise HermesApiError(None, f"Hermes API run {run_id} ended with status={state}: {detail}")
+            time.sleep(min(self.poll_interval, max(0.0, deadline - time.monotonic())))
+        try:
+            self._request("POST", f"{run_path}/stop", {}, expected=(200, 202, 409))
+        except HermesApiError:
+            pass
+        raise TimeoutError(f"Hermes API run {run_id} timed out after {timeout_s}s")
 
 
 def now_iso() -> str:
@@ -138,6 +322,10 @@ def ensure_suite(
 def validate_attempt_limit(max_attempts: int, target_valid_games: int = TARGET_VALID_GAMES) -> None:
     if max_attempts < target_valid_games:
         raise ValueError(f"max attempts must be at least {target_valid_games}")
+
+
+def api_game_concurrency(requested_games: int, api_run_slots: int) -> int:
+    return max(1, min(requested_games, max(1, api_run_slots // 2)))
 
 
 def attempt_limit_arg(value: str) -> int:
@@ -287,16 +475,6 @@ def load_session_usage(db_path: Path, session_id: str | None) -> dict[str, Any] 
     return {"session_id": session_id, **dict(zip(keys, map(int, row)))}
 
 
-def build_cli_command(provider: str, model: str, reasoning: str, prompt: str) -> list[str]:
-    return [
-        "hermes", "chat", "-Q", "-q", prompt,
-        "--provider", provider, "--model", model,
-        "--reasoning-effort", reasoning,
-        "--toolsets", "terminal", "--max-turns", "180",
-        "--ignore-rules", "--source", SESSION_SOURCE, "--yolo",
-    ]
-
-
 def is_completed_score(path: Path) -> bool:
     if not path.exists():
         return False
@@ -403,24 +581,49 @@ game_id={game_id}，max_rounds=50，自主提示上限2。
 
 
 def init_game(path: Path, game_id: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    subprocess.run([*MAILBOX_COMMAND, "init", "--file", str(path), "--game-id", game_id, "--max-rounds", "50"], check=True, stdout=subprocess.DEVNULL)
+    game_mailbox.initialize(path, game_id=game_id, max_rounds=50)
 
 
-async def run_cli(cmd: list[str], log_path: Path, timeout_s: int) -> int:
+async def run_api_role(
+    client: HermesApiClient,
+    session_id: str,
+    session_title: str,
+    provider: str,
+    model: str,
+    reasoning: str,
+    prompt: str,
+    log_path: Path,
+    timeout_s: int,
+) -> tuple[int, dict[str, Any] | None]:
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("wb") as out:
-        proc = await asyncio.create_subprocess_exec(*cmd, stdout=out, stderr=asyncio.subprocess.STDOUT, cwd=str(Path.home()))
-        try:
-            return await asyncio.wait_for(proc.wait(), timeout=timeout_s)
-        except asyncio.TimeoutError:
-            proc.terminate()
-            try:
-                await asyncio.wait_for(proc.wait(), timeout=20)
-            except asyncio.TimeoutError:
-                proc.kill()
-                await proc.wait()
-            return 124
+    try:
+        result = await asyncio.to_thread(
+            client.turn,
+            session_id=session_id,
+            session_title=session_title,
+            provider=provider,
+            model=model,
+            reasoning=reasoning,
+            prompt=prompt,
+            timeout_s=timeout_s,
+        )
+    except TimeoutError as exc:
+        log_path.write_text(
+            f"session_id: {session_id}\nAPI call failed after 1 attempt: {exc}\n",
+            encoding="utf-8",
+        )
+        return 124, None
+    except Exception as exc:
+        log_path.write_text(
+            f"session_id: {session_id}\nAPI call failed after 1 attempt: {exc}\n",
+            encoding="utf-8",
+        )
+        return 1, None
+    log_path.write_text(
+        f"session_id: {session_id}\nrun_id: {result.run_id}\n{result.output}\n",
+        encoding="utf-8",
+    )
+    return 0, result.usage
 
 
 def has_infrastructure_api_failure(log_path: Path) -> bool:
@@ -434,18 +637,28 @@ async def mark_error_if_needed(game_path: Path, reason: str) -> None:
         game = load_json(game_path)
         if game.get("status") in TERMINAL_STATES:
             return
-        proc = await asyncio.create_subprocess_exec(
-            *MAILBOX_COMMAND, "write", "--file", str(game_path),
-            "--role", "host", "--type", "exit", "--text", reason,
-            "--expected-revision", str(game["revision"]), "--finish", "error",
-            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        game_mailbox.append_event(
+            game_path,
+            actor="host",
+            event_type="exit",
+            text=reason,
+            expected_revision=int(game["revision"]),
+            finish="error",
         )
-        await proc.wait()
     except Exception:
         return
 
 
-async def run_game(run_dir: Path, player: dict[str, str], puzzle: dict[str, Any], trial: int, timeout_s: int) -> Path:
+async def run_game(
+    run_dir: Path,
+    player: dict[str, str],
+    puzzle: dict[str, Any],
+    trial: int,
+    timeout_s: int,
+    api_client: HermesApiClient | None = None,
+) -> Path:
+    if api_client is None:
+        raise RuntimeError("Hermes API client is required")
     trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
     score_path = trial_dir / "score.json"
     if is_completed_score(score_path):
@@ -463,18 +676,35 @@ async def run_game(run_dir: Path, player: dict[str, str], puzzle: dict[str, Any]
             game_path.rename(trial_dir / f"game.invalid-{int(datetime.now().timestamp())}.json")
     if not game_path.exists():
         init_game(game_path, f"{player['slug']}-{puzzle['id']}-t{trial:02d}")
-    host_cmd = build_cli_command(HOST["provider"], HOST["model"], HOST["reasoning_effort"], host_prompt(RUNTIME.fixtures / puzzle["path"], game_path, load_json(game_path)["game_id"]))
-    player_cmd = build_cli_command(player["provider"], player["model"], player["reasoning_effort"], player_prompt(game_path, load_json(game_path)["game_id"]))
-    host_task = asyncio.create_task(run_cli(host_cmd, trial_dir / "host.log", timeout_s))
-    player_task = asyncio.create_task(run_cli(player_cmd, trial_dir / "player.log", timeout_s))
-    host_rc, player_rc = await asyncio.gather(host_task, player_task)
+    game_id = str(load_json(game_path)["game_id"])
+    session_suffix = uuid.uuid4().hex[:12]
+    sessions = {
+        "source": SESSION_SOURCE,
+        "host": f"tb-{session_suffix}-host",
+        "player": f"tb-{session_suffix}-player",
+    }
+    atomic_json(trial_dir / "sessions.json", sessions)
+    host_task = asyncio.create_task(run_api_role(
+        api_client,
+        sessions["host"],
+        f"TurtleBench host {player['slug']} {puzzle['id']} t{trial:02d} {session_suffix}",
+        HOST["provider"], HOST["model"], HOST["reasoning_effort"],
+        host_prompt(RUNTIME.fixtures / puzzle["path"], game_path, game_id),
+        trial_dir / "host.log", timeout_s,
+    ))
+    player_task = asyncio.create_task(run_api_role(
+        api_client,
+        sessions["player"],
+        f"TurtleBench player {player['slug']} {puzzle['id']} t{trial:02d} {session_suffix}",
+        player["provider"], player["model"], player["reasoning_effort"],
+        player_prompt(game_path, game_id),
+        trial_dir / "player.log", timeout_s,
+    ))
+    (host_rc, _host_usage), (player_rc, player_usage) = await asyncio.gather(host_task, player_task)
     await mark_error_if_needed(game_path, f"角色进程提前退出 host={host_rc} player={player_rc}")
     game = load_json(game_path)
     raw = compute_raw_metrics(game)
-    raw["player_usage"] = load_session_usage(
-        RUNTIME.state_db,
-        parse_session_id(trial_dir / "player.log"),
-    )
+    raw["player_usage"] = player_usage
     atomic_json(trial_dir / "player_totals.json", {
         "game_id": game.get("game_id"),
         "status": game.get("status"),
@@ -508,7 +738,15 @@ def judge_prompt(puzzle_path: Path, trial_dirs: list[Path], output_path: Path, p
 玩家配置：{player['provider']} / {player['model']} / {player['reasoning_effort']}。"""
 
 
-async def run_judge(run_dir: Path, player: dict[str, str], puzzle: dict[str, Any], timeout_s: int) -> Path:
+async def run_judge(
+    run_dir: Path,
+    player: dict[str, str],
+    puzzle: dict[str, Any],
+    timeout_s: int,
+    api_client: HermesApiClient | None = None,
+) -> Path:
+    if api_client is None:
+        raise RuntimeError("Hermes API client is required")
     puzzle_root = run_dir / "games" / player["slug"] / puzzle["id"]
     trial_dirs = [puzzle_root / f"trial-{i:02d}" for i in (1, 2, 3)]
     output = puzzle_root / "judge.json"
@@ -532,11 +770,25 @@ async def run_judge(run_dir: Path, player: dict[str, str], puzzle: dict[str, Any
     if valid_output():
         return output
 
-    cmd = build_cli_command(JUDGE["provider"], JUDGE["model"], JUDGE["reasoning_effort"], judge_prompt(RUNTIME.fixtures / puzzle["path"], trial_dirs, output, player))
+    prompt = judge_prompt(RUNTIME.fixtures / puzzle["path"], trial_dirs, output, player)
     last_rc: int | None = None
+    session_ids: list[str] = []
     for attempt in range(1, 4):
         log_path = puzzle_root / ("judge.log" if attempt == 1 else f"judge-retry-{attempt:02d}.log")
-        last_rc = await run_cli(cmd, log_path, timeout_s)
+        suffix = uuid.uuid4().hex[:12]
+        session_id = f"tb-{suffix}-judge"
+        session_ids.append(session_id)
+        atomic_json(puzzle_root / "judge-sessions.json", {
+            "source": SESSION_SOURCE,
+            "attempts": session_ids,
+        })
+        last_rc, _usage = await run_api_role(
+            api_client,
+            session_id,
+            f"TurtleBench judge {player['slug']} {puzzle['id']} a{attempt} {suffix}",
+            JUDGE["provider"], JUDGE["model"], JUDGE["reasoning_effort"],
+            prompt, log_path, timeout_s,
+        )
         if last_rc == 0 and valid_output():
             return output
         if output.exists():
@@ -685,6 +937,8 @@ async def run_player(
     concurrency: int,
     timeout_s: int,
     max_attempts: int = 100,
+    api_client: HermesApiClient | None = None,
+    api_run_slots: int = 8,
 ) -> dict[str, Any]:
     if repeats != 3:
         raise RuntimeError("current judge path requires exactly 3 repeats")
@@ -697,11 +951,13 @@ async def run_player(
         for trial in range(1, repeats + 1)
         for puzzle in manifest["puzzles"]
     }
-    semaphore = asyncio.Semaphore(concurrency)
+    semaphore = asyncio.Semaphore(api_game_concurrency(concurrency, api_run_slots))
 
     async def guarded(puzzle: dict[str, Any], trial: int):
         async with semaphore:
-            return await run_game(run_dir, player, puzzle, trial, timeout_s)
+            if api_client is None:
+                return await run_game(run_dir, player, puzzle, trial, timeout_s)
+            return await run_game(run_dir, player, puzzle, trial, timeout_s, api_client=api_client)
 
     while True:
         pending = [key for key in state.get("pending_slots", []) if key in slots]
@@ -724,7 +980,13 @@ async def run_player(
             state["updated_at"] = now_iso()
             atomic_json(state_path, state)
 
-        await asyncio.gather(*(run_judge(run_dir, player, p, timeout_s) for p in manifest["puzzles"]))
+        if api_client is None:
+            await asyncio.gather(*(run_judge(run_dir, player, p, timeout_s) for p in manifest["puzzles"]))
+        else:
+            await asyncio.gather(*(
+                run_judge(run_dir, player, p, timeout_s, api_client=api_client)
+                for p in manifest["puzzles"]
+            ))
         scores = finalize_scores(run_dir, player, manifest)
         valid_games = sum(score.get("validity") == "valid" for score in scores)
         should_stop, limit_reached = retry_stop_state(
@@ -786,6 +1048,8 @@ async def async_main(args: argparse.Namespace) -> None:
     )
     ensure_suite(RUNTIME.fixtures)
     manifest = verify_suite(RUNTIME.fixtures)
+    api_client = HermesApiClient(args.api_url, os.environ.get("HERMES_API_KEY", ""))
+    await asyncio.to_thread(api_client.health)
     run_id = args.run_id or f"baseline-luna-max-host-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     run_dir = RUNTIME.runs_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -801,9 +1065,11 @@ async def async_main(args: argparse.Namespace) -> None:
         "player_hint_limit": 2, "concurrency": args.concurrency, "session_source": SESSION_SOURCE, "started_at": now_iso(),
         "status": "running", "completed_players": [],
     }
-    if meta.get("session_source", SESSION_SOURCE) != SESSION_SOURCE:
-        raise RuntimeError(f"run source mismatch: {meta.get('session_source')} != {SESSION_SOURCE}")
+    existing_source = meta.get("session_source", SESSION_SOURCE)
+    if existing_source not in {SESSION_SOURCE, "turtle-bench"}:
+        raise RuntimeError(f"run source mismatch: {existing_source} != {SESSION_SOURCE}")
     meta["session_source"] = SESSION_SOURCE
+    meta["api_url"] = args.api_url
     meta["max_attempts_per_player"] = args.max_attempts_per_player
     atomic_json(meta_path, meta)
     summaries=[]
@@ -816,6 +1082,8 @@ async def async_main(args: argparse.Namespace) -> None:
             summary=await run_player(
                 run_dir, player, manifest, args.repeats, args.concurrency, args.timeout,
                 max_attempts=args.max_attempts_per_player,
+                api_client=api_client,
+                api_run_slots=args.api_run_slots,
             )
         summaries.append(summary)
         if player["slug"] not in meta["completed_players"]:
@@ -838,6 +1106,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fixtures", type=Path, default=DEFAULT_FIXTURES)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS)
     parser.add_argument("--state-db", type=Path, default=DEFAULT_STATE_DB)
+    parser.add_argument("--api-url", default=os.environ.get("HERMES_API_URL", "http://127.0.0.1:8642"))
+    parser.add_argument("--api-run-slots", type=int, default=8)
     return parser
 
 

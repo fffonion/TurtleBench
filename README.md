@@ -50,18 +50,24 @@ ZIP password: `123456`
 
 ## Run
 
+TurtleBench controls all host, player, and judge sessions through one Hermes API Server. Export the same Bearer key configured for that server before starting the runner:
+
 ```bash
+export HERMES_API_URL=http://127.0.0.1:8642
+export HERMES_API_KEY='...'
+
 .venv/bin/python -m turtlebench \
   --fixtures fixtures/fixed-v1 \
   --runs-dir runs \
   --players gpt-5-6-sol-high \
   --repeats 3 \
-  --concurrency 12
+  --concurrency 12 \
+  --api-run-slots 8
 ```
 
-Use `python -m turtlebench --help` for all options. `--players` accepts comma-separated slugs from the model matrix in `src/turtlebench/benchmark_runner.py`.
+Use `python -m turtlebench --help` for all options. `--players` accepts comma-separated slugs from the model matrix in `src/turtlebench/benchmark_runner.py`. Every role receives an isolated persisted Hermes session with `source=turtle-soup`; the runner itself remains one process. `--concurrency` is the requested number of concurrent games. Each game needs two API run slots, so `--api-run-slots 8` admits up to four games at once and leaves capacity for unrelated API clients.
 
-Hermes session usage is read from `~/.hermes/state.db` by default. Override it with `--state-db PATH`.
+Player usage is measured from the API session before and after each run. `--state-db` remains available for dashboard compaction-time accounting of completed sessions.
 
 ## Fixtures
 

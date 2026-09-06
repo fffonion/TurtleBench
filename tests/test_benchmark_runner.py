@@ -7,6 +7,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
 from turtlebench import benchmark_runner as br
@@ -106,11 +107,18 @@ class BenchmarkRunnerTests(unittest.TestCase):
             "--fixtures", "/tmp/fixtures",
             "--runs-dir", "/tmp/runs",
             "--state-db", "/tmp/state.db",
+            "--api-url", "http://127.0.0.1:9999",
         ])
         self.assertEqual(args.fixtures, Path("/tmp/fixtures"))
         self.assertEqual(args.runs_dir, Path("/tmp/runs"))
         self.assertEqual(args.state_db, Path("/tmp/state.db"))
+        self.assertEqual(args.api_url, "http://127.0.0.1:9999")
         self.assertEqual(args.max_attempts_per_player, 100)
+
+    def test_api_game_concurrency_reserves_two_server_slots(self):
+        self.assertEqual(br.api_game_concurrency(12, 8), 4)
+        self.assertEqual(br.api_game_concurrency(2, 8), 2)
+        self.assertEqual(br.api_game_concurrency(12, 2), 1)
 
     def test_attempt_state_reserves_only_remaining_capacity(self):
         with tempfile.TemporaryDirectory() as td:
@@ -231,16 +239,96 @@ class BenchmarkRunnerTests(unittest.TestCase):
             self.assertEqual(usage["output_tokens"], 30)
             self.assertEqual(usage["cache_read_tokens"], 80)
 
-    def test_cli_command_pins_provider_model_and_reasoning(self):
-        cmd = br.build_cli_command("xai-oauth", "grok-4.6", "high", "prompt")
-        self.assertIn("--provider", cmd)
-        self.assertEqual(cmd[cmd.index("--provider") + 1], "xai-oauth")
-        self.assertEqual(cmd[cmd.index("--model") + 1], "grok-4.6")
-        self.assertEqual(cmd[cmd.index("--reasoning-effort") + 1], "high")
-        self.assertIn("--ignore-rules", cmd)
-        self.assertIn("--source", cmd)
-        self.assertEqual(cmd[cmd.index("--source") + 1], "turtle-bench")
-        self.assertEqual(cmd[cmd.index("--max-turns") + 1], "180")
+    def test_api_client_creates_turtle_soup_session_and_returns_usage_delta(self):
+        calls: dict[str, Any] = {"session": None, "run": None}
+        completed = False
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def _json(self, status, payload):
+                body = json.dumps(payload).encode()
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self):
+                self.assert_auth()
+                if self.path == "/api/sessions/tb-session-1":
+                    if calls["session"] is None:
+                        self._json(404, {"error": "missing"})
+                    else:
+                        tokens = 19 if completed else 7
+                        self._json(200, {"session": {
+                            "provider": "provider-a", "model": "model-a",
+                            "api_call_count": 2 if completed else 1,
+                            "input_tokens": tokens, "output_tokens": 5 if completed else 2,
+                            "cache_read_tokens": 3 if completed else 1,
+                            "cache_write_tokens": 0, "reasoning_tokens": 4 if completed else 1,
+                        }})
+                elif self.path == "/api/sessions/tb-session-1/messages":
+                    self._json(200, {"data": []})
+                elif self.path == "/v1/toolsets":
+                    self._json(200, {"data": [{"name": name} for name in ("terminal", "web", "file", "memory")]})
+                elif self.path == "/v1/runs/run-1":
+                    self._json(200, {"status": "completed", "output": "role completed"})
+                else:
+                    self._json(404, {"error": "unknown"})
+
+            def do_POST(self):
+                nonlocal completed
+                self.assert_auth()
+                size = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(size))
+                if self.path == "/api/sessions":
+                    calls["session"] = payload
+                    self._json(201, {"session": payload})
+                elif self.path == "/v1/runs":
+                    calls["run"] = payload
+                    completed = True
+                    self._json(202, {"run_id": "run-1"})
+                else:
+                    self._json(404, {"error": "unknown"})
+
+            def assert_auth(self):
+                if self.headers.get("Authorization") != "Bearer secret":
+                    raise AssertionError("missing bearer auth")
+
+            def log_message(self, format, *args):
+                pass
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            client = br.HermesApiClient(f"http://127.0.0.1:{server.server_port}", "secret", poll_interval=0.01)
+            result = client.turn(
+                session_id="tb-session-1", session_title="TurtleBench role",
+                provider="provider-a", model="model-a", reasoning="high",
+                prompt="run role", timeout_s=2,
+            )
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
+        self.assertEqual(calls["session"]["source"], "turtle-soup")
+        self.assertEqual(calls["run"]["session_id"], "tb-session-1")
+        self.assertEqual(calls["run"]["provider"], "provider-a")
+        self.assertEqual(calls["run"]["model"], "model-a")
+        self.assertEqual(calls["run"]["model_options"], {"reasoning_effort": "high"})
+        self.assertEqual(calls["run"]["conversation_history"], [])
+        self.assertTrue(calls["run"]["skip_context_files"])
+        self.assertEqual(set(calls["run"]["disabled_toolsets"]), {"web", "file", "memory", "skills"})
+        self.assertEqual(result.output, "role completed")
+        self.assertEqual(result.run_id, "run-1")
+        self.assertEqual(result.usage["session_id"], "tb-session-1")
+        self.assertEqual(result.usage["api_call_count"], 1)
+        self.assertEqual(result.usage["input_tokens"], 12)
+        self.assertEqual(result.usage["reasoning_tokens"], 3)
+
+    def test_api_sessions_keep_turtle_soup_source(self):
+        self.assertEqual(br.SESSION_SOURCE, "turtle-soup")
 
     def test_role_prompts_avoid_reserved_evaluation_terms(self):
         prompts = [
@@ -365,6 +453,164 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
 
 class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
+    async def test_api_role_writes_session_metadata_without_cli_process(self):
+        calls: dict[str, Any] = {"session": None, "run": None}
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def _json(self, status, payload):
+                body = json.dumps(payload).encode()
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self):
+                if self.path.startswith("/api/sessions/") and self.path.endswith("/messages"):
+                    self._json(200, {"data": []})
+                elif self.path.startswith("/api/sessions/"):
+                    if calls["session"] is None:
+                        self._json(404, {"error": "missing"})
+                    else:
+                        self._json(200, {"session": {"provider": "p", "model": "m", "api_call_count": 1}})
+                elif self.path == "/v1/toolsets":
+                    self._json(200, {"data": [{"name": "terminal"}]})
+                elif self.path.startswith("/v1/runs/"):
+                    self._json(200, {"status": "completed", "output": "done"})
+                else:
+                    self._json(404, {})
+
+            def do_POST(self):
+                size = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(size))
+                if self.path == "/api/sessions":
+                    calls["session"] = payload
+                    self._json(201, {"session": payload})
+                elif self.path == "/v1/runs":
+                    calls["run"] = payload
+                    self._json(202, {"run_id": "run-role"})
+                else:
+                    self._json(404, {})
+
+            def log_message(self, format, *args):
+                pass
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                log = Path(td) / "role.log"
+                client = br.HermesApiClient(f"http://127.0.0.1:{server.server_port}", "", poll_interval=0.01)
+                rc, usage = await br.run_api_role(
+                    client, "tb-role-1", "role title", "p", "m", "high", "prompt", log, 2,
+                )
+                text = log.read_text(encoding="utf-8")
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(usage["session_id"], "tb-role-1")
+        self.assertIn("session_id: tb-role-1", text)
+        self.assertIn("run_id: run-role", text)
+        self.assertIn("done", text)
+
+    async def test_run_game_uses_api_sessions_for_both_roles(self):
+        sessions = {}
+        runs = {}
+        lock = threading.Lock()
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def _json(self, status, payload):
+                body = json.dumps(payload).encode()
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self):
+                if self.path == "/v1/toolsets":
+                    self._json(200, {"data": [{"name": "terminal"}, {"name": "web"}]})
+                    return
+                if self.path.startswith("/api/sessions/"):
+                    parts = self.path.split("/")
+                    session_id = parts[3]
+                    if session_id not in sessions:
+                        self._json(404, {"error": "missing"})
+                    elif self.path.endswith("/messages"):
+                        self._json(200, {"data": []})
+                    else:
+                        self._json(200, {"session": {
+                            "provider": sessions[session_id].get("provider", ""),
+                            "model": sessions[session_id]["model"],
+                            "api_call_count": int(sessions[session_id].get("done", False)),
+                            "input_tokens": 10 if sessions[session_id].get("done") else 0,
+                            "output_tokens": 2 if sessions[session_id].get("done") else 0,
+                        }})
+                    return
+                if self.path.startswith("/v1/runs/"):
+                    run_id = self.path.rsplit("/", 1)[-1]
+                    self._json(200, {"status": "completed", "output": f"completed {run_id}"})
+                    return
+                self._json(404, {})
+
+            def do_POST(self):
+                size = int(self.headers.get("Content-Length", "0"))
+                payload = json.loads(self.rfile.read(size))
+                if self.path == "/api/sessions":
+                    sessions[payload["id"]] = dict(payload)
+                    self._json(201, {"session": payload})
+                    return
+                if self.path == "/v1/runs":
+                    with lock:
+                        run_id = f"run-{len(runs) + 1}"
+                        runs[run_id] = payload
+                        sessions[payload["session_id"]]["provider"] = payload["provider"]
+                        sessions[payload["session_id"]]["done"] = True
+                    self._json(202, {"run_id": run_id})
+                    return
+                self._json(404, {})
+
+            def log_message(self, format, *args):
+                pass
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        old_runtime = br.RUNTIME
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                fixtures = root / "fixtures"
+                fixtures.mkdir()
+                (fixtures / "puzzle.json").write_text("{}", encoding="utf-8")
+                br.RUNTIME = br.RuntimePaths(fixtures, root / "runs", root / "state.db")
+                client = br.HermesApiClient(f"http://127.0.0.1:{server.server_port}", "", poll_interval=0.01)
+                player = {"slug": "model-a", "provider": "player-provider", "model": "player-model", "reasoning_effort": "high"}
+                puzzle = {"id": "P1", "path": "puzzle.json"}
+
+                score_path = await br.run_game(root / "run", player, puzzle, 1, 5, api_client=client)
+
+                trial = score_path.parent
+                preliminary = json.loads((trial / "preliminary.json").read_text(encoding="utf-8"))
+                role_sessions = json.loads((trial / "sessions.json").read_text(encoding="utf-8"))
+        finally:
+            br.RUNTIME = old_runtime
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
+        self.assertEqual(len(sessions), 2)
+        self.assertEqual({item["source"] for item in sessions.values()}, {"turtle-soup"})
+        self.assertEqual({payload["provider"] for payload in runs.values()}, {br.HOST["provider"], "player-provider"})
+        self.assertIn(role_sessions["host"], sessions)
+        self.assertIn(role_sessions["player"], sessions)
+        self.assertEqual(preliminary["process_exit"], {"host": 0, "player": 0})
+        self.assertEqual(preliminary["raw"]["player_usage"]["session_id"], role_sessions["player"])
+
     async def test_run_player_requeues_only_invalid_slots(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)
@@ -419,7 +665,7 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(summary["attempts_started"], 4)
             self.assertFalse(summary["attempt_limit_reached"])
 
-    async def test_judge_retries_when_cli_claims_success_without_output(self):
+    async def test_judge_retries_when_api_run_claims_success_without_output_file(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)
             player = {
@@ -430,21 +676,24 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
             }
             puzzle = {"id": "SPB-C-E-01", "path": "puzzles/SPB-C-E-01.json"}
             output = run_dir / "games/luna-max/SPB-C-E-01/judge.json"
-            calls = 0
+            calls = []
 
-            async def fake_run_cli(cmd, log_path, timeout_s):
-                nonlocal calls
-                calls += 1
-                if calls == 2:
+            async def fake_run_api_role(client, session_id, session_title, provider, model, reasoning, prompt, log_path, timeout_s):
+                calls.append(session_id)
+                if len(calls) == 2:
                     output.parent.mkdir(parents=True, exist_ok=True)
                     output.write_text(json.dumps([{"trial": i} for i in (1, 2, 3)]), encoding="utf-8")
-                return 0
+                return 0, {"session_id": session_id}
 
-            with mock.patch.object(br, "run_cli", side_effect=fake_run_cli):
-                result = await br.run_judge(run_dir, player, puzzle, 10)
+            with mock.patch.object(br, "run_api_role", side_effect=fake_run_api_role):
+                result = await br.run_judge(run_dir, player, puzzle, 10, api_client=mock.Mock())
 
             self.assertEqual(result, output)
-            self.assertEqual(calls, 2)
+            self.assertEqual(len(calls), 2)
+            self.assertNotEqual(calls[0], calls[1])
+            sessions = json.loads((output.parent / "judge-sessions.json").read_text(encoding="utf-8"))
+            self.assertEqual(sessions["source"], "turtle-soup")
+            self.assertEqual(sessions["attempts"], calls)
 
 
 if __name__ == "__main__":
