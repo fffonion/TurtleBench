@@ -181,7 +181,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
             [p["slug"] for p in br.PLAYER_MATRIX],
-            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-6-astra-high", "grok-4-6-high"],
+            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
         )
 
     def test_minimax_uses_openrouter_free_route(self):
@@ -212,6 +212,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(sol["provider"], "openai-codex")
         self.assertEqual(sol["model"], "gpt-5.6-sol")
         self.assertEqual(sol["reasoning_effort"], "high")
+
+    def test_gpt_sol_uses_openai_codex_medium(self):
+        sol = next(p for p in br.PLAYER_MATRIX if p["slug"] == "gpt-5-6-sol-medium")
+        self.assertEqual(sol["provider"], "openai-codex")
+        self.assertEqual(sol["model"], "gpt-5.6-sol")
+        self.assertEqual(sol["reasoning_effort"], "medium")
 
     def test_gpt_astra_uses_openai_codex_high(self):
         astra = next(p for p in br.PLAYER_MATRIX if p["slug"] == "gpt-6-astra-high")

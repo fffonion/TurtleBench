@@ -51,6 +51,7 @@ PLAYER_MATRIX = [
     {"slug": "deepseek-provider-v4-flash-max", "display_name": "DeepSeek provider / DeepSeek V4 Flash max", "provider": "deepseek", "model": "deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "claude-sonnet-5-high", "display_name": "Anthropic / Claude Sonnet 5 high", "provider": "anthropic", "model": "claude-sonnet-5", "reasoning_effort": "high"},
     {"slug": "gpt-5-6-sol-high", "display_name": "OpenAI Codex / GPT-5.6 Sol high", "provider": "openai-codex", "model": "gpt-5.6-sol", "reasoning_effort": "high"},
+    {"slug": "gpt-5-6-sol-medium", "display_name": "OpenAI Codex / GPT-5.6 Sol medium", "provider": "openai-codex", "model": "gpt-5.6-sol", "reasoning_effort": "medium"},
     {"slug": "gpt-6-astra-high", "display_name": "OpenAI Codex / GPT-6 Astra high", "provider": "openai-codex", "model": "gpt-6-astra", "reasoning_effort": "high"},
     {"slug": "grok-4-6-high", "display_name": "Supplemental / Grok 4.6 high", "provider": "xai-oauth", "model": "grok-4.6", "reasoning_effort": "high"},
 ]
