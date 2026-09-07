@@ -8,29 +8,29 @@
       "model": "gpt-6-astra",
       "family": "gpt-6-astra",
       "reasoning_effort": "high",
-      "overall_score": 91.3,
+      "overall_score": 92.4,
       "games": 36,
-      "active_time_s": 6797.808,
+      "active_time_s": 7308.006,
       "compression_time_s": 0,
       "tokens": {
-        "total": 7662452,
-        "input": 815153,
-        "output": 115139,
-        "cache_read": 6732160,
+        "total": 6947090,
+        "input": 816786,
+        "output": 104832,
+        "cache_read": 6025472,
         "cache_write": 0
       },
       "price_usd": {
-        "input": 8.15153,
-        "output": 5.75695,
-        "cache_read": 6.73216,
+        "input": 8.16786,
+        "output": 5.2416,
+        "cache_read": 6.025472,
         "cache_write": 0.0,
-        "total": 20.64064
+        "total": 19.434932
       },
       "pricing": {
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-6-astra",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 10.0,
           "output": 50.0,
@@ -39,10 +39,10 @@
         }
       },
       "behavior": {
-        "solve_rate": 0.968,
-        "rounds_median": 7.0,
-        "hints_median": 0,
-        "samples": 31
+        "solve_rate": 0.972,
+        "rounds_median": 8.5,
+        "hints_median": 0.0,
+        "samples": 36
       }
     },
     {
@@ -52,29 +52,29 @@
       "model": "gpt-5.6-sol",
       "family": "gpt-5.6-sol",
       "reasoning_effort": "high",
-      "overall_score": 88.8,
+      "overall_score": 91.5,
       "games": 36,
-      "active_time_s": 6019.452,
+      "active_time_s": 7174.339,
       "compression_time_s": 0,
       "tokens": {
-        "total": 62020082,
-        "input": 3595020,
-        "output": 281574,
-        "cache_read": 58143488,
+        "total": 46308088,
+        "input": 3113020,
+        "output": 248764,
+        "cache_read": 42946304,
         "cache_write": 0
       },
       "price_usd": {
-        "input": 14.38008,
-        "output": 5.63148,
-        "cache_read": 23.2573952,
+        "input": 12.45208,
+        "output": 4.97528,
+        "cache_read": 17.1785216,
         "cache_write": 0.0,
-        "total": 43.2689552
+        "total": 34.6058816
       },
       "pricing": {
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
@@ -83,10 +83,10 @@
         }
       },
       "behavior": {
-        "solve_rate": 0.929,
-        "rounds_median": 11.5,
+        "solve_rate": 0.944,
+        "rounds_median": 13.0,
         "hints_median": 0.0,
-        "samples": 28
+        "samples": 36
       }
     },
     {
@@ -118,7 +118,7 @@
         "source": "https://models.dev",
         "source_model_id": "xai/grok-4.6",
         "source_provider_id": "xai",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 6.0,
@@ -162,7 +162,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -206,7 +206,7 @@
         "source": "https://models.dev",
         "source_model_id": "deepseek/deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 0.14,
           "output": 0.28,
@@ -250,7 +250,7 @@
         "source": "https://models.dev",
         "source_model_id": "anthropic/claude-sonnet-5",
         "source_provider_id": "anthropic",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 10.0,
@@ -294,7 +294,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-07T08:40:02Z",
+        "fetched_at": "2026-09-07T12:09:26Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -308,50 +308,6 @@
         "hints_median": 2.0,
         "samples": 36
       }
-    },
-    {
-      "slug": "minimax-m3-max",
-      "name": "OpenRouter / MiniMax M3",
-      "provider": "openrouter",
-      "model": "minimax/minimax-m3:free",
-      "family": "minimax-m3:free",
-      "reasoning_effort": "max",
-      "overall_score": 59.5,
-      "games": 19,
-      "active_time_s": 8395.937,
-      "compression_time_s": 0,
-      "tokens": {
-        "total": 80068533,
-        "input": 2358052,
-        "output": 229267,
-        "cache_read": 77481214,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 0.7074156,
-        "output": 0.2751204,
-        "cache_read": 4.64887284,
-        "cache_write": 0.0,
-        "total": 5.63140884
-      },
-      "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "minimax/MiniMax-M3",
-        "source_provider_id": "minimax-cn",
-        "fetched_at": "2026-09-07T08:40:02Z",
-        "usd_per_million_tokens": {
-          "input": 0.3,
-          "output": 1.2,
-          "cache_read": 0.06,
-          "cache_write": null
-        }
-      },
-      "behavior": {
-        "solve_rate": 0.526,
-        "rounds_median": 40.0,
-        "hints_median": 1,
-        "samples": 19
-      }
     }
   ],
   "title": "2026-09-03 基准结果",
@@ -359,5 +315,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-07T08:40:02Z"
+  "published_at": "2026-09-07T12:09:26Z"
 }
