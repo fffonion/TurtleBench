@@ -262,6 +262,26 @@ def _public_model(
     }
 
 
+def _model_variant_key(model: dict[str, Any]) -> tuple[str, str]:
+    """Group identical model variants while ignoring provider-specific routing."""
+
+    family = str(model.get("family", "")).strip().lower().removesuffix(":free")
+    reasoning_effort = str(model.get("reasoning_effort", "")).strip().lower()
+    return family, reasoning_effort
+
+
+def _keep_highest_scored_variants(models: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one highest-scoring provider entry per model and reasoning variant."""
+
+    selected: dict[tuple[str, str], dict[str, Any]] = {}
+    for model in models:
+        key = _model_variant_key(model)
+        previous = selected.get(key)
+        if previous is None or float(model["overall_score"]) > float(previous["overall_score"]):
+            selected[key] = model
+    return list(selected.values())
+
+
 def build_public_run(
     run_dir: str | Path,
     pricing: dict[str, Any],
@@ -273,10 +293,10 @@ def build_public_run(
     summaries_dir = run_path / "summaries"
     if not summaries_dir.is_dir():
         raise ValueError(f"missing summaries directory: {summaries_dir}")
-    models = [
+    models = _keep_highest_scored_variants([
         _public_model(run_path, _read_json(path), pricing, state_db)
         for path in sorted(summaries_dir.glob("*.json"))
-    ]
+    ])
     if not models:
         raise ValueError("run has no model summaries")
     return {"run_id": run_path.name, "models": models}
