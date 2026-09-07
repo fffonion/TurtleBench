@@ -30,7 +30,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-6-astra",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
           "input": 10.0,
           "output": 50.0,
@@ -74,7 +74,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
@@ -96,29 +96,29 @@
       "model": "grok-4.6",
       "family": "grok-4.6",
       "reasoning_effort": "high",
-      "overall_score": 88.2,
+      "overall_score": 87.3,
       "games": 36,
-      "active_time_s": 12383.591,
-      "compression_time_s": 411.601,
+      "active_time_s": 13527.028,
+      "compression_time_s": 271.844,
       "tokens": {
-        "total": 89272285,
-        "input": 9384929,
-        "output": 581756,
-        "cache_read": 79305600,
+        "total": 91569947,
+        "input": 10012619,
+        "output": 637264,
+        "cache_read": 80920064,
         "cache_write": 0
       },
       "price_usd": {
-        "input": 18.769858,
-        "output": 3.490536,
-        "cache_read": 39.6528,
+        "input": 20.025238,
+        "output": 3.823584,
+        "cache_read": 40.460032,
         "cache_write": 0.0,
-        "total": 61.913194
+        "total": 64.308854
       },
       "pricing": {
         "source": "https://models.dev",
         "source_model_id": "xai/grok-4.6",
         "source_provider_id": "xai",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 6.0,
@@ -127,10 +127,10 @@
         }
       },
       "behavior": {
-        "solve_rate": 0.931,
-        "rounds_median": 22.0,
-        "hints_median": 0,
-        "samples": 29
+        "solve_rate": 0.944,
+        "rounds_median": 24.0,
+        "hints_median": 0.0,
+        "samples": 36
       }
     },
     {
@@ -162,7 +162,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -178,45 +178,45 @@
       }
     },
     {
-      "slug": "claude-sonnet-5-high",
-      "name": "Anthropic / Claude Sonnet 5",
-      "provider": "anthropic",
-      "model": "claude-sonnet-5",
-      "family": "claude-sonnet-5",
-      "reasoning_effort": "high",
-      "overall_score": 79.8,
+      "slug": "deepseek-provider-v4-flash-max",
+      "name": "DeepSeek / DeepSeek V4 Flash",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "family": "deepseek-v4-flash",
+      "reasoning_effort": "max",
+      "overall_score": 81.6,
       "games": 36,
-      "active_time_s": 33842.637,
+      "active_time_s": 19793.901,
       "compression_time_s": 0,
       "tokens": {
-        "total": 178651201,
-        "input": 4342,
-        "output": 2799685,
-        "cache_read": 163189138,
-        "cache_write": 12658036
+        "total": 192904081,
+        "input": 4001360,
+        "output": 2135873,
+        "cache_read": 186766848,
+        "cache_write": 0
       },
       "price_usd": {
-        "input": 0.008684,
-        "output": 27.99685,
-        "cache_read": 32.6378276,
-        "cache_write": 31.64509,
-        "total": 92.2884516
+        "input": 0.5601904,
+        "output": 0.59804444,
+        "cache_read": 0.5229471744,
+        "cache_write": 0.0,
+        "total": 1.6811820144
       },
       "pricing": {
         "source": "https://models.dev",
-        "source_model_id": "anthropic/claude-sonnet-5",
-        "source_provider_id": "anthropic",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
-          "input": 2.0,
-          "output": 10.0,
-          "cache_read": 0.2,
-          "cache_write": 2.5
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
         }
       },
       "behavior": {
         "solve_rate": 0.88,
-        "rounds_median": 22.0,
+        "rounds_median": 21.0,
         "hints_median": 1,
         "samples": 25
       }
@@ -250,7 +250,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -266,47 +266,47 @@
       }
     },
     {
-      "slug": "minimax-m3-max",
-      "name": "MiniMax / MiniMax M3",
-      "provider": "minimax-cn",
-      "model": "minimax-m3",
-      "family": "minimax-m3",
+      "slug": "deepseek-v4-flash-max",
+      "name": "CommandCode / DeepSeek V4 Flash",
+      "provider": "commandcode",
+      "model": "deepseek-ai/deepseek-v4-flash",
+      "family": "deepseek-v4-flash",
       "reasoning_effort": "max",
-      "overall_score": 53.0,
+      "overall_score": 76.7,
       "games": 36,
-      "active_time_s": 6177.671,
+      "active_time_s": 19180.621,
       "compression_time_s": 0,
       "tokens": {
-        "total": 65815012,
-        "input": 2349345,
-        "output": 238346,
-        "cache_read": 63227321,
+        "total": 109631408,
+        "input": 5518156,
+        "output": 1693412,
+        "cache_read": 102419840,
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.7048035,
-        "output": 0.2860152,
-        "cache_read": 3.79363926,
+        "input": 0.77254184,
+        "output": 0.47415536,
+        "cache_read": 0.286775552,
         "cache_write": 0.0,
-        "total": 4.78445796
+        "total": 1.533472752
       },
       "pricing": {
         "source": "https://models.dev",
-        "source_model_id": "minimax/MiniMax-M3",
-        "source_provider_id": "minimax-cn",
-        "fetched_at": "2026-09-05T08:55:10Z",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-07T07:52:50Z",
         "usd_per_million_tokens": {
-          "input": 0.3,
-          "output": 1.2,
-          "cache_read": 0.06,
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
           "cache_write": null
         }
       },
       "behavior": {
-        "solve_rate": 0.4,
-        "rounds_median": 48.5,
+        "solve_rate": 0.806,
+        "rounds_median": 27.0,
         "hints_median": 1.0,
-        "samples": 10
+        "samples": 36
       }
     }
   ],
@@ -315,5 +315,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-05T08:55:10Z"
+  "published_at": "2026-09-07T07:52:50Z"
 }
