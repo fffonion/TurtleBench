@@ -72,6 +72,25 @@ export function groupByFamily(rows) {
   return groups;
 }
 
+export function groupBySeries(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const family = row.family || row.model;
+    const provider = row.provider || splitDisplayName(row.name).provider;
+    const key = `${family}\u0000${provider}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  });
+  groups.forEach((items) => {
+    items.sort(
+      (a, b) =>
+        (EFFORT_ORDER.get(a.reasoning_effort) ?? 99) -
+        (EFFORT_ORDER.get(b.reasoning_effort) ?? 99),
+    );
+  });
+  return groups;
+}
+
 export function formatDuration(seconds) {
   if (seconds == null || !Number.isFinite(seconds)) return "—";
   const value = Math.max(0, Math.round(seconds));
@@ -140,6 +159,48 @@ function chartLabel(value, axis) {
   return axis === "price" ? formatMoney(value) : formatDuration(value);
 }
 
+export function formatChartDetails(row, axis) {
+  const parts = splitDisplayName(row.name);
+  return {
+    provider: row.provider || parts.provider,
+    model: parts.model,
+    reasoning_effort: row.reasoning_effort,
+    score: formatScore(row.overall_score),
+    metric: chartLabel(chartMetric(row, axis), axis),
+  };
+}
+
+function renderChartTooltip(host, row, axis) {
+  let tooltip = host.querySelector(".chart-tooltip");
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.className = "chart-tooltip";
+    tooltip.setAttribute("role", "status");
+    host.append(tooltip);
+  }
+  const details = formatChartDetails(row, axis);
+  tooltip.replaceChildren();
+  const title = document.createElement("strong");
+  title.textContent = `${details.model} · ${details.reasoning_effort}`;
+  tooltip.append(title);
+  [
+    ["运营商", details.provider || "未知"],
+    ["综合分", details.score],
+    [axis === "price" ? "总价格" : "每局平均耗时", details.metric],
+    ["局数", formatNumber(row.games)],
+  ].forEach(([label, value]) => {
+    const line = document.createElement("span");
+    line.textContent = `${label}：${value}`;
+    tooltip.append(line);
+  });
+  tooltip.hidden = false;
+}
+
+function hideChartTooltip(host) {
+  const tooltip = host.querySelector(".chart-tooltip");
+  if (tooltip) tooltip.hidden = true;
+}
+
 function renderChart(models, axis) {
   const host = document.querySelector("#chart");
   host.replaceChildren();
@@ -198,18 +259,49 @@ function renderChart(models, axis) {
   svg.append(xTitle);
 
   const colors = colorMap(models);
-  groupByFamily(plotted).forEach((items, family) => {
+  groupBySeries(plotted).forEach((items) => {
+    const family = items[0].family || items[0].model;
     const points = items.map((model) => `${x(chartMetric(model, axis))},${y(model.overall_score)}`).join(" ");
     if (items.length > 1) {
       svg.append(svgElement("polyline", { points, class: "series-line", stroke: colors.get(family) }));
     }
   });
 
+  let pinnedModel = null;
   plotted.forEach((model, index) => {
     const family = model.family || model.model;
     const xPosition = x(chartMetric(model, axis));
     const yPosition = y(model.overall_score);
-    svg.append(svgElement("circle", { cx: xPosition, cy: yPosition, r: 6.5, fill: colors.get(family), class: "chart-point" }));
+    const point = svgElement("circle", {
+      cx: xPosition,
+      cy: yPosition,
+      r: 6.5,
+      fill: colors.get(family),
+      class: "chart-point",
+      tabindex: 0,
+      role: "button",
+      "aria-label": `${formatChartName(model)} · ${model.provider || "未知运营商"}`,
+    });
+    point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis));
+    point.addEventListener("focus", () => renderChartTooltip(host, model, axis));
+    point.addEventListener("pointerleave", () => {
+      if (pinnedModel !== model) hideChartTooltip(host);
+    });
+    point.addEventListener("blur", () => {
+      if (pinnedModel !== model) hideChartTooltip(host);
+    });
+    point.addEventListener("click", () => {
+      pinnedModel = pinnedModel === model ? null : model;
+      if (pinnedModel) renderChartTooltip(host, model, axis);
+      else hideChartTooltip(host);
+    });
+    point.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        point.dispatchEvent(new MouseEvent("click"));
+      }
+    });
+    svg.append(point);
     const nearRight = xPosition > margin.left + plotWidth * 0.76;
     const label = svgElement("text", {
       x: xPosition + (nearRight ? -11 : 11),
