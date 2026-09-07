@@ -11,7 +11,7 @@ import {
   formatDuration,
   formatMoney,
   groupByFamily,
-  groupBySeries,
+  groupByVariant,
   splitDisplayName,
   sortRows,
 } from "../../web/assets/app.js";
@@ -62,14 +62,14 @@ test("groupByFamily orders reasoning levels for connected chart lines", () => {
   assert.equal(groups.get("deepseek-v4-flash").length, 1);
 });
 
-test("groupBySeries keeps same model providers on separate chart series", () => {
-  const groups = groupBySeries([
-    { ...rows[2], provider: "commandcode", reasoning_effort: "max" },
-    { ...rows[2], provider: "deepseek", reasoning_effort: "max" },
+test("groupByVariant merges providers for one model and reasoning level", () => {
+  const groups = groupByVariant([
+    { ...rows[2], provider: "commandcode", reasoning_effort: "max", overall_score: 81.6 },
+    { ...rows[2], provider: "deepseek", reasoning_effort: "max", overall_score: 76.7 },
   ]);
-  assert.equal(groups.size, 2);
+  assert.equal(groups.size, 1);
   assert.deepEqual(
-    [...groups.values()].map((items) => items[0].provider).sort(),
+    groups.values().next().value.map((row) => row.provider),
     ["commandcode", "deepseek"],
   );
 });
@@ -108,11 +108,15 @@ test("formatters keep resource values compact and explicit", () => {
     ...rows[2],
     name: "DeepSeek / DeepSeek V4 Flash",
     provider: "deepseek",
-  }, "price"), {
-    provider: "deepseek",
+  }, "price", [
+    { ...rows[2], provider: "deepseek", overall_score: 76.7 },
+    { ...rows[2], provider: "commandcode", overall_score: 81.6 },
+  ]), {
     model: "DeepSeek V4 Flash",
     reasoning_effort: "max",
-    score: "68.2",
-    metric: "—",
+    providers: [
+      { provider: "deepseek", score: "76.7", metric: "—", games: "—" },
+      { provider: "commandcode", score: "81.6", metric: "—", games: "—" },
+    ],
   });
 });

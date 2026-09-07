@@ -72,21 +72,13 @@ export function groupByFamily(rows) {
   return groups;
 }
 
-export function groupBySeries(rows) {
+export function groupByVariant(rows) {
   const groups = new Map();
   rows.forEach((row) => {
     const family = row.family || row.model;
-    const provider = row.provider || splitDisplayName(row.name).provider;
-    const key = `${family}\u0000${provider}`;
+    const key = `${family}|${row.reasoning_effort || ""}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(row);
-  });
-  groups.forEach((items) => {
-    items.sort(
-      (a, b) =>
-        (EFFORT_ORDER.get(a.reasoning_effort) ?? 99) -
-        (EFFORT_ORDER.get(b.reasoning_effort) ?? 99),
-    );
   });
   return groups;
 }
@@ -159,18 +151,24 @@ function chartLabel(value, axis) {
   return axis === "price" ? formatMoney(value) : formatDuration(value);
 }
 
-export function formatChartDetails(row, axis) {
+export function formatChartDetails(row, axis, providers = [row]) {
   const parts = splitDisplayName(row.name);
   return {
-    provider: row.provider || parts.provider,
     model: parts.model,
     reasoning_effort: row.reasoning_effort,
-    score: formatScore(row.overall_score),
-    metric: chartLabel(chartMetric(row, axis), axis),
+    providers: providers.map((providerRow) => {
+      const providerParts = splitDisplayName(providerRow.name);
+      return {
+        provider: providerRow.provider || providerParts.provider,
+        score: formatScore(providerRow.overall_score),
+        metric: chartLabel(chartMetric(providerRow, axis), axis),
+        games: formatNumber(providerRow.games),
+      };
+    }),
   };
 }
 
-function renderChartTooltip(host, row, axis) {
+function renderChartTooltip(host, row, axis, providers = [row]) {
   let tooltip = host.querySelector(".chart-tooltip");
   if (!tooltip) {
     tooltip = document.createElement("div");
@@ -178,19 +176,15 @@ function renderChartTooltip(host, row, axis) {
     tooltip.setAttribute("role", "status");
     host.append(tooltip);
   }
-  const details = formatChartDetails(row, axis);
+  const details = formatChartDetails(row, axis, providers);
   tooltip.replaceChildren();
   const title = document.createElement("strong");
   title.textContent = `${details.model} · ${details.reasoning_effort}`;
   tooltip.append(title);
-  [
-    ["运营商", details.provider || "未知"],
-    ["综合分", details.score],
-    [axis === "price" ? "总价格" : "每局平均耗时", details.metric],
-    ["局数", formatNumber(row.games)],
-  ].forEach(([label, value]) => {
+  details.providers.forEach((provider) => {
     const line = document.createElement("span");
-    line.textContent = `${label}：${value}`;
+    line.className = "chart-tooltip-provider";
+    line.textContent = `${provider.provider || "未知"} · 综合分 ${provider.score} · ${axis === "price" ? "总价格" : "每局平均耗时"} ${provider.metric} · ${provider.games} 局`;
     tooltip.append(line);
   });
   tooltip.hidden = false;
@@ -204,7 +198,13 @@ function hideChartTooltip(host) {
 function renderChart(models, axis) {
   const host = document.querySelector("#chart");
   host.replaceChildren();
-  const plotted = models.filter((model) => Number.isFinite(chartMetric(model, axis)));
+  const candidates = models.filter((model) => Number.isFinite(chartMetric(model, axis)));
+  const plotted = [...groupByVariant(candidates).values()].map((providers) => ({
+    model: providers.reduce((highest, row) => (
+      row.overall_score > highest.overall_score ? row : highest
+    )),
+    providers,
+  }));
   if (!plotted.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
@@ -218,10 +218,10 @@ function renderChart(models, axis) {
   const margin = { top: 42, right: 170, bottom: 72, left: 72 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
-  const xValues = plotted.map((model) => chartMetric(model, axis));
+  const xValues = plotted.map(({ model }) => chartMetric(model, axis));
   const maxX = Math.max(...xValues, 1) * 1.12;
-  const minScore = Math.min(...plotted.map((model) => model.overall_score));
-  const maxScore = Math.max(...plotted.map((model) => model.overall_score));
+  const minScore = Math.min(...plotted.map(({ model }) => model.overall_score));
+  const maxScore = Math.max(...plotted.map(({ model }) => model.overall_score));
   const yMin = Math.max(0, Math.floor((minScore - 8) / 10) * 10);
   const yMax = Math.min(100, Math.max(yMin + 10, Math.ceil((maxScore + 5) / 10) * 10));
   const x = (value) => margin.left + (value / maxX) * plotWidth;
@@ -259,7 +259,7 @@ function renderChart(models, axis) {
   svg.append(xTitle);
 
   const colors = colorMap(models);
-  groupBySeries(plotted).forEach((items) => {
+  groupByFamily(plotted.map(({ model }) => model)).forEach((items) => {
     const family = items[0].family || items[0].model;
     const points = items.map((model) => `${x(chartMetric(model, axis))},${y(model.overall_score)}`).join(" ");
     if (items.length > 1) {
@@ -268,7 +268,7 @@ function renderChart(models, axis) {
   });
 
   let pinnedModel = null;
-  plotted.forEach((model, index) => {
+  plotted.forEach(({ model, providers }, index) => {
     const family = model.family || model.model;
     const xPosition = x(chartMetric(model, axis));
     const yPosition = y(model.overall_score);
@@ -280,10 +280,10 @@ function renderChart(models, axis) {
       class: "chart-point",
       tabindex: 0,
       role: "button",
-      "aria-label": `${formatChartName(model)} · ${model.provider || "未知运营商"}`,
+      "aria-label": `${formatChartName(model)} · ${providers.length} 个运营商，点击查看详情`,
     });
-    point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis));
-    point.addEventListener("focus", () => renderChartTooltip(host, model, axis));
+    point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis, providers));
+    point.addEventListener("focus", () => renderChartTooltip(host, model, axis, providers));
     point.addEventListener("pointerleave", () => {
       if (pinnedModel !== model) hideChartTooltip(host);
     });
@@ -292,7 +292,7 @@ function renderChart(models, axis) {
     });
     point.addEventListener("click", () => {
       pinnedModel = pinnedModel === model ? null : model;
-      if (pinnedModel) renderChartTooltip(host, model, axis);
+      if (pinnedModel) renderChartTooltip(host, model, axis, providers);
       else hideChartTooltip(host);
     });
     point.addEventListener("keydown", (event) => {
