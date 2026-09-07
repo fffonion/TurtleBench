@@ -196,6 +196,7 @@ h2 {
 }
 
 .chart-frame {
+  position: relative;
   min-height: 460px;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -252,8 +253,34 @@ h2 {
 }
 
 .chart-point {
+  cursor: pointer;
   stroke: white;
   stroke-width: 2.5;
+}
+
+.chart-tooltip {
+  position: absolute;
+  top: 20px;
+  right: 18px;
+  z-index: 5;
+  display: grid;
+  gap: 4px;
+  min-width: 190px;
+  max-width: min(280px, calc(100% - 36px));
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 8px 24px rgba(23, 59, 99, 0.14);
+  color: var(--text);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.chart-tooltip strong {
+  margin-bottom: 2px;
+  color: var(--accent);
+  font-size: 0.82rem;
 }
 
 .table-scroll {

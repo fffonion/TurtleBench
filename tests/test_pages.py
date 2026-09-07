@@ -112,7 +112,7 @@ class PublicResultTests(unittest.TestCase):
 
         self.assertEqual(result["models"][0]["behavior"]["hints_median"], 1.0)
 
-    def test_build_public_run_keeps_highest_score_for_same_model_across_providers(self):
+    def test_build_public_run_keeps_same_model_rows_for_each_provider(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = self.make_run(Path(tmp))
             base_summary = json.loads((run / "summaries" / "luna-max.json").read_text())
@@ -135,11 +135,13 @@ class PublicResultTests(unittest.TestCase):
 
             result = pages.build_public_run(run, pricing={})
 
-        self.assertEqual(len(result["models"]), 2)
+        self.assertEqual(len(result["models"]), 3)
         deepseek = [model for model in result["models"] if model["family"] == "deepseek-v4-flash"]
-        self.assertEqual(len(deepseek), 1)
-        self.assertEqual(deepseek[0]["provider"], "commandcode")
-        self.assertEqual(deepseek[0]["overall_score"], 81.6)
+        self.assertEqual(len(deepseek), 2)
+        self.assertEqual(
+            {(model["provider"], model["overall_score"]) for model in deepseek},
+            {("commandcode", 81.6), ("deepseek", 76.7)},
+        )
 
     def test_compression_time_is_removed_from_public_active_time(self):
         with tempfile.TemporaryDirectory() as temp:

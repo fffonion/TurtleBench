@@ -6,10 +6,12 @@ import {
   averageTimePerGame,
   colorForFamily,
   formatBehaviorName,
+  formatChartDetails,
   formatChartName,
   formatDuration,
   formatMoney,
   groupByFamily,
+  groupBySeries,
   splitDisplayName,
   sortRows,
 } from "../../web/assets/app.js";
@@ -60,6 +62,18 @@ test("groupByFamily orders reasoning levels for connected chart lines", () => {
   assert.equal(groups.get("deepseek-v4-flash").length, 1);
 });
 
+test("groupBySeries keeps same model providers on separate chart series", () => {
+  const groups = groupBySeries([
+    { ...rows[2], provider: "commandcode", reasoning_effort: "max" },
+    { ...rows[2], provider: "deepseek", reasoning_effort: "max" },
+  ]);
+  assert.equal(groups.size, 2);
+  assert.deepEqual(
+    [...groups.values()].map((items) => items[0].provider).sort(),
+    ["commandcode", "deepseek"],
+  );
+});
+
 test("known model families keep stable distinct colors", () => {
   assert.equal(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-luna"));
   assert.notEqual(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-sol"));
@@ -89,5 +103,16 @@ test("formatters keep resource values compact and explicit", () => {
   assert.deepEqual(splitDisplayName("OpenAI Codex / GPT-5.6 Luna"), {
     provider: "OpenAI Codex",
     model: "GPT-5.6 Luna",
+  });
+  assert.deepEqual(formatChartDetails({
+    ...rows[2],
+    name: "DeepSeek / DeepSeek V4 Flash",
+    provider: "deepseek",
+  }, "price"), {
+    provider: "deepseek",
+    model: "DeepSeek V4 Flash",
+    reasoning_effort: "max",
+    score: "68.2",
+    metric: "—",
   });
 });
