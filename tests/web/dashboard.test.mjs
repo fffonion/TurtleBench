@@ -112,14 +112,14 @@ test("language detection supports browser preference and explicit overrides", ()
   assert.equal(translate("performance"), "综合表现");
 });
 
-test("time is the default chart axis while price remains available", () => {
+test("price is the default chart axis while time remains available", () => {
   const html = readFileSync(new URL("../../web/index.html", import.meta.url), "utf8");
   assert.ok(html.includes('data-value="price"'));
-  assert.ok(html.includes('aria-pressed="false"'));
   assert.ok(html.includes('>每局平均价格</button>'));
-  assert.ok(html.includes('data-value="time" aria-pressed="true"'));
+  assert.ok(html.includes('data-value="price" aria-pressed="true"'));
+  assert.ok(html.includes('data-value="time" aria-pressed="false"'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
-  assert.ok(app.includes('let axis = "time";'));
+  assert.ok(app.includes('let axis = "price";'));
 });
 
 test("formatters keep resource values compact and explicit", () => {
