@@ -30,7 +30,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-6-astra",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 10.0,
           "output": 50.0,
@@ -74,7 +74,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
@@ -118,7 +118,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
@@ -142,8 +142,8 @@
       "reasoning_effort": "high",
       "overall_score": 87.3,
       "games": 36,
-      "active_time_s": 13798.872,
-      "compression_time_s": 0.0,
+      "active_time_s": 13527.028,
+      "compression_time_s": 271.844,
       "tokens": {
         "total": 91569947,
         "input": 10012619,
@@ -162,7 +162,7 @@
         "source": "https://models.dev",
         "source_model_id": "xai/grok-4.6",
         "source_provider_id": "xai",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 6.0,
@@ -206,7 +206,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -230,13 +230,13 @@
       "reasoning_effort": "max",
       "overall_score": 85.4,
       "games": 18,
-      "active_time_s": 7574.663,
+      "active_time_s": 5602.296,
       "compression_time_s": 0,
       "tokens": {
-        "total": 29807741,
-        "input": 1102140,
-        "output": 870209,
-        "cache_read": 27835392,
+        "total": 25550509,
+        "input": 960399,
+        "output": 811678,
+        "cache_read": 23778432,
         "cache_write": 0
       },
       "price_usd": null,
@@ -246,6 +246,33 @@
         "rounds_median": 22.5,
         "hints_median": 0.0,
         "samples": 8
+      }
+    },
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
+      "name": "kong-ai-gateway / Glm 5.3",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3",
+      "family": "GLM-5.3",
+      "reasoning_effort": "high",
+      "overall_score": 83.5,
+      "games": 18,
+      "active_time_s": 5666.095,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 64166194,
+        "input": 2076300,
+        "output": 263174,
+        "cache_read": 61826720,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 29.0,
+        "hints_median": 1,
+        "samples": 11
       }
     },
     {
@@ -277,7 +304,7 @@
         "source": "https://models.dev",
         "source_model_id": "deepseek/deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 0.14,
           "output": 0.28,
@@ -321,7 +348,7 @@
         "source": "https://models.dev",
         "source_model_id": "anthropic/claude-sonnet-5",
         "source_provider_id": "anthropic",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 10.0,
@@ -365,7 +392,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
@@ -409,7 +436,7 @@
         "source": "https://models.dev",
         "source_model_id": "deepseek/deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 0.14,
           "output": 0.28,
@@ -453,7 +480,7 @@
         "source": "https://models.dev",
         "source_model_id": "minimax/MiniMax-M3",
         "source_provider_id": "minimax-cn",
-        "fetched_at": "2026-09-08T13:52:27Z",
+        "fetched_at": "2026-09-08T13:59:51Z",
         "usd_per_million_tokens": {
           "input": 0.3,
           "output": 1.2,
@@ -474,5 +501,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-08T13:52:27Z"
+  "published_at": "2026-09-08T13:59:51Z"
 }
