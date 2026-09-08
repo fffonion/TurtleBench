@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   averageTimePerGame,
+  averagePricePerGame,
   colorForFamily,
   formatBehaviorName,
   formatChartDetails,
@@ -23,6 +24,7 @@ const rows = [
     reasoning_effort: "max",
     overall_score: 85.9,
     active_time_s: 120,
+    games: 3,
     price_usd: { total: 1.2 },
   },
   {
@@ -31,6 +33,7 @@ const rows = [
     reasoning_effort: "high",
     overall_score: 78.1,
     active_time_s: 80,
+    games: 2,
     price_usd: { total: 0.8 },
   },
   {
@@ -39,6 +42,7 @@ const rows = [
     reasoning_effort: "max",
     overall_score: 68.2,
     active_time_s: 30,
+    games: 3,
     price_usd: null,
   },
 ];
@@ -85,9 +89,22 @@ test("chart time uses the per-game average", () => {
   assert.equal(averageTimePerGame({ active_time_s: 366, games: 0 }), null);
 });
 
+test("chart price uses the per-game average", () => {
+  assert.equal(Number(averagePricePerGame({ price_usd: { total: 1.2 }, games: 3 }).toFixed(12)), 0.4);
+  assert.equal(averagePricePerGame({ price_usd: { total: 1.2 }, games: 0 }), null);
+  assert.equal(averagePricePerGame({ price_usd: null, games: 3 }), null);
+  assert.deepEqual(
+    sortRows([
+      { name: "two games", price_usd: { total: 2 }, games: 2 },
+      { name: "one game", price_usd: { total: 1.5 }, games: 1 },
+    ], "price_usd.total_per_game", "asc").map((row) => row.name),
+    ["two games", "one game"],
+  );
+});
+
 test("time is the default chart axis while price remains available", () => {
   const html = readFileSync(new URL("../../web/index.html", import.meta.url), "utf8");
-  assert.ok(html.includes('data-value="price" aria-pressed="false"'));
+  assert.ok(html.includes('data-axis data-value="price" aria-pressed="false">每局平均价格</button>'));
   assert.ok(html.includes('data-value="time" aria-pressed="true"'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "time";'));
@@ -115,8 +132,8 @@ test("formatters keep resource values compact and explicit", () => {
     model: "DeepSeek V4 Flash",
     reasoning_effort: "max",
     providers: [
-      { provider: "deepseek", score: "76.7", metric: "—", games: "—" },
-      { provider: "commandcode", score: "81.6", metric: "—", games: "—" },
+      { provider: "deepseek", score: "76.7", metric: "—", games: "3" },
+      { provider: "commandcode", score: "81.6", metric: "—", games: "3" },
     ],
   });
 });

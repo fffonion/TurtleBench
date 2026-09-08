@@ -42,11 +42,16 @@ function nestedValue(row, path) {
   return path.split(".").reduce((value, key) => value?.[key], row);
 }
 
+function sortableValue(row, key) {
+  if (key === "price_usd.total_per_game") return averagePricePerGame(row);
+  return nestedValue(row, key);
+}
+
 export function sortRows(rows, key, direction = "asc") {
   const sign = direction === "desc" ? -1 : 1;
   return [...rows].sort((left, right) => {
-    const a = nestedValue(left, key);
-    const b = nestedValue(right, key);
+    const a = sortableValue(left, key);
+    const b = sortableValue(right, key);
     if (a == null && b == null) return 0;
     if (a == null) return 1;
     if (b == null) return -1;
@@ -119,6 +124,11 @@ export function averageTimePerGame(model) {
   return model.active_time_s / model.games;
 }
 
+export function averagePricePerGame(model) {
+  if (!Number.isFinite(model.price_usd?.total) || !Number.isFinite(model.games) || model.games <= 0) return null;
+  return model.price_usd.total / model.games;
+}
+
 function formatNumber(value) {
   if (value == null || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("zh-CN").format(value);
@@ -144,7 +154,7 @@ function colorMap(models) {
 }
 
 function chartMetric(model, axis) {
-  return axis === "price" ? model.price_usd?.total : averageTimePerGame(model);
+  return axis === "price" ? averagePricePerGame(model) : averageTimePerGame(model);
 }
 
 function chartLabel(value, axis) {
@@ -184,7 +194,7 @@ function renderChartTooltip(host, row, axis, providers = [row]) {
   details.providers.forEach((provider) => {
     const line = document.createElement("span");
     line.className = "chart-tooltip-provider";
-    line.textContent = `${provider.provider || "未知"} · 综合分 ${provider.score} · ${axis === "price" ? "总价格" : "每局平均耗时"} ${provider.metric} · ${provider.games} 局`;
+    line.textContent = `${provider.provider || "未知"} · 综合分 ${provider.score} · ${axis === "price" ? "每局平均价格" : "每局平均耗时"} ${provider.metric} · ${provider.games} 局`;
     tooltip.append(line);
   });
   tooltip.hidden = false;
@@ -230,7 +240,7 @@ function renderChart(models, axis) {
   const svg = svgElement("svg", {
     viewBox: `0 0 ${width} ${height}`,
     role: "img",
-    "aria-label": `综合分与${axis === "price" ? "总价格" : "每局平均耗时"}关系图`,
+    "aria-label": `综合分与${axis === "price" ? "每局平均价格" : "每局平均耗时"}关系图`,
   });
   svg.classList.add("score-chart");
 
@@ -255,7 +265,7 @@ function renderChart(models, axis) {
   yTitle.textContent = "综合分";
   svg.append(yTitle);
   const xTitle = svgElement("text", { x: margin.left + plotWidth / 2, y: height - 16, class: "axis-title", "text-anchor": "middle" });
-  xTitle.textContent = axis === "price" ? "总价格（USD）" : "每局平均耗时";
+  xTitle.textContent = axis === "price" ? "每局平均价格（USD）" : "每局平均耗时";
   svg.append(xTitle);
 
   const colors = colorMap(models);
@@ -327,7 +337,7 @@ const RESOURCE_COLUMNS = [
   ["输出", "tokens.output", (row) => formatNumber(row.tokens.output)],
   ["Cache 读", "tokens.cache_read", (row) => formatNumber(row.tokens.cache_read)],
   ["Cache 写", "tokens.cache_write", (row) => formatNumber(row.tokens.cache_write)],
-  ["总价格", "price_usd.total", (row) => formatMoney(row.price_usd?.total)],
+  ["每局平均价格", "price_usd.total_per_game", (row) => formatMoney(averagePricePerGame(row))],
 ];
 
 const BEHAVIOR_COLUMNS = [
@@ -400,7 +410,7 @@ function renderTable(table, rows, columns, state) {
         if (key === "reasoning_effort") td.classList.add("effort-cell");
         td.textContent = formatter(row);
       }
-      if (key === "price_usd.total" && row.price_usd) {
+      if (key === "price_usd.total_per_game" && row.price_usd) {
         const detail = document.createElement("small");
         detail.className = "price-detail";
         detail.textContent = [
