@@ -24,6 +24,11 @@
     "model": "deepseek-v4-flash",
     "canonical_model": "deepseek/deepseek-v4-flash"
   },
+  "deepseek:deepseek-v4.1-flash-expires-on-0910": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "canonical_model": "deepseek/deepseek-v4-flash"
+  },
   "anthropic:claude-sonnet-5": {
     "provider": "anthropic",
     "model": "claude-sonnet-5",
