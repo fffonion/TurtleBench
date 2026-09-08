@@ -1,15 +1,6 @@
 {
-  "default_run": "random18-kong-glm-5-3-high-20260908",
+  "default_run": "baseline-luna-max-host-20260903",
   "runs": [
-    {
-      "id": "random18-kong-glm-5-3-high-20260908",
-      "title": "fixed-v1 · GLM 5.3 随机18槽位结果",
-      "file": "data/runs/random18-kong-glm-5-3-high-20260908.json",
-      "suite_version": "fixed-v1",
-      "puzzle_count": 8,
-      "repeats": 1,
-      "published_at": "2026-09-08T15:41:08Z"
-    },
     {
       "id": "baseline-luna-max-host-20260903",
       "title": "fixed-v1 综合结果（含随机18槽位补充）",
