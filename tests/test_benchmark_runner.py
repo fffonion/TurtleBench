@@ -181,7 +181,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
             [p["slug"] for p in br.PLAYER_MATRIX],
-            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
+            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-v4-1-flash-max", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
         )
 
     def test_minimax_uses_openrouter_free_route(self):
@@ -199,6 +199,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
         deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "deepseek-provider-v4-flash-max")
         self.assertEqual(deepseek["provider"], "deepseek")
         self.assertEqual(deepseek["model"], "deepseek-v4-flash")
+        self.assertEqual(deepseek["reasoning_effort"], "max")
+
+    def test_deepseek_v4_1_uses_expiring_model_route(self):
+        deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "deepseek-v4-1-flash-max")
+        self.assertEqual(deepseek["provider"], "deepseek")
+        self.assertEqual(deepseek["model"], "deepseek-v4.1-flash-expires-on-0910")
         self.assertEqual(deepseek["reasoning_effort"], "max")
 
     def test_claude_sonnet_5_uses_anthropic_high(self):
