@@ -29,6 +29,11 @@
     "model": "deepseek-v4-flash",
     "canonical_model": "deepseek/deepseek-v4-flash"
   },
+  "kong-ai-gateway:zai-org/GLM-5.3": {
+    "provider": "zai",
+    "model": "glm-5.3",
+    "canonical_model": "zai/glm-5.3"
+  },
   "anthropic:claude-sonnet-5": {
     "provider": "anthropic",
     "model": "claude-sonnet-5",
