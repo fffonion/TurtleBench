@@ -1,6 +1,15 @@
 {
-  "default_run": "baseline-luna-max-host-20260903",
+  "default_run": "random18-deepseek-v4-1-flash-20260908",
   "runs": [
+    {
+      "id": "random18-deepseek-v4-1-flash-20260908",
+      "title": "DeepSeek V4.1 Flash 随机18槽位试跑",
+      "file": "data/runs/random18-deepseek-v4-1-flash-20260908.json",
+      "suite_version": "fixed-v1",
+      "puzzle_count": 6,
+      "repeats": 1,
+      "published_at": "2026-09-08T13:14:38Z"
+    },
     {
       "id": "baseline-luna-max-host-20260903",
       "title": "2026-09-03 基准结果",
