@@ -12,36 +12,44 @@
     <header class="site-header">
       <div>
         <h1>TurtleBench</h1>
-        <p>海龟汤模型基准</p>
+        <p data-i18n="subtitle">海龟汤模型基准</p>
       </div>
       <div class="header-meta">
-        <span id="suite-meta">正在读取结果…</span>
+        <span id="suite-meta" data-i18n="loading">正在读取结果…</span>
         <label id="run-picker" hidden>
-          <span>结果批次</span>
+          <span data-i18n="resultBatch">结果批次</span>
           <select id="run-select"></select>
+        </label>
+        <label id="language-picker">
+          <span data-i18n="language">语言</span>
+          <select id="language-select" data-i18n-aria-label="language">
+            <option value="auto" data-i18n="autoLanguage">自动</option>
+            <option value="zh" data-i18n="chinese">中文</option>
+            <option value="en" data-i18n="english">English</option>
+          </select>
         </label>
       </div>
     </header>
 
     <main>
-      <p id="status" class="status" role="status">正在读取结果…</p>
+      <p id="status" class="status" role="status" data-i18n="loading">正在读取结果…</p>
 
       <section aria-labelledby="performance-title">
         <div class="section-header">
-          <h2 id="performance-title">综合表现</h2>
+          <h2 id="performance-title" data-i18n="performance">综合表现</h2>
           <div class="section-controls">
             <div class="control-group">
-              <span>视图</span>
-              <div class="segmented" aria-label="综合表现展示方式">
-                <button type="button" class="selected" data-view data-value="chart" aria-pressed="true">图表</button>
-                <button type="button" data-view data-value="table" aria-pressed="false">表格</button>
+              <span data-i18n="view">视图</span>
+              <div class="segmented" data-i18n-aria-label="viewModes">
+                <button type="button" class="selected" data-view data-value="chart" aria-pressed="true" data-i18n="chart">图表</button>
+                <button type="button" data-view data-value="table" aria-pressed="false" data-i18n="table">表格</button>
               </div>
             </div>
             <div id="axis-control" class="control-group">
-              <span>X 轴</span>
-              <div class="segmented compact" aria-label="图表横轴">
-                <button type="button" data-axis data-value="price" aria-pressed="false">每局平均价格</button>
-                <button type="button" class="selected" data-axis data-value="time" aria-pressed="true">每局平均耗时</button>
+              <span data-i18n="xAxis">X 轴</span>
+              <div class="segmented compact" data-i18n-aria-label="xAxis">
+                <button type="button" data-axis data-value="price" aria-pressed="false" data-i18n="averagePrice">每局平均价格</button>
+                <button type="button" class="selected" data-axis data-value="time" aria-pressed="true" data-i18n="averageTime">每局平均耗时</button>
               </div>
             </div>
           </div>
@@ -63,7 +71,7 @@
 
       <section class="behavior-section" aria-labelledby="behavior-title">
         <div class="section-header">
-          <h2 id="behavior-title">模型行为</h2>
+          <h2 id="behavior-title" data-i18n="behavior">模型行为</h2>
         </div>
         <div class="table-scroll">
           <table id="behavior-table">
@@ -75,7 +83,7 @@
     </main>
 
     <footer>
-      <span>价格来源：models.dev</span>
+      <span data-i18n="priceSource">价格来源：models.dev</span>
       <a href="https://github.com/fffonion/TurtleBench">GitHub</a>
     </footer>
   </body>
