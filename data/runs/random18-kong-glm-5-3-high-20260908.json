@@ -1,0 +1,38 @@
+{
+  "run_id": "random18-kong-glm-5-3-high-20260908",
+  "models": [
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
+      "name": "kong-ai-gateway / Glm 5.3",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3",
+      "family": "GLM-5.3",
+      "reasoning_effort": "high",
+      "overall_score": 83.5,
+      "games": 18,
+      "active_time_s": 5666.095,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 64166194,
+        "input": 2076300,
+        "output": 263174,
+        "cache_read": 61826720,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 29.0,
+        "hints_median": 1,
+        "samples": 11
+      }
+    }
+  ],
+  "title": "fixed-v1 · GLM 5.3 随机18槽位结果",
+  "suite_version": "fixed-v1",
+  "puzzle_count": 8,
+  "repeats": 1,
+  "started_at": "2026-09-08T11:12:10.993649+00:00",
+  "published_at": "2026-09-08T15:41:08Z"
+}
