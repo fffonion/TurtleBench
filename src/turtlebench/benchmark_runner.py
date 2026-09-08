@@ -1071,6 +1071,10 @@ async def async_main(args: argparse.Namespace) -> None:
     existing_source = meta.get("session_source", SESSION_SOURCE)
     if existing_source not in {SESSION_SOURCE, "turtle-bench"}:
         raise RuntimeError(f"run source mismatch: {existing_source} != {SESSION_SOURCE}")
+    meta["players"] = players
+    meta["repeats"] = args.repeats
+    meta["max_rounds"] = 50
+    meta["player_hint_limit"] = 2
     meta["session_source"] = SESSION_SOURCE
     meta["api_url"] = args.api_url
     meta["max_attempts_per_player"] = args.max_attempts_per_player
