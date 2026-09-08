@@ -51,6 +51,7 @@ PLAYER_MATRIX = [
     {"slug": "deepseek-provider-v4-flash-max", "display_name": "DeepSeek provider / DeepSeek V4 Flash max", "provider": "deepseek", "model": "deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "deepseek-deepseek-v4-1-flash-max", "display_name": "DeepSeek / deepseek-v4.1-flash-expires-on-0910 max", "provider": "deepseek", "model": "deepseek-v4.1-flash-expires-on-0910", "reasoning_effort": "max"},
     {"slug": "kong-ai-gateway-zai-org-glm-5-3-high", "display_name": "Kong AI Gateway / zai-org/GLM-5.3 high", "provider": "kong-ai-gateway", "model": "zai-org/GLM-5.3", "reasoning_effort": "high"},
+    {"slug": "commandcode-deepseek-v4-1-flash-beta-high", "display_name": "CommandCode / deepseek/deepseek-v4.1-flash-beta high", "provider": "commandcode", "model": "deepseek/deepseek-v4.1-flash-beta", "reasoning_effort": "high"},
     {"slug": "claude-sonnet-5-high", "display_name": "Anthropic / Claude Sonnet 5 high", "provider": "anthropic", "model": "claude-sonnet-5", "reasoning_effort": "high"},
     {"slug": "gpt-5-6-sol-high", "display_name": "OpenAI Codex / GPT-5.6 Sol high", "provider": "openai-codex", "model": "gpt-5.6-sol", "reasoning_effort": "high"},
     {"slug": "gpt-5-6-sol-medium", "display_name": "OpenAI Codex / GPT-5.6 Sol medium", "provider": "openai-codex", "model": "gpt-5.6-sol", "reasoning_effort": "medium"},
