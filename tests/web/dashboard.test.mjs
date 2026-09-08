@@ -85,12 +85,12 @@ test("chart time uses the per-game average", () => {
   assert.equal(averageTimePerGame({ active_time_s: 366, games: 0 }), null);
 });
 
-test("price is the first and default chart axis", () => {
+test("time is the default chart axis while price remains available", () => {
   const html = readFileSync(new URL("../../web/index.html", import.meta.url), "utf8");
-  const price = html.indexOf('data-value="price" aria-pressed="true"');
-  const time = html.indexOf('data-value="time" aria-pressed="false"');
-  assert.ok(price >= 0);
-  assert.ok(time > price);
+  assert.ok(html.includes('data-value="price" aria-pressed="false"'));
+  assert.ok(html.includes('data-value="time" aria-pressed="true"'));
+  const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
+  assert.ok(app.includes('let axis = "time";'));
 });
 
 test("formatters keep resource values compact and explicit", () => {

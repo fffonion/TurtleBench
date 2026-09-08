@@ -451,7 +451,7 @@ async function startDashboard() {
     if (index.runs.length > 1) document.querySelector("#run-picker").hidden = false;
 
     let data = await loadRun(runSelect.value || index.runs[0].file);
-    let axis = "price";
+    let axis = "time";
     const resourceSort = { key: "overall_score", direction: "desc" };
     const behaviorSort = { key: "overall_score", direction: "desc" };
 
