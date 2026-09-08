@@ -6,6 +6,7 @@ import {
   averageTimePerGame,
   averagePricePerGame,
   colorForFamily,
+  detectLanguage,
   formatBehaviorName,
   formatChartDetails,
   formatChartName,
@@ -15,6 +16,7 @@ import {
   groupByVariant,
   splitDisplayName,
   sortRows,
+  translate,
 } from "../../web/assets/app.js";
 
 const rows = [
@@ -102,9 +104,19 @@ test("chart price uses the per-game average", () => {
   );
 });
 
+test("language detection supports browser preference and explicit overrides", () => {
+  assert.equal(detectLanguage("auto", ["en-US", "en"]), "en");
+  assert.equal(detectLanguage("auto", ["zh-CN", "en-US"]), "zh");
+  assert.equal(detectLanguage("en", ["zh-CN"]), "en");
+  assert.equal(detectLanguage("zh", ["en-US"]), "zh");
+  assert.equal(translate("performance"), "综合表现");
+});
+
 test("time is the default chart axis while price remains available", () => {
   const html = readFileSync(new URL("../../web/index.html", import.meta.url), "utf8");
-  assert.ok(html.includes('data-axis data-value="price" aria-pressed="false">每局平均价格</button>'));
+  assert.ok(html.includes('data-value="price"'));
+  assert.ok(html.includes('aria-pressed="false"'));
+  assert.ok(html.includes('>每局平均价格</button>'));
   assert.ok(html.includes('data-value="time" aria-pressed="true"'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "time";'));

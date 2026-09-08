@@ -1,3 +1,182 @@
+const LANGUAGE_STORAGE_KEY = "turtlebench-language";
+
+const MESSAGES = {
+  zh: {
+    documentTitle: "TurtleBench · 海龟汤模型基准",
+    description: "TurtleBench 海龟汤模型基准结果",
+    subtitle: "海龟汤模型基准",
+    loading: "正在读取结果…",
+    resultBatch: "结果批次",
+    language: "语言",
+    autoLanguage: "自动",
+    chinese: "中文",
+    english: "English",
+    performance: "综合表现",
+    viewModes: "综合表现展示方式",
+    view: "视图",
+    chart: "图表",
+    table: "表格",
+    xAxis: "X 轴",
+    averagePrice: "每局平均价格",
+    averageTime: "每局平均耗时",
+    score: "综合分",
+    behavior: "模型行为",
+    puzzles: "{count} 道题",
+    repeats: "每题 {count} 局",
+    unknown: "未知",
+    priceSource: "价格来源：models.dev",
+    chartRelation: "综合分与{metric}关系图",
+    priceAxis: "每局平均价格（USD）",
+    timeAxis: "每局平均耗时",
+    priceTooltip: "每局平均价格",
+    timeTooltip: "每局平均耗时",
+    missingPrice: "当前结果缺少可计算的价格。",
+    missingTime: "当前结果缺少耗时数据。",
+    readError: "结果读取失败",
+    httpReadError: "无法读取结果（{status}）",
+    model: "模型",
+    effort: "推理等级",
+    games: "局数",
+    totalTime: "总耗时",
+    totalTokens: "总 Token",
+    inputTokens: "输入",
+    outputTokens: "输出",
+    cacheRead: "Cache 读",
+    cacheWrite: "Cache 写",
+    averagePriceColumn: "每局平均价格",
+    solveRate: "解出率",
+    roundsMedian: "轮数中位数",
+    hintsMedian: "提示数量中位数",
+    samples: "样本数",
+    inputShort: "入",
+    outputShort: "出",
+    cacheReadShort: "读",
+    cacheWriteShort: "写",
+    providers: "{count} 个运营商，点击查看详情",
+    tooltipLine: "{provider} · 综合分 {score} · {metricLabel} {metric} · {games} 局",
+    effortNone: "none",
+    effortMinimal: "minimal",
+    effortLow: "low",
+    effortMedium: "medium",
+    effortHigh: "high",
+    effortMax: "max",
+    effortXhigh: "xhigh",
+  },
+  en: {
+    documentTitle: "TurtleBench · Turtle Soup Model Benchmark",
+    description: "TurtleBench turtle soup model benchmark results",
+    subtitle: "Turtle Soup Model Benchmark",
+    loading: "Loading results…",
+    resultBatch: "Result batch",
+    language: "Language",
+    autoLanguage: "Auto",
+    chinese: "中文",
+    english: "English",
+    performance: "Overall performance",
+    viewModes: "Overall performance display mode",
+    view: "View",
+    chart: "Chart",
+    table: "Table",
+    xAxis: "X axis",
+    averagePrice: "Average price per game",
+    averageTime: "Average time per game",
+    score: "Overall score",
+    behavior: "Model behavior",
+    puzzles: "{count} puzzles",
+    repeats: "{count} games per puzzle",
+    unknown: "Unknown",
+    priceSource: "Price source: models.dev",
+    chartRelation: "Overall score vs. {metric}",
+    priceAxis: "Average price per game (USD)",
+    timeAxis: "Average time per game",
+    priceTooltip: "Average price per game",
+    timeTooltip: "Average time per game",
+    missingPrice: "No computable prices in the current results.",
+    missingTime: "No time data in the current results.",
+    readError: "Failed to read results",
+    httpReadError: "Unable to read results ({status})",
+    model: "Model",
+    effort: "Reasoning",
+    games: "Games",
+    totalTime: "Total time",
+    totalTokens: "Total tokens",
+    inputTokens: "Input",
+    outputTokens: "Output",
+    cacheRead: "Cache read",
+    cacheWrite: "Cache write",
+    averagePriceColumn: "Average price per game",
+    solveRate: "Solve rate",
+    roundsMedian: "Median rounds",
+    hintsMedian: "Median hints",
+    samples: "Samples",
+    inputShort: "in",
+    outputShort: "out",
+    cacheReadShort: "read",
+    cacheWriteShort: "write",
+    providers: "{count} provider(s), click for details",
+    tooltipLine: "{provider} · score {score} · {metricLabel} {metric} · {games} games",
+    effortNone: "none",
+    effortMinimal: "minimal",
+    effortLow: "low",
+    effortMedium: "medium",
+    effortHigh: "high",
+    effortMax: "max",
+    effortXhigh: "xhigh",
+  },
+};
+
+let currentLanguage = "zh";
+
+function interpolate(template, values = {}) {
+  return template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+}
+
+export function translate(key, values = {}) {
+  const template = MESSAGES[currentLanguage][key] ?? MESSAGES.zh[key] ?? key;
+  return interpolate(template, values);
+}
+
+export function detectLanguage(preference = "auto", languages = []) {
+  if (preference === "zh" || preference === "en") return preference;
+  const candidates = languages.length
+    ? languages
+    : (typeof navigator !== "undefined" ? navigator.languages || [navigator.language] : []);
+  return candidates.some((language) => String(language).toLowerCase().startsWith("zh")) ? "zh" : "en";
+}
+
+export function applyLanguage(language) {
+  currentLanguage = language === "zh" ? "zh" : "en";
+  if (typeof document === "undefined") return currentLanguage;
+  document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en";
+  document.title = translate("documentTitle");
+  const description = document.querySelector('meta[name="description"]');
+  if (description) description.setAttribute("content", translate("description"));
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = translate(element.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+    element.setAttribute("aria-label", translate(element.dataset.i18nAriaLabel));
+  });
+  return currentLanguage;
+}
+
+function readLanguagePreference() {
+  try {
+    const value = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return value === "zh" || value === "en" ? value : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function saveLanguagePreference(value) {
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, value);
+  } catch {
+    // Ignore storage restrictions and keep the current page language.
+  }
+}
+
 const EFFORT_ORDER = new Map([
   ["none", 0],
   ["minimal", 1],
@@ -94,6 +273,11 @@ export function formatDuration(seconds) {
   const hours = Math.floor(value / 3600);
   const minutes = Math.floor((value % 3600) / 60);
   const remainder = value % 60;
+  if (currentLanguage === "en") {
+    if (hours) return `${hours}h ${minutes}m`;
+    if (minutes) return `${minutes}m ${remainder}s`;
+    return `${remainder}s`;
+  }
   if (hours) return `${hours}时 ${minutes}分`;
   if (minutes) return `${minutes}分 ${remainder}秒`;
   return `${remainder}秒`;
@@ -112,11 +296,17 @@ export function splitDisplayName(name) {
 }
 
 export function formatBehaviorName(row) {
-  return `${row.name} · ${row.reasoning_effort}`;
+  return `${row.name} · ${formatEffort(row.reasoning_effort)}`;
 }
 
 export function formatChartName(row) {
-  return `${splitDisplayName(row.name).model} · ${row.reasoning_effort}`;
+  return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}`;
+}
+
+function formatEffort(effort) {
+  const value = String(effort ?? "");
+  const effortKey = `effort${value.replace(/^./, (letter) => letter.toUpperCase())}`;
+  return translate(effortKey) === effortKey ? value : translate(effortKey);
 }
 
 export function averageTimePerGame(model) {
@@ -131,7 +321,7 @@ export function averagePricePerGame(model) {
 
 function formatNumber(value) {
   if (value == null || !Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("zh-CN").format(value);
+  return new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "zh-CN").format(value);
 }
 
 function formatScore(value) {
@@ -194,7 +384,13 @@ function renderChartTooltip(host, row, axis, providers = [row]) {
   details.providers.forEach((provider) => {
     const line = document.createElement("span");
     line.className = "chart-tooltip-provider";
-    line.textContent = `${provider.provider || "未知"} · 综合分 ${provider.score} · ${axis === "price" ? "每局平均价格" : "每局平均耗时"} ${provider.metric} · ${provider.games} 局`;
+    line.textContent = translate("tooltipLine", {
+      provider: provider.provider || translate("unknown"),
+      score: provider.score,
+      metricLabel: axis === "price" ? translate("priceTooltip") : translate("timeTooltip"),
+      metric: provider.metric,
+      games: provider.games,
+    });
     tooltip.append(line);
   });
   tooltip.hidden = false;
@@ -218,7 +414,7 @@ function renderChart(models, axis) {
   if (!plotted.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = axis === "price" ? "当前结果缺少可计算的价格。" : "当前结果缺少耗时数据。";
+    empty.textContent = axis === "price" ? translate("missingPrice") : translate("missingTime");
     host.append(empty);
     return;
   }
@@ -240,7 +436,9 @@ function renderChart(models, axis) {
   const svg = svgElement("svg", {
     viewBox: `0 0 ${width} ${height}`,
     role: "img",
-    "aria-label": `综合分与${axis === "price" ? "每局平均价格" : "每局平均耗时"}关系图`,
+    "aria-label": translate("chartRelation", {
+      metric: axis === "price" ? translate("priceAxis") : translate("timeAxis"),
+    }),
   });
   svg.classList.add("score-chart");
 
@@ -262,10 +460,10 @@ function renderChart(models, axis) {
   }
 
   const yTitle = svgElement("text", { x: margin.left, y: 22, class: "axis-title" });
-  yTitle.textContent = "综合分";
+  yTitle.textContent = translate("score");
   svg.append(yTitle);
   const xTitle = svgElement("text", { x: margin.left + plotWidth / 2, y: height - 16, class: "axis-title", "text-anchor": "middle" });
-  xTitle.textContent = axis === "price" ? "每局平均价格（USD）" : "每局平均耗时";
+  xTitle.textContent = axis === "price" ? translate("priceAxis") : translate("timeAxis");
   svg.append(xTitle);
 
   const colors = colorMap(models);
@@ -290,7 +488,7 @@ function renderChart(models, axis) {
       class: "chart-point",
       tabindex: 0,
       role: "button",
-      "aria-label": `${formatChartName(model)} · ${providers.length} 个运营商，点击查看详情`,
+      "aria-label": `${formatChartName(model)} · ${translate("providers", { count: providers.length })}`,
     });
     point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis, providers));
     point.addEventListener("focus", () => renderChartTooltip(host, model, axis, providers));
@@ -327,26 +525,26 @@ function renderChart(models, axis) {
 }
 
 const RESOURCE_COLUMNS = [
-  ["模型", "name", (row) => row.name],
-  ["推理等级", "reasoning_effort", (row) => row.reasoning_effort],
-  ["综合分", "overall_score", (row) => formatScore(row.overall_score)],
-  ["局数", "games", (row) => formatNumber(row.games)],
-  ["总耗时", "active_time_s", (row) => formatDuration(row.active_time_s)],
-  ["总 Token", "tokens.total", (row) => formatNumber(row.tokens.total)],
-  ["输入", "tokens.input", (row) => formatNumber(row.tokens.input)],
-  ["输出", "tokens.output", (row) => formatNumber(row.tokens.output)],
-  ["Cache 读", "tokens.cache_read", (row) => formatNumber(row.tokens.cache_read)],
-  ["Cache 写", "tokens.cache_write", (row) => formatNumber(row.tokens.cache_write)],
-  ["每局平均价格", "price_usd.total_per_game", (row) => formatMoney(averagePricePerGame(row))],
+  ["model", "name", (row) => row.name],
+  ["effort", "reasoning_effort", (row) => row.reasoning_effort],
+  ["score", "overall_score", (row) => formatScore(row.overall_score)],
+  ["games", "games", (row) => formatNumber(row.games)],
+  ["totalTime", "active_time_s", (row) => formatDuration(row.active_time_s)],
+  ["totalTokens", "tokens.total", (row) => formatNumber(row.tokens.total)],
+  ["inputTokens", "tokens.input", (row) => formatNumber(row.tokens.input)],
+  ["outputTokens", "tokens.output", (row) => formatNumber(row.tokens.output)],
+  ["cacheRead", "tokens.cache_read", (row) => formatNumber(row.tokens.cache_read)],
+  ["cacheWrite", "tokens.cache_write", (row) => formatNumber(row.tokens.cache_write)],
+  ["averagePriceColumn", "price_usd.total_per_game", (row) => formatMoney(averagePricePerGame(row))],
 ];
 
 const BEHAVIOR_COLUMNS = [
-  ["名字", "name", (row) => formatBehaviorName(row)],
-  ["综合分", "overall_score", (row) => formatScore(row.overall_score)],
-  ["解出率", "behavior.solve_rate", (row) => formatPercent(row.behavior.solve_rate)],
-  ["轮数中位数", "behavior.rounds_median", (row) => formatNumber(row.behavior.rounds_median)],
-  ["提示数量中位数", "behavior.hints_median", (row) => formatNumber(row.behavior.hints_median)],
-  ["样本数", "behavior.samples", (row) => formatNumber(row.behavior.samples)],
+  ["model", "name", (row) => formatBehaviorName(row)],
+  ["score", "overall_score", (row) => formatScore(row.overall_score)],
+  ["solveRate", "behavior.solve_rate", (row) => formatPercent(row.behavior.solve_rate)],
+  ["roundsMedian", "behavior.rounds_median", (row) => formatNumber(row.behavior.rounds_median)],
+  ["hintsMedian", "behavior.hints_median", (row) => formatNumber(row.behavior.hints_median)],
+  ["samples", "behavior.samples", (row) => formatNumber(row.behavior.samples)],
 ];
 
 function renderTable(table, rows, columns, state) {
@@ -355,14 +553,14 @@ function renderTable(table, rows, columns, state) {
   headRow.replaceChildren();
   body.replaceChildren();
 
-  columns.forEach(([label, key]) => {
+  columns.forEach(([labelKey, key]) => {
     const th = document.createElement("th");
     th.scope = "col";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "sort-button";
     button.dataset.sortKey = key;
-    button.textContent = label;
+    button.textContent = translate(labelKey);
     if (state.key === key) {
       th.setAttribute("aria-sort", state.direction === "asc" ? "ascending" : "descending");
       const mark = document.createElement("span");
@@ -442,12 +640,16 @@ function bindSegmentedControl(selector, onChange) {
 
 async function loadRun(file) {
   const response = await fetch(file, { cache: "no-store" });
-  if (!response.ok) throw new Error(`无法读取结果（${response.status}）`);
+  if (!response.ok) throw new Error(translate("httpReadError", { status: response.status }));
   return response.json();
 }
 
 async function startDashboard() {
   const status = document.querySelector("#status");
+  const languageSelect = document.querySelector("#language-select");
+  const languagePreference = readLanguagePreference();
+  languageSelect.value = languagePreference;
+  applyLanguage(detectLanguage(languagePreference));
   try {
     const index = await loadRun("data/index.json");
     const runSelect = document.querySelector("#run-select");
@@ -468,8 +670,8 @@ async function startDashboard() {
     const render = () => {
       document.querySelector("#suite-meta").textContent = [
         data.suite_version,
-        `${data.puzzle_count} 道题`,
-        `每题 ${data.repeats} 局`,
+        translate("puzzles", { count: data.puzzle_count }),
+        translate("repeats", { count: data.repeats }),
       ].filter(Boolean).join(" · ");
       renderChart(data.models, axis);
       renderTable(
@@ -497,9 +699,14 @@ async function startDashboard() {
       axis = value;
       renderChart(data.models, axis);
     });
+    languageSelect.addEventListener("change", () => {
+      saveLanguagePreference(languageSelect.value);
+      applyLanguage(detectLanguage(languageSelect.value));
+      render();
+    });
     runSelect.addEventListener("change", async () => {
       status.hidden = false;
-      status.textContent = "正在读取结果…";
+      status.textContent = translate("loading");
       data = await loadRun(runSelect.value);
       render();
     });
@@ -507,7 +714,7 @@ async function startDashboard() {
   } catch (error) {
     status.hidden = false;
     status.classList.add("error");
-    status.textContent = error instanceof Error ? error.message : "结果读取失败";
+    status.textContent = error instanceof Error ? error.message : translate("readError");
   }
 }
 

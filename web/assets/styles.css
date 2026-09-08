@@ -82,6 +82,7 @@ h1 {
 .header-meta {
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 24px;
   color: var(--muted);
   font-size: 0.86rem;
@@ -97,6 +98,15 @@ h1 {
 }
 
 #run-picker span {
+  font-size: 0.72rem;
+}
+
+#language-picker {
+  display: grid;
+  gap: 5px;
+}
+
+#language-picker span {
   font-size: 0.72rem;
 }
 
