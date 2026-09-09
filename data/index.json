@@ -3,7 +3,7 @@
   "runs": [
     {
       "id": "fixed-v1-comparison-20260909",
-      "title": "fixed-v1 · 统一比较（全部历史模型 + 当前结果）",
+      "title": "fixed-v1 · 统一比较（全部模型）",
       "file": "data/runs/fixed-v1-comparison-20260909.json",
       "suite_version": "fixed-v1",
       "puzzle_count": 12,
