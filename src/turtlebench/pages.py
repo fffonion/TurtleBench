@@ -294,8 +294,11 @@ def prepare_public_run(
     run_path = Path(run_dir)
     summary = _read_json(run_path / "summary.json")
     metadata = summary.get("run", {})
-    if not isinstance(metadata, dict) or metadata.get("status") != "completed":
-        raise ValueError("only completed benchmark runs can be published")
+    status = metadata.get("status") if isinstance(metadata, dict) else None
+    partial = bool(metadata.get("partial")) if isinstance(metadata, dict) else False
+    publishable_partial = status == "stopped" and partial
+    if status != "completed" and not publishable_partial:
+        raise ValueError("only completed benchmark runs or explicitly stopped partial runs can be published")
 
     pricing: dict[str, Any] = {}
     puzzle_ids: set[str] = set()
@@ -327,6 +330,9 @@ def prepare_public_run(
     public.update(
         {
             "title": run_path.name,
+            "status": status,
+            "partial": partial,
+            "stop_reason": metadata.get("stop_reason"),
             "suite_version": metadata.get("suite_version"),
             "puzzle_count": len(puzzle_ids),
             "repeats": metadata.get("repeats"),

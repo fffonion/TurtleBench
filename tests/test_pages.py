@@ -468,6 +468,28 @@ class SiteBuildTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pages.prepare_public_run(run, {}, {}, "2026-09-05T00:00:00Z")
 
+    def test_prepare_public_run_marks_operator_stopped_partial_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = PublicResultTests().make_run(Path(tmp))
+            (run / "summary.json").write_text(
+                json.dumps({
+                    "run": {
+                        "status": "stopped",
+                        "partial": True,
+                        "suite_version": "fixed-v1",
+                        "repeats": 3,
+                        "started_at": "2026-09-05T00:00:00Z",
+                        "stop_reason": "operator_requested",
+                    }
+                }),
+                encoding="utf-8",
+            )
+            result = pages.prepare_public_run(run, {}, {}, "2026-09-05T00:00:00Z")
+
+        self.assertEqual(result["status"], "stopped")
+        self.assertTrue(result["partial"])
+        self.assertEqual(result["stop_reason"], "operator_requested")
+
     def test_page_cli_has_build_and_publish_commands(self):
         parser = pages.build_parser()
         build = parser.parse_args(["build", "--run-dir", "/tmp/run", "--output", "/tmp/site"])
