@@ -1,0 +1,58 @@
+{
+  "run_id": "matrix36-deepseek-v4-1-flash-max-20260909",
+  "models": [
+    {
+      "slug": "deepseek-deepseek-v4-1-flash-max",
+      "name": "DeepSeek / DeepSeek V4.1 Flash Expires On 0910",
+      "provider": "deepseek",
+      "model": "deepseek-v4.1-flash-expires-on-0910",
+      "family": "deepseek-v4.1-flash-expires-on-0910",
+      "reasoning_effort": "max",
+      "overall_score": 81.5,
+      "games": 29,
+      "active_time_s": 8205.397,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 53984549,
+        "input": 956126,
+        "output": 1367111,
+        "cache_read": 51661312,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.13385764,
+        "output": 0.38279108,
+        "cache_read": 0.1446516736,
+        "cache_write": 0.0,
+        "total": 0.6613003936
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-09T05:33:40Z",
+        "usd_per_million_tokens": {
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.897,
+        "rounds_median": 24.0,
+        "hints_median": 0,
+        "samples": 29
+      }
+    }
+  ],
+  "title": "fixed-v1 · DeepSeek provider 29/36 局（已停止）",
+  "status": "stopped",
+  "partial": true,
+  "stop_reason": "operator_requested",
+  "suite_version": "fixed-v1",
+  "puzzle_count": 12,
+  "repeats": 3,
+  "started_at": "2026-09-09T01:24:33.271905+00:00",
+  "published_at": "2026-09-09T05:33:40Z"
+}
