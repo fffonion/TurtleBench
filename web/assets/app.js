@@ -48,6 +48,7 @@ const MESSAGES = {
     roundsMedian: "轮数中位数",
     hintsMedian: "提示数量中位数",
     samples: "样本数",
+    pendingJudge: "待评分",
     inputShort: "入",
     outputShort: "出",
     cacheReadShort: "读",
@@ -109,6 +110,7 @@ const MESSAGES = {
     roundsMedian: "Median rounds",
     hintsMedian: "Median hints",
     samples: "Samples",
+    pendingJudge: "Pending judge",
     inputShort: "in",
     outputShort: "out",
     cacheReadShort: "read",
@@ -296,11 +298,13 @@ export function splitDisplayName(name) {
 }
 
 export function formatBehaviorName(row) {
-  return `${row.name} · ${formatEffort(row.reasoning_effort)}`;
+  const status = row.score_status === "pending_judge" ? ` · ${translate("pendingJudge")}` : "";
+  return `${row.name} · ${formatEffort(row.reasoning_effort)}${status}`;
 }
 
 export function formatChartName(row) {
-  return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}`;
+  const status = row.score_status === "pending_judge" ? ` · ${translate("pendingJudge")}` : "";
+  return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}${status}`;
 }
 
 function formatEffort(effort) {
@@ -345,6 +349,10 @@ function colorMap(models) {
 
 function chartMetric(model, axis) {
   return axis === "price" ? averagePricePerGame(model) : averageTimePerGame(model);
+}
+
+export function isPlottable(model, axis) {
+  return Number.isFinite(model.overall_score) && Number.isFinite(chartMetric(model, axis));
 }
 
 function chartLabel(value, axis) {
@@ -404,7 +412,7 @@ function hideChartTooltip(host) {
 function renderChart(models, axis) {
   const host = document.querySelector("#chart");
   host.replaceChildren();
-  const candidates = models.filter((model) => Number.isFinite(chartMetric(model, axis)));
+  const candidates = models.filter((model) => isPlottable(model, axis));
   const plotted = [...groupByVariant(candidates).values()].map((providers) => ({
     model: providers.reduce((highest, row) => (
       row.overall_score > highest.overall_score ? row : highest

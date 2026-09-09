@@ -14,6 +14,7 @@ import {
   formatMoney,
   groupByFamily,
   groupByVariant,
+  isPlottable,
   splitDisplayName,
   sortRows,
   translate,
@@ -148,4 +149,19 @@ test("formatters keep resource values compact and explicit", () => {
       { provider: "commandcode", score: "81.6", metric: "—", games: "3" },
     ],
   });
+});
+
+test("partial unjudged rows are labeled and excluded from the score chart", () => {
+  const partial = {
+    ...rows[0],
+    overall_score: null,
+    score_status: "pending_judge",
+  };
+  assert.equal(formatBehaviorName(partial), "Luna · max · 待评分");
+  assert.equal(formatChartName({
+    ...partial,
+    name: "OpenAI Codex / GPT-5.6 Luna",
+  }), "GPT-5.6 Luna · max · 待评分");
+  assert.equal(isPlottable(partial, "price"), false);
+  assert.equal(isPlottable(rows[0], "price"), true);
 });
