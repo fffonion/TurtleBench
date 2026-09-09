@@ -1,6 +1,15 @@
 {
-  "default_run": "matrix36-deepseek-v4-1-flash-max-20260909",
+  "default_run": "matrix36-kong-glm-5-3-high-20260909",
   "runs": [
+    {
+      "id": "matrix36-kong-glm-5-3-high-20260909",
+      "title": "fixed-v1 · GLM 5.3 完整36局",
+      "file": "data/runs/matrix36-kong-glm-5-3-high-20260909.json",
+      "suite_version": "fixed-v1",
+      "puzzle_count": 12,
+      "repeats": 3,
+      "published_at": "2026-09-09T07:17:57Z"
+    },
     {
       "id": "matrix36-deepseek-v4-1-flash-max-20260909",
       "title": "fixed-v1 · DeepSeek provider 29/36 局（已停止）",
