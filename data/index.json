@@ -1,23 +1,14 @@
 {
-  "default_run": "matrix36-kong-glm-5-3-high-20260909",
+  "default_run": "fixed-v1-comparison-20260909",
   "runs": [
     {
-      "id": "matrix36-kong-glm-5-3-high-20260909",
-      "title": "fixed-v1 · GLM 5.3 完整36局",
-      "file": "data/runs/matrix36-kong-glm-5-3-high-20260909.json",
+      "id": "fixed-v1-comparison-20260909",
+      "title": "fixed-v1 · 统一比较（GLM 5.3 + DeepSeek provider）",
+      "file": "data/runs/fixed-v1-comparison-20260909.json",
       "suite_version": "fixed-v1",
       "puzzle_count": 12,
       "repeats": 3,
-      "published_at": "2026-09-09T07:17:57Z"
-    },
-    {
-      "id": "matrix36-deepseek-v4-1-flash-max-20260909",
-      "title": "fixed-v1 · DeepSeek provider 29/36 局（已停止）",
-      "file": "data/runs/matrix36-deepseek-v4-1-flash-max-20260909.json",
-      "suite_version": "fixed-v1",
-      "puzzle_count": 12,
-      "repeats": 3,
-      "published_at": "2026-09-09T05:33:40Z"
+      "published_at": "2026-09-09T08:09:47Z"
     },
     {
       "id": "baseline-luna-max-host-20260903",
