@@ -8,16 +8,7 @@
       "suite_version": "fixed-v1",
       "puzzle_count": 12,
       "repeats": 3,
-      "published_at": "2026-09-09T08:09:47Z"
-    },
-    {
-      "id": "baseline-luna-max-host-20260903",
-      "title": "fixed-v1 综合结果（含随机18槽位补充）",
-      "file": "data/runs/baseline-luna-max-host-20260903.json",
-      "suite_version": "fixed-v1",
-      "puzzle_count": 12,
-      "repeats": 3,
-      "published_at": "2026-09-08T15:05:47Z"
+      "published_at": "2026-09-09T08:13:37Z"
     }
   ]
 }

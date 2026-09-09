@@ -30,7 +30,7 @@
         "source": "https://models.dev",
         "source_model_id": "zai/glm-5.3",
         "source_provider_id": "zai",
-        "fetched_at": "2026-09-09T08:09:47Z",
+        "fetched_at": "2026-09-09T08:13:37Z",
         "usd_per_million_tokens": {
           "input": 1.4,
           "output": 4.4,
@@ -77,7 +77,7 @@
         "source": "https://models.dev",
         "source_model_id": "deepseek/deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-09T08:09:47Z",
+        "fetched_at": "2026-09-09T08:13:37Z",
         "usd_per_million_tokens": {
           "input": 0.14,
           "output": 0.28,
@@ -104,5 +104,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-09T08:09:47Z"
+  "published_at": "2026-09-09T08:13:37Z"
 }
