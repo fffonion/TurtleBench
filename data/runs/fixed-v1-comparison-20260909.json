@@ -576,21 +576,77 @@
       "partial": false,
       "stop_reason": null,
       "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
+      "name": "kong-ai-gateway / Glm 5.3 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3-Flash",
+      "family": "GLM-5.3-Flash",
+      "reasoning_effort": "high",
+      "overall_score": null,
+      "games": 31,
+      "active_time_s": 8451.692,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "input": 6842757,
+        "output": 374136,
+        "cache_read": 140609280,
+        "cache_write": 0,
+        "total": 147826173
+      },
+      "price_usd": {
+        "input": 0.513206775,
+        "output": 0.093534,
+        "cache_read": 2.1091392,
+        "cache_write": 0.0,
+        "total": 2.715879975
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "zai/glm-5.3-flash",
+        "source_provider_id": "zai",
+        "fetched_at": "2026-09-09T15:55:24Z",
+        "usd_per_million_tokens": {
+          "input": 0.075,
+          "output": 0.25,
+          "cache_read": 0.015,
+          "cache_write": 0.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.581,
+        "rounds_median": 50.0,
+        "hints_median": 0.0,
+        "samples": 31
+      },
+      "status": "stopped",
+      "partial": true,
+      "stop_reason": "operator_requested_before_judging",
+      "score_status": "pending_judge",
+      "observed_status_counts": {
+        "error": 3,
+        "max_rounds": 9,
+        "solved": 18,
+        "stopped": 1
+      },
+      "source_record": "matrix36-kong-glm-5-3-flash-high-20260909"
     }
   ],
-  "title": "fixed-v1 · 统一比较（全部模型）",
+  "title": "fixed-v1 · 统一比较（全部模型，Flash 31 局待评分）",
   "status": "stopped",
   "partial": true,
-  "stop_reason": "operator_requested",
+  "stop_reason": "operator_requested_before_judging",
   "suite_version": "fixed-v1",
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-09T08:13:37Z",
+  "published_at": "2026-09-09T15:55:24Z",
   "source_records": [
     "baseline-luna-max-host-20260903",
     "matrix36-kong-glm-5-3-high-20260909",
-    "matrix36-deepseek-v4-1-flash-max-20260909"
+    "matrix36-deepseek-v4-1-flash-max-20260909",
+    "matrix36-kong-glm-5-3-flash-high-20260909"
   ],
   "deduplicated_records": [
     {
@@ -619,5 +675,8 @@
       ],
       "kept_games": 36
     }
+  ],
+  "partial_models": [
+    "kong-ai-gateway-zai-org-glm-5-3-flash-high"
   ]
 }
