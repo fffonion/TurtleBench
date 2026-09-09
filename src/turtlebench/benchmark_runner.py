@@ -233,7 +233,11 @@ class HermesApiClient:
             raise HermesApiError(None, "Hermes API run response omitted run_id")
         run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
         while time.monotonic() < deadline:
-            status = self._request("GET", run_path)
+            try:
+                status = self._request("GET", run_path)
+            except TimeoutError:
+                time.sleep(min(self.poll_interval, max(0.0, deadline - time.monotonic())))
+                continue
             state = str(status.get("status", ""))
             if state == "completed":
                 output = str(status.get("output", "")).strip()

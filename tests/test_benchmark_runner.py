@@ -351,6 +351,47 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(result.usage["input_tokens"], 12)
         self.assertEqual(result.usage["reasoning_tokens"], 3)
 
+    def test_api_client_retries_transient_poll_timeout(self):
+        state = {"session_exists": False, "polls": 0}
+        client = br.HermesApiClient("http://api", "secret", poll_interval=0.001)
+
+        def request(method, path, payload=None, expected=(200,)):
+            if path == "api/sessions/tb-session-timeout":
+                if not state["session_exists"]:
+                    raise br.HermesApiError(404, "missing")
+                calls = 2 if state["polls"] else 1
+                return {"session": {
+                    "provider": "provider-a", "model": "model-a",
+                    "api_call_count": calls, "input_tokens": 20 * calls,
+                    "output_tokens": 5 * calls, "cache_read_tokens": 3 * calls,
+                    "cache_write_tokens": 0, "reasoning_tokens": 2 * calls,
+                }}
+            if path == "api/sessions":
+                state["session_exists"] = True
+                return {}
+            if path == "api/sessions/tb-session-timeout/messages":
+                return {"data": []}
+            if path == "v1/toolsets":
+                return {"data": [{"name": name} for name in ("terminal", "file")]}
+            if path == "v1/runs":
+                return {"run_id": "run-timeout"}
+            if path == "v1/runs/run-timeout":
+                state["polls"] += 1
+                if state["polls"] == 1:
+                    raise TimeoutError("transient socket timeout")
+                return {"status": "completed", "output": "role completed"}
+            raise AssertionError(f"unexpected request: {method} {path}")
+
+        with mock.patch.object(client, "_request", side_effect=request):
+            result = client.turn(
+                session_id="tb-session-timeout", session_title="TurtleBench role",
+                provider="provider-a", model="model-a", reasoning="high",
+                prompt="run role", timeout_s=2,
+            )
+
+        self.assertEqual(result.output, "role completed")
+        self.assertEqual(state["polls"], 2)
+
     def test_api_sessions_keep_turtle_soup_source(self):
         self.assertEqual(br.SESSION_SOURCE, "turtle-soup")
 
