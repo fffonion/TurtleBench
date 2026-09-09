@@ -825,6 +825,11 @@ def finalize_scores(run_dir: Path, player: dict[str, str], manifest: dict[str, A
         judged = {int(x["trial"]): x for x in load_json(root / "judge.json")}
         for trial in (1, 2, 3):
             td = root / f"trial-{trial:02d}"
+            score_path = td / "score.json"
+            existing_score = load_json(score_path) if score_path.exists() else None
+            if is_completed_score(score_path) and isinstance(existing_score, dict) and existing_score.get("validity") == "valid":
+                scores.append(existing_score)
+                continue
             pre = load_json(td / "preliminary.json")
             raw = pre["raw"] | {k: judged[trial][k] for k in (
                 "atomic_question_rate", "useful_constraint_rate", "redundant_question_rate",

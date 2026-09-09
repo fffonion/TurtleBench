@@ -426,6 +426,33 @@ class BenchmarkRunnerTests(unittest.TestCase):
             score.write_text(json.dumps({"validity": "pending", "status": "running"}), encoding="utf-8")
             self.assertFalse(br.is_completed_score(score))
 
+    def test_finalize_preserves_existing_valid_score(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td) / "run"
+            player = {"slug": "model-a", "provider": "provider", "model": "model", "reasoning_effort": "high"}
+            puzzle = {"id": "P1", "path": "P1.json", "difficulty": "简单"}
+            root = run_dir / "games" / player["slug"] / puzzle["id"]
+            raw = {"rounds": 1, "hints_used": 0, "player_latency_p50_s": 1, "player_latency_p90_s": 1, "player_active_time_s": 1}
+            pre = {"player": player, "status": "solved", "raw": raw, "process_exit": {"host": 0, "player": 0}}
+            for trial in (1, 2, 3):
+                td_trial = root / f"trial-{trial:02d}"
+                td_trial.mkdir(parents=True)
+                (td_trial / "preliminary.json").write_text(json.dumps(pre), encoding="utf-8")
+            existing = {"puzzle_id": "P1", "trial": 1, "validity": "valid", "status": "solved", "sentinel": "preserve-me"}
+            (root / "trial-01" / "score.json").write_text(json.dumps(existing), encoding="utf-8")
+            judge_item = {"trial": trial, "validity": "valid", "atomic_question_rate": 1, "useful_constraint_rate": 1,
+                          "redundant_question_rate": 0, "unsupported_story_guess_rate": 0, "irrelevant_branch_max": 0,
+                          "contradiction_count": 0, "partial_misread_count": 0, "excluded_revisit_count": 0,
+                          "protocol_recovery_failure_count": 0, "reasoning_chain_parts": {"a": 1},
+                          "question_information_parts": {"a": 1}, "final_closure": 5, "hint_effective_count": 0,
+                          "hint_ineffective_count": 0, "hint_early_count": 0, "hint_consecutive": False,
+                          "hint_hoarding": False, "failure_tags": [], "notes": []}
+            (root / "judge.json").write_text(json.dumps([judge_item | {"trial": trial} for trial in (1, 2, 3)]), encoding="utf-8")
+
+            scores = br.finalize_scores(run_dir, player, {"puzzles": [puzzle]})
+
+            self.assertEqual(next(s for s in scores if s["trial"] == 1), existing)
+
     def test_archive_invalid_trials_preserves_valid_trials(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td) / "run"
