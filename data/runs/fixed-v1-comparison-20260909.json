@@ -2,6 +2,390 @@
   "run_id": "fixed-v1-comparison-20260909",
   "models": [
     {
+      "slug": "gpt-6-astra-high",
+      "name": "OpenAI Codex / GPT-6 Astra",
+      "provider": "openai-codex",
+      "model": "gpt-6-astra",
+      "family": "gpt-6-astra",
+      "reasoning_effort": "high",
+      "overall_score": 92.4,
+      "games": 36,
+      "active_time_s": 7308.006,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 6947090,
+        "input": 816786,
+        "output": 104832,
+        "cache_read": 6025472,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 8.16786,
+        "output": 5.2416,
+        "cache_read": 6.025472,
+        "cache_write": 0.0,
+        "total": 19.434932
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-6-astra",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 10.0,
+          "output": 50.0,
+          "cache_read": 1.0,
+          "cache_write": 12.5
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.972,
+        "rounds_median": 8.5,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "gpt-5-6-sol-high",
+      "name": "OpenAI Codex / GPT-5.6 Sol",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "family": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "overall_score": 91.5,
+      "games": 36,
+      "active_time_s": 7174.339,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 46308088,
+        "input": 3113020,
+        "output": 248764,
+        "cache_read": 42946304,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 12.45208,
+        "output": 4.97528,
+        "cache_read": 17.1785216,
+        "cache_write": 0.0,
+        "total": 34.6058816
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-sol",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 4.0,
+          "output": 20.0,
+          "cache_read": 0.4,
+          "cache_write": 5.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.944,
+        "rounds_median": 13.0,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "gpt-5-6-sol-medium",
+      "name": "OpenAI Codex / GPT-5.6 Sol",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "family": "gpt-5.6-sol",
+      "reasoning_effort": "medium",
+      "overall_score": 89.5,
+      "games": 36,
+      "active_time_s": 10869.57,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 24139186,
+        "input": 2335929,
+        "output": 196473,
+        "cache_read": 21606784,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 9.343716,
+        "output": 3.92946,
+        "cache_read": 8.6427136,
+        "cache_write": 0.0,
+        "total": 21.9158896
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-sol",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 4.0,
+          "output": 20.0,
+          "cache_read": 0.4,
+          "cache_write": 5.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.944,
+        "rounds_median": 13.0,
+        "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "grok-4-6-high",
+      "name": "xAI / Grok 4.6",
+      "provider": "xai-oauth",
+      "model": "grok-4.6",
+      "family": "grok-4.6",
+      "reasoning_effort": "high",
+      "overall_score": 87.3,
+      "games": 36,
+      "active_time_s": 13798.872,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 91569947,
+        "input": 10012619,
+        "output": 637264,
+        "cache_read": 80920064,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 20.025238,
+        "output": 3.823584,
+        "cache_read": 40.460032,
+        "cache_write": 0.0,
+        "total": 64.308854
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "xai/grok-4.6",
+        "source_provider_id": "xai",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 6.0,
+          "cache_read": 0.5,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.944,
+        "rounds_median": 24.0,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "luna-max",
+      "name": "OpenAI Codex / GPT-5.6 Luna",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "family": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "overall_score": 85.9,
+      "games": 36,
+      "active_time_s": 15966.958,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 99964085,
+        "input": 5887689,
+        "output": 639468,
+        "cache_read": 93436928,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.1775378,
+        "output": 0.7673616,
+        "cache_read": 1.86873856,
+        "cache_write": 0.0,
+        "total": 3.81363796
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-luna",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 0.2,
+          "output": 1.2,
+          "cache_read": 0.02,
+          "cache_write": 0.25
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.861,
+        "rounds_median": 22.0,
+        "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "deepseek-deepseek-v4-1-flash-max",
+      "name": "DeepSeek / DeepSeek V4.1 Flash Expires On 0910",
+      "provider": "deepseek",
+      "model": "deepseek-v4.1-flash-expires-on-0910",
+      "family": "deepseek-v4.1-flash-expires-on-0910",
+      "reasoning_effort": "max",
+      "overall_score": 85.4,
+      "games": 18,
+      "active_time_s": 5602.296,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 25550509,
+        "input": 960399,
+        "output": 811678,
+        "cache_read": 23778432,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.13445586,
+        "output": 0.22726984,
+        "cache_read": 0.0665796096,
+        "cache_write": 0.0,
+        "total": 0.4283053096
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 22.5,
+        "hints_median": 0.0,
+        "samples": 8
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
+      "name": "kong-ai-gateway / Glm 5.3",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3",
+      "family": "GLM-5.3",
+      "reasoning_effort": "high",
+      "overall_score": 83.5,
+      "games": 18,
+      "active_time_s": 5666.095,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 64166194,
+        "input": 2076300,
+        "output": 263174,
+        "cache_read": 61826720,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 2.90682,
+        "output": 1.1579656,
+        "cache_read": 16.0749472,
+        "cache_write": 0.0,
+        "total": 20.1397328
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "zai/glm-5.3",
+        "source_provider_id": "zai",
+        "fetched_at": "2026-09-08T16:05:17Z",
+        "usd_per_million_tokens": {
+          "input": 1.4,
+          "output": 4.4,
+          "cache_read": 0.26,
+          "cache_write": 0.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 29.0,
+        "hints_median": 1,
+        "samples": 11
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "deepseek-provider-v4-flash-max",
+      "name": "DeepSeek / DeepSeek V4 Flash",
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "family": "deepseek-v4-flash",
+      "reasoning_effort": "max",
+      "overall_score": 81.6,
+      "games": 36,
+      "active_time_s": 19793.901,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 192904081,
+        "input": 4001360,
+        "output": 2135873,
+        "cache_read": 186766848,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.5601904,
+        "output": 0.59804444,
+        "cache_read": 0.5229471744,
+        "cache_write": 0.0,
+        "total": 1.6811820144
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.88,
+        "rounds_median": 21.0,
+        "hints_median": 1,
+        "samples": 25
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
       "name": "kong-ai-gateway / Glm 5.3",
       "provider": "kong-ai-gateway",
@@ -46,7 +430,8 @@
       },
       "status": "completed",
       "partial": false,
-      "stop_reason": null
+      "stop_reason": null,
+      "source_record": "matrix36-current"
     },
     {
       "slug": "deepseek-deepseek-v4-1-flash-max",
@@ -93,10 +478,203 @@
       },
       "status": "stopped",
       "partial": true,
-      "stop_reason": "operator_requested"
+      "stop_reason": "operator_requested",
+      "source_record": "matrix36-current"
+    },
+    {
+      "slug": "claude-sonnet-5-high",
+      "name": "Anthropic / Claude Sonnet 5",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "family": "claude-sonnet-5",
+      "reasoning_effort": "high",
+      "overall_score": 79.6,
+      "games": 34,
+      "active_time_s": 28167.876,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 144175446,
+        "input": 3834,
+        "output": 2280214,
+        "cache_read": 131359909,
+        "cache_write": 10531489
+      },
+      "price_usd": {
+        "input": 0.007668,
+        "output": 22.80214,
+        "cache_read": 26.2719818,
+        "cache_write": 26.3287225,
+        "total": 75.4105123
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "anthropic/claude-sonnet-5",
+        "source_provider_id": "anthropic",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 10.0,
+          "cache_read": 0.2,
+          "cache_write": 2.5
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.912,
+        "rounds_median": 22.5,
+        "hints_median": 1.0,
+        "samples": 34
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "luna-high",
+      "name": "OpenAI Codex / GPT-5.6 Luna",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "family": "gpt-5.6-luna",
+      "reasoning_effort": "high",
+      "overall_score": 79.0,
+      "games": 36,
+      "active_time_s": 15798.465,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 127926187,
+        "input": 6792776,
+        "output": 534883,
+        "cache_read": 120598528,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.3585552,
+        "output": 0.6418596,
+        "cache_read": 2.41197056,
+        "cache_write": 0.0,
+        "total": 4.41238536
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-5.6-luna",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 0.2,
+          "output": 1.2,
+          "cache_read": 0.02,
+          "cache_write": 0.25
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.806,
+        "rounds_median": 25.0,
+        "hints_median": 2.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "deepseek-v4-flash-max",
+      "name": "CommandCode / DeepSeek V4 Flash",
+      "provider": "commandcode",
+      "model": "deepseek-ai/deepseek-v4-flash",
+      "family": "deepseek-v4-flash",
+      "reasoning_effort": "max",
+      "overall_score": 76.7,
+      "games": 36,
+      "active_time_s": 19180.621,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 109631408,
+        "input": 5518156,
+        "output": 1693412,
+        "cache_read": 102419840,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.77254184,
+        "output": 0.47415536,
+        "cache_read": 0.286775552,
+        "cache_write": 0.0,
+        "total": 1.533472752
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.806,
+        "rounds_median": 27.0,
+        "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
+    },
+    {
+      "slug": "minimax-m3-max",
+      "name": "OpenRouter / MiniMax M3",
+      "provider": "openrouter",
+      "model": "minimax/minimax-m3:free",
+      "family": "minimax-m3:free",
+      "reasoning_effort": "max",
+      "overall_score": 59.3,
+      "games": 36,
+      "active_time_s": 11517.241,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 100273460,
+        "input": 3050999,
+        "output": 297663,
+        "cache_read": 96924798,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.9152997,
+        "output": 0.3571956,
+        "cache_read": 5.81548788,
+        "cache_write": 0.0,
+        "total": 7.08798318
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "minimax/MiniMax-M3",
+        "source_provider_id": "minimax-cn",
+        "fetched_at": "2026-09-08T15:05:47Z",
+        "usd_per_million_tokens": {
+          "input": 0.3,
+          "output": 1.2,
+          "cache_read": 0.06,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.522,
+        "rounds_median": 40.0,
+        "hints_median": 1,
+        "samples": 23
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null,
+      "source_record": "baseline-luna-max-host-20260903"
     }
   ],
-  "title": "fixed-v1 · 统一比较（GLM 5.3 + DeepSeek provider）",
+  "title": "fixed-v1 · 统一比较（全部历史模型 + 当前结果）",
   "status": "stopped",
   "partial": true,
   "stop_reason": "operator_requested",
@@ -104,5 +682,10 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-09T08:13:37Z"
+  "published_at": "2026-09-09T08:13:37Z",
+  "source_records": [
+    "baseline-luna-max-host-20260903",
+    "matrix36-kong-glm-5-3-high-20260909",
+    "matrix36-deepseek-v4-1-flash-max-20260909"
+  ]
 }
