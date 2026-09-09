@@ -490,14 +490,94 @@ class SiteBuildTests(unittest.TestCase):
         self.assertTrue(result["partial"])
         self.assertEqual(result["stop_reason"], "operator_requested")
 
+    def test_prepare_public_batch_merges_runs_and_marks_partial_models(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            completed = PublicResultTests().make_run(root / "completed")
+            stopped = PublicResultTests().make_run(root / "stopped")
+            stopped_summary_path = stopped / "summaries" / "luna-max.json"
+            stopped_summary = json.loads(stopped_summary_path.read_text())
+            stopped_summary["player"] = {
+                "slug": "model-b",
+                "display_name": "Model B",
+                "provider": "commandcode",
+                "model": "deepseek/model-b",
+                "reasoning_effort": "high",
+            }
+            stopped_summary_path.write_text(json.dumps(stopped_summary), encoding="utf-8")
+            (stopped / "games" / "luna-max").rename(stopped / "games" / "model-b")
+            (completed / "summary.json").write_text(
+                json.dumps({
+                    "run": {
+                        "status": "completed",
+                        "suite_version": "fixed-v1",
+                        "repeats": 3,
+                        "started_at": "2026-09-05T00:00:00Z",
+                    }
+                }),
+                encoding="utf-8",
+            )
+            (stopped / "summary.json").write_text(
+                json.dumps({
+                    "run": {
+                        "status": "stopped",
+                        "partial": True,
+                        "suite_version": "fixed-v1",
+                        "repeats": 3,
+                        "started_at": "2026-09-05T01:00:00Z",
+                        "stop_reason": "operator_requested",
+                    }
+                }),
+                encoding="utf-8",
+            )
+
+            result = pages.prepare_public_batch(
+                [completed, stopped], {}, {}, "2026-09-05T02:00:00Z",
+                batch_id="merged-run", title="fixed-v1 merged",
+            )
+
+        self.assertEqual(result["run_id"], "merged-run")
+        self.assertEqual(result["title"], "fixed-v1 merged")
+        self.assertEqual(result["status"], "stopped")
+        self.assertTrue(result["partial"])
+        self.assertEqual({model["slug"] for model in result["models"]}, {"luna-max", "model-b"})
+        self.assertEqual(
+            {model["slug"]: (model["status"], model["partial"]) for model in result["models"]},
+            {"luna-max": ("completed", False), "model-b": ("stopped", True)},
+        )
+
+    def test_write_site_retires_source_run_entries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "site"
+            pages.write_site(output, self.public_run("source-one"), ROOT / "web")
+            pages.write_site(output, self.public_run("source-two"), ROOT / "web")
+            pages.write_site(
+                output,
+                self.public_run("merged-run"),
+                ROOT / "web",
+                retire_run_ids=["source-one", "source-two"],
+            )
+
+            index = json.loads((output / "data" / "index.json").read_text())
+
+        self.assertEqual([run["id"] for run in index["runs"]], ["merged-run"])
+        self.assertFalse((output / "data" / "runs" / "source-one.json").exists())
+        self.assertFalse((output / "data" / "runs" / "source-two.json").exists())
+
     def test_page_cli_has_build_and_publish_commands(self):
         parser = pages.build_parser()
         build = parser.parse_args(["build", "--run-dir", "/tmp/run", "--output", "/tmp/site"])
-        publish = parser.parse_args(["publish", "--run-dir", "/tmp/run"])
+        publish = parser.parse_args([
+            "publish", "--run-dir", "/tmp/run-one", "--run-dir", "/tmp/run-two",
+            "--batch-id", "merged-run",
+        ])
 
         self.assertEqual(build.command, "build")
+        self.assertEqual(build.run_dir, ["/tmp/run"])
         self.assertEqual(build.output, "/tmp/site")
         self.assertEqual(publish.command, "publish")
+        self.assertEqual(publish.run_dir, ["/tmp/run-one", "/tmp/run-two"])
+        self.assertEqual(publish.batch_id, "merged-run")
         self.assertEqual(publish.branch, "gh-pages")
 
 

@@ -341,6 +341,77 @@ def prepare_public_run(
         }
     )
     public["models"].sort(key=lambda model: model["overall_score"], reverse=True)
+    for model in public["models"]:
+        model.update({
+            "status": status,
+            "partial": partial,
+            "stop_reason": metadata.get("stop_reason"),
+        })
+    assert_public_safe(public)
+    return public
+
+
+def prepare_public_batch(
+    run_dirs: list[str | Path],
+    mapping: dict[str, Any],
+    catalog: dict[str, Any],
+    fetched_at: str,
+    state_db: str | Path | None = None,
+    batch_id: str = "fixed-v1-combined",
+    title: str = "fixed-v1 · merged comparison",
+) -> dict[str, Any]:
+    """Merge publishable model runs into one public result batch."""
+
+    if not run_dirs:
+        raise ValueError("at least one run directory is required")
+    prepared = [
+        prepare_public_run(path, mapping, catalog, fetched_at, state_db=state_db)
+        for path in run_dirs
+    ]
+    suite_versions = {item.get("suite_version") for item in prepared}
+    repeats = {item.get("repeats") for item in prepared}
+    puzzle_counts = {item.get("puzzle_count") for item in prepared}
+    if len(suite_versions) != 1 or len(repeats) != 1 or len(puzzle_counts) != 1:
+        raise ValueError("all runs in a public batch must use the same suite, repeats, and puzzle count")
+
+    models: list[dict[str, Any]] = []
+    seen_slugs: set[str] = set()
+    started_at = []
+    for item in prepared:
+        if item.get("started_at"):
+            started_at.append(str(item["started_at"]))
+        for model in item["models"]:
+            slug = str(model["slug"])
+            if slug in seen_slugs:
+                raise ValueError(f"duplicate model slug in public batch: {slug}")
+            seen_slugs.add(slug)
+            models.append(dict(model))
+
+    partial = any(bool(item.get("partial")) for item in prepared)
+    stop_reasons = [str(item["stop_reason"]) for item in prepared if item.get("stop_reason")]
+    public = {
+        "run_id": batch_id,
+        "models": models,
+        "title": title,
+        "status": "stopped" if partial else "completed",
+        "partial": partial,
+        "stop_reason": "; ".join(dict.fromkeys(stop_reasons)) if stop_reasons else None,
+        "suite_version": next(iter(suite_versions)),
+        "puzzle_count": next(iter(puzzle_counts)),
+        "repeats": next(iter(repeats)),
+        "started_at": min(started_at) if started_at else None,
+        "published_at": fetched_at,
+    }
+    for model, item in zip(
+        models,
+        [item for item in prepared for _ in item["models"]],
+    ):
+        model.update({
+            "status": item.get("status"),
+            "partial": bool(item.get("partial")),
+            "stop_reason": item.get("stop_reason"),
+        })
+    public["models"].sort(key=lambda model: model["overall_score"], reverse=True)
     assert_public_safe(public)
     return public
 
@@ -381,7 +452,12 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def write_site(output_dir: str | Path, run: dict[str, Any], web_dir: str | Path) -> None:
+def write_site(
+    output_dir: str | Path,
+    run: dict[str, Any],
+    web_dir: str | Path,
+    retire_run_ids: list[str] | None = None,
+) -> None:
     """Write static assets and append or replace one sanitized run document."""
 
     assert_public_safe(run)
@@ -405,6 +481,11 @@ def write_site(output_dir: str | Path, run: dict[str, Any], web_dir: str | Path)
         prior_runs = []
     if not isinstance(prior_runs, list):
         raise ValueError("data/index.json runs must be an array")
+    retired = {str(value) for value in (retire_run_ids or []) if str(value) != run_id}
+    for retired_id in retired:
+        retired_file = output / "data" / "runs" / f"{retired_id}.json"
+        if retired_file.is_file():
+            retired_file.unlink()
     entry = {
         "id": run_id,
         "title": str(run.get("title") or run_id),
@@ -414,7 +495,15 @@ def write_site(output_dir: str | Path, run: dict[str, Any], web_dir: str | Path)
         "repeats": run.get("repeats"),
         "published_at": run.get("published_at"),
     }
-    runs = [entry, *[item for item in prior_runs if isinstance(item, dict) and item.get("id") != run_id]]
+    runs = [
+        entry,
+        *[
+            item for item in prior_runs
+            if isinstance(item, dict)
+            and item.get("id") != run_id
+            and item.get("id") not in retired
+        ],
+    ]
     _write_json(index_path, {"default_run": run_id, "runs": runs})
 
 
@@ -445,19 +534,29 @@ def _load_catalog(path: str | None) -> dict[str, Any]:
     return _read_json(Path(path)) if path else fetch_catalog()
 
 
-def _prepare_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], Path]:
+def _prepare_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], Path, list[str]]:
     root = Path(args.repo).resolve() if args.repo else _repo_root()
     mapping_path = Path(args.mapping) if args.mapping else root / "pricing" / "models-dev-mapping.json"
-    run = prepare_public_run(
-        args.run_dir,
-        load_mapping(mapping_path),
-        _load_catalog(args.catalog),
-        _utc_now(),
-        state_db=Path(args.state_db).expanduser() if args.state_db else None,
-    )
+    run_dirs = list(args.run_dir)
+    mapping = load_mapping(mapping_path)
+    catalog = _load_catalog(args.catalog)
+    fetched_at = _utc_now()
+    state_db = Path(args.state_db).expanduser() if args.state_db else None
+    if len(run_dirs) == 1:
+        run = prepare_public_run(run_dirs[0], mapping, catalog, fetched_at, state_db=state_db)
+    else:
+        run = prepare_public_batch(
+            run_dirs,
+            mapping,
+            catalog,
+            fetched_at,
+            state_db=state_db,
+            batch_id=args.batch_id or "fixed-v1-combined",
+            title=args.title or "fixed-v1 · merged comparison",
+        )
     if args.title:
         run["title"] = args.title
-    return run, root
+    return run, root, run_dirs
 
 
 def _git(repo: Path, *arguments: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -484,6 +583,7 @@ def publish_site(
     branch: str,
     run: dict[str, Any],
     web_dir: str | Path,
+    retire_run_ids: list[str] | None = None,
 ) -> str:
     """Build, commit, and push the dashboard from an isolated branch worktree."""
 
@@ -503,7 +603,7 @@ def publish_site(
             _git(worktree, "checkout", "--orphan", branch)
             _clear_worktree(worktree)
         try:
-            write_site(worktree, run, web_dir)
+            write_site(worktree, run, web_dir, retire_run_ids=retire_run_ids)
             _git(worktree, "add", "-A")
             changes = _git(worktree, "status", "--porcelain").stdout.strip()
             if changes:
@@ -519,7 +619,9 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     for command in ("build", "publish"):
         subparser = subparsers.add_parser(command)
-        subparser.add_argument("--run-dir", required=True)
+        subparser.add_argument("--run-dir", required=True, action="append")
+        subparser.add_argument("--batch-id")
+        subparser.add_argument("--retire-run-id", action="append", default=[])
         subparser.add_argument("--repo")
         subparser.add_argument("--mapping")
         subparser.add_argument("--catalog", help="local models.dev api.json; fetch live when omitted")
@@ -538,13 +640,16 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    run, root = _prepare_from_args(args)
+    run, root, run_dirs = _prepare_from_args(args)
     web_dir = root / "web"
+    retire_run_ids = list(args.retire_run_id)
+    if len(run_dirs) > 1:
+        retire_run_ids.extend(Path(path).name for path in run_dirs)
     if args.command == "build":
-        write_site(args.output, run, web_dir)
+        write_site(args.output, run, web_dir, retire_run_ids=retire_run_ids)
         print(Path(args.output).resolve())
     else:
-        print(publish_site(root, args.branch, run, web_dir))
+        print(publish_site(root, args.branch, run, web_dir, retire_run_ids=retire_run_ids))
     return 0
 
 
