@@ -167,3 +167,13 @@ test("partial unjudged rows are labeled and excluded from the score chart", () =
   assert.equal(isPlottable(partial, "price"), false);
   assert.equal(isPlottable(rows[0], "price"), true);
 });
+
+test("partially judged rows keep their score and show coverage status", () => {
+  const partial = {
+    ...rows[0],
+    score_status: "partial_judged",
+  };
+  assert.equal(formatBehaviorName(partial), "Luna · max · 部分评分");
+  assert.equal(formatTableModelName(partial, true), "Luna · 部分评分");
+  assert.equal(isPlottable(partial, "price"), true);
+});
