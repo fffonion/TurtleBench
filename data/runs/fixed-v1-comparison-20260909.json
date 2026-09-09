@@ -606,7 +606,7 @@
         "source": "https://models.dev",
         "source_model_id": "zai/glm-5.3-flash",
         "source_provider_id": "zai",
-        "fetched_at": "2026-09-09T16:00:28Z",
+        "fetched_at": "2026-09-09T16:02:57Z",
         "usd_per_million_tokens": {
           "input": 0.075,
           "output": 0.25,
@@ -641,7 +641,7 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-09T16:00:28Z",
+  "published_at": "2026-09-09T16:02:57Z",
   "source_records": [
     "baseline-luna-max-host-20260903",
     "matrix36-kong-glm-5-3-high-20260909",

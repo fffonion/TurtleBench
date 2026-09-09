@@ -307,6 +307,13 @@ export function formatChartName(row) {
   return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}${status}`;
 }
 
+export function formatTableModelName(row, behavior = false) {
+  const status = behavior && row.score_status === "pending_judge"
+    ? ` · ${translate("pendingJudge")}`
+    : "";
+  return `${splitDisplayName(row.name).model}${status}`;
+}
+
 function formatEffort(effort) {
   const value = String(effort ?? "");
   const effortKey = `effort${value.replace(/^./, (letter) => letter.toUpperCase())}`;
@@ -602,7 +609,7 @@ function renderTable(table, rows, columns, state) {
         const parts = splitDisplayName(row.name);
         const primary = document.createElement("span");
         primary.className = "model-primary";
-        primary.textContent = parts.model;
+        primary.textContent = formatTableModelName(row, columns === BEHAVIOR_COLUMNS);
         td.append(primary);
         if (parts.provider) {
           const provider = document.createElement("small");
