@@ -65,6 +65,14 @@ TARGET_VALID_GAMES = 36
 FIXTURE_RELEASE_URL = "https://github.com/fffonion/TurtleBench/releases/download/fixtures-v1/turtlebench-fixed-v1.zip"
 FIXTURE_ARCHIVE_SHA256 = "c28746c7b8296a2b8eb36aef6c6cff5ae9418283409c291eaac139c772646069"
 FIXTURE_ARCHIVE_PASSWORD = "123456"
+JUDGE_REQUIRED_FIELDS = frozenset({
+    "trial", "validity", "atomic_question_rate", "useful_constraint_rate",
+    "redundant_question_rate", "unsupported_story_guess_rate", "irrelevant_branch_max",
+    "contradiction_count", "partial_misread_count", "excluded_revisit_count",
+    "protocol_recovery_failure_count", "reasoning_chain_parts", "question_information_parts",
+    "final_closure", "hint_effective_count", "hint_ineffective_count", "hint_early_count",
+    "hint_consecutive", "hint_hoarding", "failure_tags", "notes",
+})
 
 
 class HermesApiError(RuntimeError):
@@ -742,6 +750,19 @@ def judge_prompt(puzzle_path: Path, trial_dirs: list[Path], output_path: Path, p
 玩家配置：{player['provider']} / {player['model']} / {player['reasoning_effort']}。"""
 
 
+def is_valid_judge_output(data: Any) -> bool:
+    if not isinstance(data, list) or len(data) != 3:
+        return False
+    trials = set()
+    for item in data:
+        if not isinstance(item, dict) or JUDGE_REQUIRED_FIELDS - set(item):
+            return False
+        if not isinstance(item["reasoning_chain_parts"], dict) or not isinstance(item["question_information_parts"], dict):
+            return False
+        trials.add(item.get("trial"))
+    return trials == {1, 2, 3}
+
+
 async def run_judge(
     run_dir: Path,
     player: dict[str, str],
@@ -759,15 +780,7 @@ async def run_judge(
         if not output.exists():
             return False
         try:
-            data = load_json(output)
-            if not isinstance(data, list) or len(data) != 3:
-                return False
-            trials = set()
-            for item in data:
-                if not isinstance(item, dict):
-                    return False
-                trials.add(item.get("trial"))
-            return trials == {1, 2, 3}
+            return is_valid_judge_output(load_json(output))
         except Exception:
             return False
 

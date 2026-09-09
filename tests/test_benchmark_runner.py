@@ -453,6 +453,26 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
             self.assertEqual(next(s for s in scores if s["trial"] == 1), existing)
 
+    def test_judge_output_requires_complete_scoring_fields(self):
+        fields = {
+            "trial": 1, "validity": "valid", "atomic_question_rate": 1,
+            "useful_constraint_rate": 1, "redundant_question_rate": 0,
+            "unsupported_story_guess_rate": 0, "irrelevant_branch_max": 0,
+            "contradiction_count": 0, "partial_misread_count": 0,
+            "excluded_revisit_count": 0, "protocol_recovery_failure_count": 0,
+            "reasoning_chain_parts": {}, "question_information_parts": {},
+            "final_closure": 5, "hint_effective_count": 0,
+            "hint_ineffective_count": 0, "hint_early_count": 0,
+            "hint_consecutive": False, "hint_hoarding": False,
+            "failure_tags": [], "notes": [],
+        }
+        complete = [fields | {"trial": trial} for trial in (1, 2, 3)]
+
+        self.assertTrue(br.is_valid_judge_output(complete))
+        incomplete = [dict(item) for item in complete]
+        incomplete[2].pop("reasoning_chain_parts")
+        self.assertFalse(br.is_valid_judge_output(incomplete))
+
     def test_archive_invalid_trials_preserves_valid_trials(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td) / "run"
@@ -733,7 +753,16 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
                 calls.append(session_id)
                 if len(calls) == 2:
                     output.parent.mkdir(parents=True, exist_ok=True)
-                    output.write_text(json.dumps([{"trial": i} for i in (1, 2, 3)]), encoding="utf-8")
+                    fields = {
+                        "validity": "valid", "atomic_question_rate": 1, "useful_constraint_rate": 1,
+                        "redundant_question_rate": 0, "unsupported_story_guess_rate": 0, "irrelevant_branch_max": 0,
+                        "contradiction_count": 0, "partial_misread_count": 0, "excluded_revisit_count": 0,
+                        "protocol_recovery_failure_count": 0, "reasoning_chain_parts": {},
+                        "question_information_parts": {}, "final_closure": 5, "hint_effective_count": 0,
+                        "hint_ineffective_count": 0, "hint_early_count": 0, "hint_consecutive": False,
+                        "hint_hoarding": False, "failure_tags": [], "notes": [],
+                    }
+                    output.write_text(json.dumps([fields | {"trial": i} for i in (1, 2, 3)]), encoding="utf-8")
                 return 0, {"session_id": session_id}
 
             with mock.patch.object(br, "run_api_role", side_effect=fake_run_api_role):
