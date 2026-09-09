@@ -12,6 +12,7 @@ import {
   formatChartName,
   formatDuration,
   formatMoney,
+  formatTableModelName,
   groupByFamily,
   groupByVariant,
   isPlottable,
@@ -158,6 +159,7 @@ test("partial unjudged rows are labeled and excluded from the score chart", () =
     score_status: "pending_judge",
   };
   assert.equal(formatBehaviorName(partial), "Luna · max · 待评分");
+  assert.equal(formatTableModelName(partial, true), "Luna · 待评分");
   assert.equal(formatChartName({
     ...partial,
     name: "OpenAI Codex / GPT-5.6 Luna",
