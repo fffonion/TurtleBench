@@ -41,11 +41,11 @@
             <div class="control-group">
               <span data-i18n="view">视图</span>
               <div class="segmented" data-i18n-aria-label="viewModes">
-                <button type="button" data-view data-value="chart" aria-pressed="false" data-i18n="chart">图表</button>
-                <button type="button" class="selected" data-view data-value="table" aria-pressed="true" data-i18n="table">表格</button>
+                <button type="button" class="selected" data-view data-value="chart" aria-pressed="true" data-i18n="chart">图表</button>
+                <button type="button" data-view data-value="table" aria-pressed="false" data-i18n="table">表格</button>
               </div>
             </div>
-            <div id="axis-control" class="control-group" hidden>
+            <div id="axis-control" class="control-group">
               <span data-i18n="xAxis">X 轴</span>
               <div class="segmented compact" data-i18n-aria-label="xAxis">
                 <button type="button" class="selected" data-axis data-value="price" aria-pressed="true" data-i18n="averagePrice">每局平均价格</button>
@@ -55,11 +55,11 @@
           </div>
         </div>
 
-        <div id="chart-view" hidden>
+        <div id="chart-view">
           <div id="chart" class="chart-frame"></div>
         </div>
 
-        <div id="table-view">
+        <div id="table-view" hidden>
           <div class="table-scroll">
             <table id="resource-table">
               <thead><tr></tr></thead>
