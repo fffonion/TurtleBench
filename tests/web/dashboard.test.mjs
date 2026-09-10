@@ -153,7 +153,7 @@ test("formatters keep resource values compact and explicit", () => {
   });
 });
 
-test("partial result rows are hidden and carry no status annotation", () => {
+test("partial result rows remain available without status annotation", () => {
   const partial = {
     ...rows[0],
     overall_score: 65.4,
@@ -169,6 +169,7 @@ test("partial result rows are hidden and carry no status annotation", () => {
   }), "GPT-5.6 Luna · max");
   assert.equal(isDisplayableModel(partial), false);
   assert.equal(isPlottable(partial, "price"), false);
+  assert.deepEqual(sortRows([partial, rows[0]], "overall_score", "desc"), [rows[0], partial]);
   assert.equal(isDisplayableModel(rows[0]), true);
   assert.equal(isPlottable(rows[0], "price"), true);
 });

@@ -686,22 +686,23 @@ async function startDashboard() {
     const behaviorSort = { key: "overall_score", direction: "desc" };
 
     const render = () => {
-      const visibleModels = data.models.filter(isDisplayableModel);
+      const tableModels = data.models;
+      const chartModels = data.models.filter(isDisplayableModel);
       document.querySelector("#suite-meta").textContent = [
         data.suite_version,
         translate("puzzles", { count: data.puzzle_count }),
         translate("repeats", { count: data.repeats }),
       ].filter(Boolean).join(" · ");
-      renderChart(visibleModels, axis);
+      renderChart(chartModels, axis);
       renderTable(
         document.querySelector("#resource-table"),
-        sortRows(visibleModels, resourceSort.key, resourceSort.direction),
+        sortRows(tableModels, resourceSort.key, resourceSort.direction),
         RESOURCE_COLUMNS,
         resourceSort,
       );
       renderTable(
         document.querySelector("#behavior-table"),
-        sortRows(visibleModels, behaviorSort.key, behaviorSort.direction),
+        sortRows(tableModels, behaviorSort.key, behaviorSort.direction),
         BEHAVIOR_COLUMNS,
         behaviorSort,
       );
