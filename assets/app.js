@@ -49,6 +49,7 @@ const MESSAGES = {
     hintsMedian: "提示数量中位数",
     samples: "样本数",
     pendingJudge: "待评分",
+    partialJudged: "部分评分",
     inputShort: "入",
     outputShort: "出",
     cacheReadShort: "读",
@@ -111,6 +112,7 @@ const MESSAGES = {
     hintsMedian: "Median hints",
     samples: "Samples",
     pendingJudge: "Pending judge",
+    partialJudged: "Partially scored",
     inputShort: "in",
     outputShort: "out",
     cacheReadShort: "read",
@@ -297,20 +299,24 @@ export function splitDisplayName(name) {
   return { provider, model: modelParts.join(separator) };
 }
 
+function formatScoreStatus(row) {
+  if (row.score_status === "pending_judge") return ` · ${translate("pendingJudge")}`;
+  if (row.score_status === "partial_judged") return ` · ${translate("partialJudged")}`;
+  return "";
+}
+
 export function formatBehaviorName(row) {
-  const status = row.score_status === "pending_judge" ? ` · ${translate("pendingJudge")}` : "";
+  const status = formatScoreStatus(row);
   return `${row.name} · ${formatEffort(row.reasoning_effort)}${status}`;
 }
 
 export function formatChartName(row) {
-  const status = row.score_status === "pending_judge" ? ` · ${translate("pendingJudge")}` : "";
+  const status = formatScoreStatus(row);
   return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}${status}`;
 }
 
 export function formatTableModelName(row, behavior = false) {
-  const status = behavior && row.score_status === "pending_judge"
-    ? ` · ${translate("pendingJudge")}`
-    : "";
+  const status = behavior ? formatScoreStatus(row) : "";
   return `${splitDisplayName(row.name).model}${status}`;
 }
 

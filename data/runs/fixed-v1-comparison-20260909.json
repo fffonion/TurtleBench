@@ -530,6 +530,69 @@
       "source_record": "baseline-luna-max-host-20260903"
     },
     {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
+      "name": "kong-ai-gateway / Glm 5.3 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3-Flash",
+      "family": "GLM-5.3-Flash",
+      "reasoning_effort": "high",
+      "overall_score": 65.4,
+      "games": 32,
+      "active_time_s": 8914.761,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 159382749,
+        "input": 7196404,
+        "output": 402665,
+        "cache_read": 151783680,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.5397303,
+        "output": 0.10066625,
+        "cache_read": 2.2767552,
+        "cache_write": 0.0,
+        "total": 2.91715175
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "zai/glm-5.3-flash",
+        "source_provider_id": "zai",
+        "fetched_at": "2026-09-10T06:05:12Z",
+        "usd_per_million_tokens": {
+          "input": 0.075,
+          "output": 0.25,
+          "cache_read": 0.015,
+          "cache_write": 0.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.714,
+        "rounds_median": 49.5,
+        "hints_median": 0.0,
+        "samples": 14
+      },
+      "status": "stopped",
+      "partial": true,
+      "stop_reason": "operator_requested",
+      "score_status": "partial_judged",
+      "source_record": "matrix36-kong-glm-5-3-flash-high-20260909",
+      "observed_games": 32,
+      "judged_games": 32,
+      "unjudged_slots": [
+        "SPB-A-M-01:trial-03",
+        "SPB-A-M-02:trial-03",
+        "SPB-A-H-01:trial-03",
+        "SPB-A-H-02:trial-03"
+      ],
+      "observed_status_counts": {
+        "error": 4,
+        "max_rounds": 9,
+        "solved": 18,
+        "stopped": 1
+      }
+    },
+    {
       "slug": "minimax-m3-max",
       "name": "OpenRouter / MiniMax M3",
       "provider": "openrouter",
@@ -576,72 +639,17 @@
       "partial": false,
       "stop_reason": null,
       "source_record": "baseline-luna-max-host-20260903"
-    },
-    {
-      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
-      "name": "kong-ai-gateway / Glm 5.3 Flash",
-      "provider": "kong-ai-gateway",
-      "model": "zai-org/GLM-5.3-Flash",
-      "family": "GLM-5.3-Flash",
-      "reasoning_effort": "high",
-      "overall_score": null,
-      "games": 31,
-      "active_time_s": 8451.692,
-      "compression_time_s": 0.0,
-      "tokens": {
-        "input": 6842757,
-        "output": 374136,
-        "cache_read": 140609280,
-        "cache_write": 0,
-        "total": 147826173
-      },
-      "price_usd": {
-        "input": 0.513206775,
-        "output": 0.093534,
-        "cache_read": 2.1091392,
-        "cache_write": 0.0,
-        "total": 2.715879975
-      },
-      "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "zai/glm-5.3-flash",
-        "source_provider_id": "zai",
-        "fetched_at": "2026-09-09T16:02:57Z",
-        "usd_per_million_tokens": {
-          "input": 0.075,
-          "output": 0.25,
-          "cache_read": 0.015,
-          "cache_write": 0.0
-        }
-      },
-      "behavior": {
-        "solve_rate": 0.581,
-        "rounds_median": 50.0,
-        "hints_median": 0.0,
-        "samples": 31
-      },
-      "status": "stopped",
-      "partial": true,
-      "stop_reason": "operator_requested_before_judging",
-      "score_status": "pending_judge",
-      "observed_status_counts": {
-        "error": 3,
-        "max_rounds": 9,
-        "solved": 18,
-        "stopped": 1
-      },
-      "source_record": "matrix36-kong-glm-5-3-flash-high-20260909"
     }
   ],
-  "title": "fixed-v1 · 统一比较（全部模型，Flash 31 局待评分）",
+  "title": "fixed-v1 · 统一比较（Flash 32局已评分，4局未完成）",
   "status": "stopped",
   "partial": true,
-  "stop_reason": "operator_requested_before_judging",
+  "stop_reason": "operator_requested",
   "suite_version": "fixed-v1",
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-09T16:02:57Z",
+  "published_at": "2026-09-10T06:05:12Z",
   "source_records": [
     "baseline-luna-max-host-20260903",
     "matrix36-kong-glm-5-3-high-20260909",
