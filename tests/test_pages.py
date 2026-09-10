@@ -224,6 +224,11 @@ class PublicResultTests(unittest.TestCase):
         model = result["models"][0]
         self.assertEqual(model["pricing"], snapshot)
         self.assertEqual(model["price_usd"]["total"], 0.00034)
+    def test_deepseek_expiring_route_uses_clean_public_label(self):
+        self.assertEqual(
+            pages._public_name("deepseek", "deepseek-v4.1-flash-expires-on-0910"),
+            "DeepSeek / DeepSeek V4.1 Flash",
+        )
 
 
 class PricingTests(unittest.TestCase):

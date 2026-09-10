@@ -112,6 +112,8 @@ def calculate_price(tokens: dict[str, int], pricing: dict[str, Any]) -> dict[str
 
 def _public_model_name(model_id: str) -> str:
     leaf = model_id.rsplit("/", 1)[-1]
+    if leaf == "deepseek-v4.1-flash-expires-on-0910":
+        return "DeepSeek V4.1 Flash"
     words = leaf.replace("-", " ").split()
     if not words:
         return model_id

@@ -49,7 +49,7 @@ PLAYER_MATRIX = [
     {"slug": "minimax-m3-max", "display_name": "OpenRouter / MiniMax M3 max", "provider": "openrouter", "model": "minimax/minimax-m3:free", "reasoning_effort": "max"},
     {"slug": "deepseek-v4-flash-max", "display_name": "CommandCode / DeepSeek V4 Flash max", "provider": "commandcode", "model": "deepseek-ai/deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "deepseek-provider-v4-flash-max", "display_name": "DeepSeek provider / DeepSeek V4 Flash max", "provider": "deepseek", "model": "deepseek-v4-flash", "reasoning_effort": "max"},
-    {"slug": "deepseek-deepseek-v4-1-flash-max", "display_name": "DeepSeek / deepseek-v4.1-flash-expires-on-0910 max", "provider": "deepseek", "model": "deepseek-v4.1-flash-expires-on-0910", "reasoning_effort": "max"},
+    {"slug": "deepseek-deepseek-v4-1-flash-max", "display_name": "DeepSeek / DeepSeek V4.1 Flash max", "provider": "deepseek", "model": "deepseek-v4.1-flash-expires-on-0910", "reasoning_effort": "max"},
     {"slug": "kong-ai-gateway-zai-org-glm-5-3-high", "display_name": "Kong AI Gateway / zai-org/GLM-5.3 high", "provider": "kong-ai-gateway", "model": "zai-org/GLM-5.3", "reasoning_effort": "high"},
     {"slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high", "display_name": "Kong AI Gateway / zai-org/GLM-5.3-Flash high", "provider": "kong-ai-gateway", "model": "zai-org/GLM-5.3-Flash", "reasoning_effort": "high"},
     {"slug": "kong-ai-gateway-zai-org-glm-5-3-flash-max", "display_name": "Kong AI Gateway / zai-org/GLM-5.3-Flash max", "provider": "kong-ai-gateway", "model": "zai-org/GLM-5.3-Flash", "reasoning_effort": "max"},

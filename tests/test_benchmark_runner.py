@@ -206,6 +206,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(deepseek["provider"], "deepseek")
         self.assertEqual(deepseek["model"], "deepseek-v4.1-flash-expires-on-0910")
         self.assertEqual(deepseek["reasoning_effort"], "max")
+        self.assertEqual(deepseek["display_name"], "DeepSeek / DeepSeek V4.1 Flash max")
 
     def test_glm_5_3_uses_kong_route(self):
         glm = next(p for p in br.PLAYER_MATRIX if p["slug"] == "kong-ai-gateway-zai-org-glm-5-3-high")
