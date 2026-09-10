@@ -3,12 +3,12 @@
   "runs": [
     {
       "id": "fixed-v1-comparison-20260909",
-      "title": "fixed-v1 · 统一比较（Flash 32局已评分，4局未完成）",
+      "title": "fixed-v1 · 统一比较",
       "file": "data/runs/fixed-v1-comparison-20260909.json",
       "suite_version": "fixed-v1",
       "puzzle_count": 12,
       "repeats": 3,
-      "published_at": "2026-09-10T06:05:12Z"
+      "published_at": "2026-09-10T06:18:29Z"
     }
   ]
 }

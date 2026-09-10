@@ -43,11 +43,7 @@
         "rounds_median": 8.5,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "gpt-5-6-sol-high",
@@ -91,11 +87,7 @@
         "rounds_median": 13.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "gpt-5-6-sol-medium",
@@ -139,11 +131,7 @@
         "rounds_median": 13.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "grok-4-6-high",
@@ -187,11 +175,7 @@
         "rounds_median": 24.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "luna-max",
@@ -235,11 +219,7 @@
         "rounds_median": 22.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "deepseek-provider-v4-flash-max",
@@ -283,59 +263,7 @@
         "rounds_median": 21.0,
         "hints_median": 1,
         "samples": 25
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
-    },
-    {
-      "slug": "deepseek-deepseek-v4-1-flash-max",
-      "name": "DeepSeek / DeepSeek V4.1 Flash Expires On 0910",
-      "provider": "deepseek",
-      "model": "deepseek-v4.1-flash-expires-on-0910",
-      "family": "deepseek-v4.1-flash-expires-on-0910",
-      "reasoning_effort": "max",
-      "overall_score": 81.5,
-      "games": 29,
-      "active_time_s": 8205.397,
-      "compression_time_s": 0,
-      "tokens": {
-        "total": 53984549,
-        "input": 956126,
-        "output": 1367111,
-        "cache_read": 51661312,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 0.13385764,
-        "output": 0.38279108,
-        "cache_read": 0.1446516736,
-        "cache_write": 0.0,
-        "total": 0.6613003936
-      },
-      "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "deepseek/deepseek-v4-flash",
-        "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-09T08:13:37Z",
-        "usd_per_million_tokens": {
-          "input": 0.14,
-          "output": 0.28,
-          "cache_read": 0.0028,
-          "cache_write": null
-        }
-      },
-      "behavior": {
-        "solve_rate": 0.897,
-        "rounds_median": 24.0,
-        "hints_median": 0,
-        "samples": 29
-      },
-      "status": "stopped",
-      "partial": true,
-      "stop_reason": "operator_requested",
-      "source_record": "matrix36-current"
+      }
     },
     {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
@@ -379,11 +307,7 @@
         "rounds_median": 28.5,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "matrix36-current"
+      }
     },
     {
       "slug": "claude-sonnet-5-high",
@@ -427,11 +351,7 @@
         "rounds_median": 22.5,
         "hints_median": 1.0,
         "samples": 34
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "luna-high",
@@ -475,11 +395,7 @@
         "rounds_median": 25.0,
         "hints_median": 2.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     },
     {
       "slug": "deepseek-v4-flash-max",
@@ -523,73 +439,6 @@
         "rounds_median": 27.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
-    },
-    {
-      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
-      "name": "kong-ai-gateway / Glm 5.3 Flash",
-      "provider": "kong-ai-gateway",
-      "model": "zai-org/GLM-5.3-Flash",
-      "family": "GLM-5.3-Flash",
-      "reasoning_effort": "high",
-      "overall_score": 65.4,
-      "games": 32,
-      "active_time_s": 8914.761,
-      "compression_time_s": 0,
-      "tokens": {
-        "total": 159382749,
-        "input": 7196404,
-        "output": 402665,
-        "cache_read": 151783680,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 0.5397303,
-        "output": 0.10066625,
-        "cache_read": 2.2767552,
-        "cache_write": 0.0,
-        "total": 2.91715175
-      },
-      "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "zai/glm-5.3-flash",
-        "source_provider_id": "zai",
-        "fetched_at": "2026-09-10T06:05:12Z",
-        "usd_per_million_tokens": {
-          "input": 0.075,
-          "output": 0.25,
-          "cache_read": 0.015,
-          "cache_write": 0.0
-        }
-      },
-      "behavior": {
-        "solve_rate": 0.714,
-        "rounds_median": 49.5,
-        "hints_median": 0.0,
-        "samples": 14
-      },
-      "status": "stopped",
-      "partial": true,
-      "stop_reason": "operator_requested",
-      "score_status": "partial_judged",
-      "source_record": "matrix36-kong-glm-5-3-flash-high-20260909",
-      "observed_games": 32,
-      "judged_games": 32,
-      "unjudged_slots": [
-        "SPB-A-M-01:trial-03",
-        "SPB-A-M-02:trial-03",
-        "SPB-A-H-01:trial-03",
-        "SPB-A-H-02:trial-03"
-      ],
-      "observed_status_counts": {
-        "error": 4,
-        "max_rounds": 9,
-        "solved": 18,
-        "stopped": 1
       }
     },
     {
@@ -634,57 +483,13 @@
         "rounds_median": 40.0,
         "hints_median": 1,
         "samples": 23
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null,
-      "source_record": "baseline-luna-max-host-20260903"
+      }
     }
   ],
-  "title": "fixed-v1 · 统一比较（Flash 32局已评分，4局未完成）",
-  "status": "stopped",
-  "partial": true,
-  "stop_reason": "operator_requested",
+  "title": "fixed-v1 · 统一比较",
   "suite_version": "fixed-v1",
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-10T06:05:12Z",
-  "source_records": [
-    "baseline-luna-max-host-20260903",
-    "matrix36-kong-glm-5-3-high-20260909",
-    "matrix36-deepseek-v4-1-flash-max-20260909",
-    "matrix36-kong-glm-5-3-flash-high-20260909"
-  ],
-  "deduplicated_records": [
-    {
-      "key": [
-        "deepseek",
-        "deepseek-v4.1-flash-expires-on-0910",
-        "max"
-      ],
-      "records": 2,
-      "games": [
-        18,
-        29
-      ],
-      "kept_games": 29
-    },
-    {
-      "key": [
-        "kong-ai-gateway",
-        "zai-org/GLM-5.3",
-        "high"
-      ],
-      "records": 2,
-      "games": [
-        18,
-        36
-      ],
-      "kept_games": 36
-    }
-  ],
-  "partial_models": [
-    "kong-ai-gateway-zai-org-glm-5-3-flash-high"
-  ]
+  "published_at": "2026-09-10T06:18:29Z"
 }
