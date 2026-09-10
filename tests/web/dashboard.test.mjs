@@ -115,12 +115,13 @@ test("language detection supports browser preference and explicit overrides", ()
   assert.equal(translate("performance"), "综合表现");
 });
 
-test("price is the default chart axis while time remains available", () => {
+test("the table is the default view while the price axis stays available", () => {
   const html = readFileSync(new URL("../../web/index.html", import.meta.url), "utf8");
   assert.ok(html.includes('data-value="price"'));
   assert.ok(html.includes('>每局平均价格</button>'));
-  assert.ok(html.includes('data-value="price" aria-pressed="true"'));
-  assert.ok(html.includes('data-value="time" aria-pressed="false"'));
+  assert.ok(html.includes('data-view data-value="chart" aria-pressed="false"'));
+  assert.ok(html.includes('data-view data-value="table" aria-pressed="true"'));
+  assert.ok(html.includes('id="chart-view" hidden'));
   assert.ok(html.includes('assets/app.js?v=restore-partial-row-20260910'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "price";'));
