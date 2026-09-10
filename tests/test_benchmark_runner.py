@@ -181,7 +181,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
             [p["slug"] for p in br.PLAYER_MATRIX],
-            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "commandcode-deepseek-v4-1-flash-beta-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
+            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
         )
 
     def test_minimax_uses_openrouter_free_route(self):
@@ -218,6 +218,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(glm["provider"], "kong-ai-gateway")
         self.assertEqual(glm["model"], "zai-org/GLM-5.3-Flash")
         self.assertEqual(glm["reasoning_effort"], "high")
+
+    def test_glm_5_3_flash_max_uses_kong_route(self):
+        glm = next(p for p in br.PLAYER_MATRIX if p["slug"] == "kong-ai-gateway-zai-org-glm-5-3-flash-max")
+        self.assertEqual(glm["provider"], "kong-ai-gateway")
+        self.assertEqual(glm["model"], "zai-org/GLM-5.3-Flash")
+        self.assertEqual(glm["reasoning_effort"], "max")
 
     def test_deepseek_v4_1_flash_beta_uses_commandcode_route(self):
         deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "commandcode-deepseek-v4-1-flash-beta-high")
