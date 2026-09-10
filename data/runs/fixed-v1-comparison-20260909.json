@@ -484,6 +484,94 @@
         "hints_median": 1,
         "samples": 23
       }
+    },
+    {
+      "slug": "deepseek-deepseek-v4-1-flash-max",
+      "name": "DeepSeek / DeepSeek V4.1 Flash Expires On 0910",
+      "provider": "deepseek",
+      "model": "deepseek-v4.1-flash-expires-on-0910",
+      "family": "deepseek-v4.1-flash-expires-on-0910",
+      "reasoning_effort": "max",
+      "overall_score": null,
+      "games": 29,
+      "active_time_s": 8205.397,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 53984549,
+        "input": 956126,
+        "output": 1367111,
+        "cache_read": 51661312,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.13385764,
+        "output": 0.38279108,
+        "cache_read": 0.1446516736,
+        "cache_write": 0.0,
+        "total": 0.6613003936
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-09T08:13:37Z",
+        "usd_per_million_tokens": {
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": null,
+        "rounds_median": null,
+        "hints_median": null,
+        "samples": null
+      }
+    },
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
+      "name": "kong-ai-gateway / Glm 5.3 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3-Flash",
+      "family": "GLM-5.3-Flash",
+      "reasoning_effort": "high",
+      "overall_score": null,
+      "games": 32,
+      "active_time_s": 8914.761,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 159382749,
+        "input": 7196404,
+        "output": 402665,
+        "cache_read": 151783680,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.5397303,
+        "output": 0.10066625,
+        "cache_read": 2.2767552,
+        "cache_write": 0.0,
+        "total": 2.91715175
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "zai/glm-5.3-flash",
+        "source_provider_id": "zai",
+        "fetched_at": "2026-09-10T06:05:12Z",
+        "usd_per_million_tokens": {
+          "input": 0.075,
+          "output": 0.25,
+          "cache_read": 0.015,
+          "cache_write": 0.0
+        }
+      },
+      "behavior": {
+        "solve_rate": null,
+        "rounds_median": null,
+        "hints_median": null,
+        "samples": null
+      }
     }
   ],
   "title": "fixed-v1 · 统一比较",
@@ -491,5 +579,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-10T06:18:29Z"
+  "published_at": "2026-09-10T06:23:26Z"
 }
