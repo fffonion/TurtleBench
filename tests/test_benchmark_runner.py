@@ -789,6 +789,61 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(summary["attempts_started"], 4)
             self.assertFalse(summary["attempt_limit_reached"])
 
+    async def test_resume_skips_terminal_preliminary_slots_in_pending_state(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            player = {
+                "slug": "model-a",
+                "provider": "test",
+                "model": "model-a",
+                "reasoning_effort": "max",
+            }
+            manifest = {"puzzles": [{"id": "P1", "path": "puzzles/P1.json"}]}
+            existing = run_dir / "games/model-a/P1/trial-01"
+            existing.mkdir(parents=True, exist_ok=True)
+            (existing / "game.json").write_text(json.dumps({"status": "solved"}), encoding="utf-8")
+            (existing / "preliminary.json").write_text("{}", encoding="utf-8")
+            attempts = existing.parent.parent / "attempts.json"
+            attempts.write_text(json.dumps({
+                "player_slug": "model-a",
+                "target_valid_games": 3,
+                "max_attempts": 3,
+                "attempts_started": 3,
+                "retry_round": 0,
+                "pending_slots": ["P1:01", "P1:02", "P1:03"],
+            }), encoding="utf-8")
+            game_calls = []
+
+            async def fake_run_game(run_dir, player, puzzle, trial, timeout_s):
+                game_calls.append((puzzle["id"], trial))
+                trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True, exist_ok=True)
+                (trial_dir / "game.json").write_text(json.dumps({"status": "solved"}), encoding="utf-8")
+                (trial_dir / "preliminary.json").write_text("{}", encoding="utf-8")
+
+            async def fake_run_judge(run_dir, player, puzzle, timeout_s):
+                return run_dir / "games" / player["slug"] / puzzle["id"] / "judge.json"
+
+            def fake_finalize(run_dir, player, manifest):
+                return [
+                    {"puzzle_id": "P1", "trial": trial, "validity": "valid", "status": "solved"}
+                    for trial in (1, 2, 3)
+                ]
+
+            def fake_aggregate(scores):
+                return {"valid_games": 3, "invalid_games": 0}
+
+            with (
+                mock.patch.object(br, "run_game", side_effect=fake_run_game),
+                mock.patch.object(br, "run_judge", side_effect=fake_run_judge),
+                mock.patch.object(br, "finalize_scores", side_effect=fake_finalize),
+                mock.patch.object(br, "aggregate_scores", side_effect=fake_aggregate),
+            ):
+                summary = await br.run_player(run_dir, player, manifest, 3, 1, 10, max_attempts=3)
+
+            self.assertEqual(game_calls, [("P1", 2), ("P1", 3)])
+            self.assertEqual(summary["valid_games"], 3)
+
     async def test_judge_retries_when_api_run_claims_success_without_output_file(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)

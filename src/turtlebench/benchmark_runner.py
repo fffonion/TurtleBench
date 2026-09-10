@@ -988,7 +988,14 @@ async def run_player(
             return await run_game(run_dir, player, puzzle, trial, timeout_s, api_client=api_client)
 
     while True:
-        pending = [key for key in state.get("pending_slots", []) if key in slots]
+        pending = []
+        for key in state.get("pending_slots", []):
+            if key not in slots:
+                continue
+            puzzle, trial = slots[key]
+            trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
+            if game_needs_run(trial_dir / "game.json", trial_dir / "preliminary.json"):
+                pending.append(key)
         missing = []
         resumable = []
         for key, (puzzle, trial) in slots.items():
