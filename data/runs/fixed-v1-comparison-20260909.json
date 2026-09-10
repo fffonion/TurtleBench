@@ -311,7 +311,7 @@
     },
     {
       "slug": "deepseek-deepseek-v4-1-flash-max",
-      "name": "DeepSeek / DeepSeek V4.1 Flash Expires On 0910",
+      "name": "DeepSeek / DeepSeek V4.1 Flash",
       "provider": "deepseek",
       "model": "deepseek-v4.1-flash-expires-on-0910",
       "family": "deepseek-v4.1-flash-expires-on-0910",
