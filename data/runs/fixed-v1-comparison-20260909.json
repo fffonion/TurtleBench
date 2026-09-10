@@ -503,8 +503,25 @@
         "cache_read": 151783680,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 0.5397303,
+        "output": 0.10066625,
+        "cache_read": 2.2767552,
+        "cache_write": 0.0,
+        "total": 2.91715175
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "zai/glm-5.3-flash",
+        "source_provider_id": "zai",
+        "fetched_at": "2026-09-10T11:12:38Z",
+        "usd_per_million_tokens": {
+          "input": 0.075,
+          "output": 0.25,
+          "cache_read": 0.015,
+          "cache_write": 0.0
+        }
+      },
       "behavior": {
         "solve_rate": 0.714,
         "rounds_median": 49.5,
@@ -562,5 +579,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-10T08:06:23Z"
+  "published_at": "2026-09-10T11:12:38Z"
 }
