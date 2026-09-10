@@ -48,8 +48,6 @@ const MESSAGES = {
     roundsMedian: "轮数中位数",
     hintsMedian: "提示数量中位数",
     samples: "样本数",
-    pendingJudge: "待评分",
-    partialJudged: "部分评分",
     inputShort: "入",
     outputShort: "出",
     cacheReadShort: "读",
@@ -111,8 +109,6 @@ const MESSAGES = {
     roundsMedian: "Median rounds",
     hintsMedian: "Median hints",
     samples: "Samples",
-    pendingJudge: "Pending judge",
-    partialJudged: "Partially scored",
     inputShort: "in",
     outputShort: "out",
     cacheReadShort: "read",
@@ -299,25 +295,26 @@ export function splitDisplayName(name) {
   return { provider, model: modelParts.join(separator) };
 }
 
-function formatScoreStatus(row) {
-  if (row.score_status === "pending_judge") return ` · ${translate("pendingJudge")}`;
-  if (row.score_status === "partial_judged") return ` · ${translate("partialJudged")}`;
-  return "";
+export function isDisplayableModel(row) {
+  return Boolean(
+    row
+      && row.partial !== true
+      && row.status !== "stopped"
+      && row.score_status == null
+      && Number.isFinite(row.overall_score),
+  );
 }
 
 export function formatBehaviorName(row) {
-  const status = formatScoreStatus(row);
-  return `${row.name} · ${formatEffort(row.reasoning_effort)}${status}`;
+  return `${row.name} · ${formatEffort(row.reasoning_effort)}`;
 }
 
 export function formatChartName(row) {
-  const status = formatScoreStatus(row);
-  return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}${status}`;
+  return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}`;
 }
 
-export function formatTableModelName(row, behavior = false) {
-  const status = behavior ? formatScoreStatus(row) : "";
-  return `${splitDisplayName(row.name).model}${status}`;
+export function formatTableModelName(row) {
+  return splitDisplayName(row.name).model;
 }
 
 function formatEffort(effort) {
@@ -365,7 +362,7 @@ function chartMetric(model, axis) {
 }
 
 export function isPlottable(model, axis) {
-  return Number.isFinite(model.overall_score) && Number.isFinite(chartMetric(model, axis));
+  return isDisplayableModel(model) && Number.isFinite(chartMetric(model, axis));
 }
 
 function chartLabel(value, axis) {
@@ -689,21 +686,22 @@ async function startDashboard() {
     const behaviorSort = { key: "overall_score", direction: "desc" };
 
     const render = () => {
+      const visibleModels = data.models.filter(isDisplayableModel);
       document.querySelector("#suite-meta").textContent = [
         data.suite_version,
         translate("puzzles", { count: data.puzzle_count }),
         translate("repeats", { count: data.repeats }),
       ].filter(Boolean).join(" · ");
-      renderChart(data.models, axis);
+      renderChart(visibleModels, axis);
       renderTable(
         document.querySelector("#resource-table"),
-        sortRows(data.models, resourceSort.key, resourceSort.direction),
+        sortRows(visibleModels, resourceSort.key, resourceSort.direction),
         RESOURCE_COLUMNS,
         resourceSort,
       );
       renderTable(
         document.querySelector("#behavior-table"),
-        sortRows(data.models, behaviorSort.key, behaviorSort.direction),
+        sortRows(visibleModels, behaviorSort.key, behaviorSort.direction),
         BEHAVIOR_COLUMNS,
         behaviorSort,
       );

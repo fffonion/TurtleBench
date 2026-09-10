@@ -15,6 +15,7 @@ import {
   formatTableModelName,
   groupByFamily,
   groupByVariant,
+  isDisplayableModel,
   isPlottable,
   splitDisplayName,
   sortRows,
@@ -152,28 +153,29 @@ test("formatters keep resource values compact and explicit", () => {
   });
 });
 
-test("partial unjudged rows are labeled and excluded from the score chart", () => {
+test("partial result rows are hidden and carry no status annotation", () => {
   const partial = {
     ...rows[0],
-    overall_score: null,
-    score_status: "pending_judge",
+    overall_score: 65.4,
+    status: "stopped",
+    partial: true,
+    score_status: "partial_judged",
   };
-  assert.equal(formatBehaviorName(partial), "Luna · max · 待评分");
-  assert.equal(formatTableModelName(partial, true), "Luna · 待评分");
+  assert.equal(formatBehaviorName(partial), "Luna · max");
+  assert.equal(formatTableModelName(partial, true), "Luna");
   assert.equal(formatChartName({
     ...partial,
     name: "OpenAI Codex / GPT-5.6 Luna",
-  }), "GPT-5.6 Luna · max · 待评分");
+  }), "GPT-5.6 Luna · max");
+  assert.equal(isDisplayableModel(partial), false);
   assert.equal(isPlottable(partial, "price"), false);
+  assert.equal(isDisplayableModel(rows[0]), true);
   assert.equal(isPlottable(rows[0], "price"), true);
 });
 
-test("partially judged rows keep their score and show coverage status", () => {
-  const partial = {
-    ...rows[0],
-    score_status: "partial_judged",
-  };
-  assert.equal(formatBehaviorName(partial), "Luna · max · 部分评分");
-  assert.equal(formatTableModelName(partial, true), "Luna · 部分评分");
-  assert.equal(isPlottable(partial, "price"), true);
+test("all partial rows stay out of the public model view even with a score", () => {
+  assert.equal(isDisplayableModel({ ...rows[0], partial: true, overall_score: 81.5 }), false);
+  assert.equal(isDisplayableModel({ ...rows[0], score_status: "pending_judge" }), false);
+  assert.equal(isDisplayableModel({ ...rows[0], status: "stopped" }), false);
+  assert.equal(isDisplayableModel({ ...rows[0], overall_score: null }), false);
 });
