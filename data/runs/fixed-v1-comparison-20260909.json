@@ -486,6 +486,33 @@
       }
     },
     {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
+      "name": "kong-ai-gateway / Glm 5.3 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3-Flash",
+      "family": "GLM-5.3-Flash",
+      "reasoning_effort": "high",
+      "overall_score": 65.4,
+      "games": 32,
+      "active_time_s": 8914.761,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 159382749,
+        "input": 7196404,
+        "output": 402665,
+        "cache_read": 151783680,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.714,
+        "rounds_median": 49.5,
+        "hints_median": 0.0,
+        "samples": 14
+      }
+    },
+    {
       "slug": "minimax-m3-max",
       "name": "OpenRouter / MiniMax M3",
       "provider": "openrouter",
@@ -528,50 +555,6 @@
         "hints_median": 1,
         "samples": 23
       }
-    },
-    {
-      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
-      "name": "kong-ai-gateway / Glm 5.3 Flash",
-      "provider": "kong-ai-gateway",
-      "model": "zai-org/GLM-5.3-Flash",
-      "family": "GLM-5.3-Flash",
-      "reasoning_effort": "high",
-      "overall_score": null,
-      "games": 32,
-      "active_time_s": 8914.761,
-      "compression_time_s": 0,
-      "tokens": {
-        "total": 159382749,
-        "input": 7196404,
-        "output": 402665,
-        "cache_read": 151783680,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 0.5397303,
-        "output": 0.10066625,
-        "cache_read": 2.2767552,
-        "cache_write": 0.0,
-        "total": 2.91715175
-      },
-      "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "zai/glm-5.3-flash",
-        "source_provider_id": "zai",
-        "fetched_at": "2026-09-10T06:05:12Z",
-        "usd_per_million_tokens": {
-          "input": 0.075,
-          "output": 0.25,
-          "cache_read": 0.015,
-          "cache_write": 0.0
-        }
-      },
-      "behavior": {
-        "solve_rate": null,
-        "rounds_median": null,
-        "hints_median": null,
-        "samples": null
-      }
     }
   ],
   "title": "fixed-v1 · 统一比较",
@@ -579,5 +562,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-10T08:03:54Z"
+  "published_at": "2026-09-10T08:06:23Z"
 }
