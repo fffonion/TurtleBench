@@ -181,7 +181,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
             [p["slug"] for p in br.PLAYER_MATRIX],
-            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
+            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "commandcode-deepseek-v4-1-flash-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high"],
         )
 
     def test_minimax_uses_openrouter_free_route(self):
@@ -230,6 +230,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
         deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "commandcode-deepseek-v4-1-flash-beta-high")
         self.assertEqual(deepseek["provider"], "commandcode")
         self.assertEqual(deepseek["model"], "deepseek/deepseek-v4.1-flash-beta")
+        self.assertEqual(deepseek["reasoning_effort"], "high")
+
+    def test_deepseek_v4_1_flash_uses_commandcode_route(self):
+        deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "commandcode-deepseek-v4-1-flash-high")
+        self.assertEqual(deepseek["provider"], "commandcode")
+        self.assertEqual(deepseek["model"], "deepseek/deepseek-v4.1-flash")
         self.assertEqual(deepseek["reasoning_effort"], "high")
 
     def test_claude_sonnet_5_uses_anthropic_high(self):
