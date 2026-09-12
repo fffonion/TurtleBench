@@ -63,5 +63,10 @@
     "provider": "openai",
     "model": "gpt-6-astra",
     "canonical_model": "openai/gpt-6-astra"
+  },
+  "bai:qwen3.8-flash": {
+    "provider": "openrouter",
+    "model": "qwen/qwen3.8-flash",
+    "canonical_model": "qwen/qwen3.8-flash"
   }
 }

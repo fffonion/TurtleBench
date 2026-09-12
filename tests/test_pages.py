@@ -358,6 +358,7 @@ class PricingTests(unittest.TestCase):
             "openai-codex:gpt-5.6-sol",
             "xai-oauth:grok-4.6",
             "openai-codex:gpt-6-astra",
+            "bai:qwen3.8-flash",
         }
         self.assertTrue(expected.issubset(mapping))
 

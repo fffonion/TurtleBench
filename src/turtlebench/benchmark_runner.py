@@ -63,6 +63,7 @@ PLAYER_MATRIX = [
     {"slug": "gpt-5-6-sol-medium", "display_name": "OpenAI Codex / GPT-5.6 Sol medium", "provider": "openai-codex", "model": "gpt-5.6-sol", "reasoning_effort": "medium"},
     {"slug": "gpt-6-astra-high", "display_name": "OpenAI Codex / GPT-6 Astra high", "provider": "openai-codex", "model": "gpt-6-astra", "reasoning_effort": "high"},
     {"slug": "grok-4-6-high", "display_name": "Supplemental / Grok 4.6 high", "provider": "xai-oauth", "model": "grok-4.6", "reasoning_effort": "high"},
+    {"slug": "bai-qwen3-8-flash-max", "display_name": "Bai / qwen3.8-flash max", "provider": "bai", "model": "qwen3.8-flash", "reasoning_effort": "max"},
 ]
 TERMINAL_STATES = {"solved", "max_rounds", "stopped", "error"}
 TERMINAL_VALIDITIES = {"valid", "invalid_host", "invalid_infrastructure"}
