@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import http.server
 import json
@@ -114,6 +115,148 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(args.state_db, Path("/tmp/state.db"))
         self.assertEqual(args.api_url, "http://127.0.0.1:9999")
         self.assertEqual(args.max_attempts_per_player, 100)
+
+    def test_progress_notifications_are_disabled_without_complete_environment(self):
+        self.assertIsNone(br.load_progress_config({}))
+        self.assertIsNone(br.load_progress_config({
+            "TURTLEBENCH_TELEGRAM_BOT_TOKEN": "token",
+            "TURTLEBENCH_TELEGRAM_CHAT_ID": "-100123",
+        }))
+        self.assertIsNone(br.load_progress_config({
+            "TURTLEBENCH_TELEGRAM_BOT_TOKEN": "token",
+            "TURTLEBENCH_TELEGRAM_CHAT_ID": "-100123",
+            "TURTLEBENCH_TELEGRAM_THREAD_ID": "36133",
+            "TURTLEBENCH_PROGRESS_INTERVAL_SECONDS": "nan",
+        }))
+
+    def test_progress_config_reads_topic_and_interval_from_environment(self):
+        config = br.load_progress_config({
+            "TURTLEBENCH_TELEGRAM_BOT_TOKEN": "token",
+            "TURTLEBENCH_TELEGRAM_CHAT_ID": "-100123",
+            "TURTLEBENCH_TELEGRAM_THREAD_ID": "36133",
+            "TURTLEBENCH_PROGRESS_INTERVAL_SECONDS": "60",
+        })
+        self.assertEqual(config, br.TelegramProgressConfig(
+            token="token", chat_id="-100123", thread_id="36133",
+            interval_seconds=60.0, api_base_url="https://api.telegram.org",
+        ))
+        self.assertNotIn("token", repr(config))
+
+    def test_progress_sender_posts_to_configured_topic(self):
+        requests = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length", "0"))
+                requests.append((self.path, self.rfile.read(length).decode("utf-8")))
+                body = b'{"ok":true,"result":{"message_id":123}}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format, *args):
+                pass
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            config = br.TelegramProgressConfig(
+                token="token", chat_id="-100123", thread_id="36133",
+                interval_seconds=3600.0,
+                api_base_url=f"http://127.0.0.1:{server.server_port}",
+            )
+            br.TelegramProgressSender(config).send("进度 1/36")
+        finally:
+            server.shutdown()
+            thread.join()
+            server.server_close()
+
+        self.assertEqual(len(requests), 1)
+        path, body = requests[0]
+        self.assertEqual(path, "/bottoken/sendMessage")
+        self.assertIn("chat_id=-100123", body)
+        self.assertIn("message_thread_id=36133", body)
+        self.assertIn("%E8%BF%9B%E5%BA%A6+1%2F36", body)
+
+    def test_progress_reporter_sends_at_configured_interval(self):
+        class Sender:
+            def __init__(self):
+                self.messages = []
+
+            def send(self, text):
+                self.messages.append(text)
+
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            sender = Sender()
+            reporter = br.ProgressReporter(
+                run_dir=run_dir,
+                players=[{"slug": "model-a", "display_name": "Model A"}],
+                manifest={"puzzles": [{"id": "P1"}]},
+                repeats=3,
+                sender=sender,
+                interval_seconds=0.01,
+            )
+            async def exercise():
+                task = asyncio.create_task(reporter.run())
+                await asyncio.sleep(0.035)
+                reporter.stop()
+                await asyncio.wait_for(task, timeout=1)
+
+            asyncio.run(exercise())
+
+        self.assertGreaterEqual(len(sender.messages), 1)
+        self.assertIn("Model A", sender.messages[0])
+
+    def test_progress_message_reports_completed_active_and_pending_slots(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            player_root = run_dir / "games/model-a/P1"
+            for trial, status in ((1, "solved"), (2, "error")):
+                trial_dir = player_root / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True)
+                (trial_dir / "preliminary.json").write_text(
+                    json.dumps({"status": status}), encoding="utf-8"
+                )
+            active = player_root / "trial-03"
+            active.mkdir(parents=True)
+            (active / "game.json").write_text(
+                json.dumps({"status": "player_turn", "round": 4}), encoding="utf-8"
+            )
+
+            message = br.render_progress_message(
+                run_dir,
+                [{"slug": "model-a", "display_name": "Model A"}],
+                {"puzzles": [{"id": "P1"}]},
+                repeats=3,
+            )
+
+        self.assertIn("Model A", message)
+        self.assertIn("已完成 2/3", message)
+        self.assertIn("运行中 1", message)
+        self.assertIn("待处理 0", message)
+        self.assertIn("solved 1", message)
+        self.assertIn("error 1", message)
+
+    def test_progress_message_stays_within_telegram_limit(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            players = [
+                {"slug": f"model-{i}", "display_name": f"Model {i} " + "x" * 80}
+                for i in range(40)
+            ]
+            message = br.render_progress_message(
+                run_dir,
+                players,
+                {"puzzles": [{"id": "P1"}]},
+                repeats=3,
+            )
+
+        self.assertLessEqual(len(message), 4096)
+        self.assertTrue(message.endswith("……内容已截断……"))
 
     def test_api_game_concurrency_reserves_two_server_slots(self):
         self.assertEqual(br.api_game_concurrency(12, 8), 4)

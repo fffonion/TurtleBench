@@ -69,6 +69,19 @@ Use `python -m turtlebench --help` for all options. `--players` accepts comma-se
 
 Player usage is measured from the API session before and after each run. `--state-db` remains available for dashboard compaction-time accounting of completed sessions.
 
+### Optional Telegram progress notifications
+
+The runner can send a periodic progress summary to a Telegram forum topic. Notifications are opt-in: if any required variable is missing, the runner does not send anything. The topic is selected only through environment variables; no chat or topic identifier is stored in the source code.
+
+```bash
+export TURTLEBENCH_TELEGRAM_BOT_TOKEN='<bot-token>'
+export TURTLEBENCH_TELEGRAM_CHAT_ID='<chat-id>'
+export TURTLEBENCH_TELEGRAM_THREAD_ID='<forum-topic-id>'
+export TURTLEBENCH_PROGRESS_INTERVAL_SECONDS=3600
+```
+
+`TURTLEBENCH_PROGRESS_INTERVAL_SECONDS` defaults to `3600` when the three destination variables are present. `TURTLEBENCH_TELEGRAM_API_BASE_URL` and `TURTLEBENCH_TELEGRAM_PROXY` are optional transport overrides. The summary includes the run ID, completed/running/pending slots, terminal-status counts, scoring count, and current active slots. Telegram delivery failures are reported locally and do not terminate the benchmark.
+
 ## Fixtures
 
 After installation, `fixtures/fixed-v1/manifest.json` declares 12 puzzles across two puzzle types and three difficulty levels. Every manifest entry records the puzzle path and SHA-256 digest.

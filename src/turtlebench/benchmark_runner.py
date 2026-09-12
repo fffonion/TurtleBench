@@ -13,6 +13,7 @@ import re
 import shutil
 import sqlite3
 import statistics
+import sys
 import tempfile
 import time
 import urllib.error
@@ -20,10 +21,12 @@ import urllib.parse
 import urllib.request
 import uuid
 import zipfile
-from dataclasses import dataclass
+from collections import Counter
+from contextlib import suppress
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from . import game_mailbox
 
@@ -277,6 +280,271 @@ def atomic_json(path: Path, data: Any) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
+
+
+@dataclass(frozen=True)
+class TelegramProgressConfig:
+    token: str = field(repr=False)
+    chat_id: str
+    thread_id: str
+    interval_seconds: float
+    api_base_url: str = "https://api.telegram.org"
+    proxy: str | None = None
+
+
+def load_progress_config(
+    environ: Mapping[str, str] | None = None,
+) -> TelegramProgressConfig | None:
+    """Load opt-in progress notifications without providing any destination defaults."""
+    env = os.environ if environ is None else environ
+    token = str(env.get("TURTLEBENCH_TELEGRAM_BOT_TOKEN", "")).strip()
+    chat_id = str(env.get("TURTLEBENCH_TELEGRAM_CHAT_ID", "")).strip()
+    thread_id = str(env.get("TURTLEBENCH_TELEGRAM_THREAD_ID", "")).strip()
+    if not token or not chat_id or not thread_id:
+        return None
+
+    interval_value = str(env.get("TURTLEBENCH_PROGRESS_INTERVAL_SECONDS", "3600")).strip()
+    try:
+        interval_seconds = float(interval_value)
+    except ValueError:
+        return None
+    if not math.isfinite(interval_seconds) or interval_seconds <= 0:
+        return None
+
+    api_base_url = str(
+        env.get("TURTLEBENCH_TELEGRAM_API_BASE_URL", "https://api.telegram.org")
+    ).strip().rstrip("/")
+    if not api_base_url:
+        return None
+    proxy = str(env.get("TURTLEBENCH_TELEGRAM_PROXY", "")).strip() or None
+    return TelegramProgressConfig(
+        token=token,
+        chat_id=chat_id,
+        thread_id=thread_id,
+        interval_seconds=interval_seconds,
+        api_base_url=api_base_url,
+        proxy=proxy,
+    )
+
+
+class TelegramProgressError(RuntimeError):
+    pass
+
+
+class TelegramProgressSender:
+    def __init__(self, config: TelegramProgressConfig):
+        self.config = config
+        handlers = (
+            [urllib.request.ProxyHandler({"http": config.proxy, "https": config.proxy})]
+            if config.proxy else []
+        )
+        self._opener = urllib.request.build_opener(*handlers)
+
+    def method_url(self, method: str) -> str:
+        base = self.config.api_base_url
+        if "{token}" in base:
+            prefix = base.replace("{token}", self.config.token)
+        elif base.endswith("/bot"):
+            prefix = base + self.config.token
+        elif base.endswith("/bot" + self.config.token):
+            prefix = base
+        else:
+            prefix = base + "/bot" + self.config.token
+        return f"{prefix}/{method}"
+
+    def send(self, text: str, attempts: int = 4) -> int:
+        data = urllib.parse.urlencode({
+            "chat_id": self.config.chat_id,
+            "message_thread_id": self.config.thread_id,
+            "text": text,
+            "disable_notification": "true",
+        }).encode("utf-8")
+        url = self.method_url("sendMessage")
+        for attempt in range(attempts):
+            request = urllib.request.Request(
+                url,
+                data=data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                method="POST",
+            )
+            try:
+                with self._opener.open(request, timeout=30) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+            except urllib.error.HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                try:
+                    error_payload = json.loads(body)
+                except json.JSONDecodeError:
+                    error_payload = {}
+                if exc.code == 429 and attempt + 1 < attempts:
+                    retry_after = float((error_payload.get("parameters") or {}).get("retry_after", 1))
+                    time.sleep(max(0.2, retry_after))
+                    continue
+                description = error_payload.get("description", f"HTTP {exc.code}")
+                raise TelegramProgressError(f"Telegram sendMessage 失败：{description}") from exc
+            except (OSError, urllib.error.URLError) as exc:
+                if attempt + 1 < attempts:
+                    time.sleep(min(2 ** attempt, 4))
+                    continue
+                raise TelegramProgressError(
+                    f"Telegram sendMessage 网络失败：{type(exc).__name__}"
+                ) from exc
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise TelegramProgressError("Telegram sendMessage 返回了无效响应") from exc
+
+            if not payload.get("ok"):
+                raise TelegramProgressError(
+                    f"Telegram sendMessage 失败：{payload.get('description', '未知错误')}"
+                )
+            result = payload.get("result")
+            if not isinstance(result, dict) or "message_id" not in result:
+                raise TelegramProgressError("Telegram sendMessage 没有返回 message_id")
+            return int(result["message_id"])
+        raise TelegramProgressError("Telegram sendMessage 重试耗尽")
+
+
+def _optional_json(path: Path) -> dict[str, Any] | None:
+    try:
+        value = load_json(path)
+    except (FileNotFoundError, OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def progress_snapshot(
+    run_dir: Path,
+    player: dict[str, str],
+    manifest: dict[str, Any],
+    repeats: int,
+) -> dict[str, Any]:
+    statuses: Counter[str] = Counter()
+    completed = 0
+    active = 0
+    scored = 0
+    active_slots: list[dict[str, Any]] = []
+    puzzles = manifest.get("puzzles", [])
+    player_root = run_dir / "games" / player["slug"]
+    for puzzle in puzzles:
+        puzzle_id = str(puzzle["id"])
+        for trial in range(1, repeats + 1):
+            trial_dir = player_root / puzzle_id / f"trial-{trial:02d}"
+            preliminary = _optional_json(trial_dir / "preliminary.json")
+            game = _optional_json(trial_dir / "game.json")
+            state = preliminary or game
+            if state is None:
+                continue
+            status = str(state.get("status", ""))
+            if status in TERMINAL_STATES:
+                completed += 1
+                statuses[status] += 1
+            else:
+                active += 1
+                active_slots.append({
+                    "puzzle_id": puzzle_id,
+                    "trial": trial,
+                    "status": status or "unknown",
+                    "round": int(state.get("round", 0) or 0),
+                })
+            if _optional_json(trial_dir / "score.json") is not None:
+                scored += 1
+    expected = len(puzzles) * repeats
+    return {
+        "expected": expected,
+        "completed": completed,
+        "active": active,
+        "pending": max(0, expected - completed - active),
+        "scored": scored,
+        "statuses": dict(statuses),
+        "active_slots": active_slots,
+    }
+
+
+def render_progress_message(
+    run_dir: Path,
+    players: list[dict[str, str]],
+    manifest: dict[str, Any],
+    repeats: int,
+) -> str:
+    meta = _optional_json(run_dir / "run.json") or {}
+    run_id = str(meta.get("run_id", run_dir.name))
+    run_status = str(meta.get("status", "running"))
+    lines = ["TurtleBench 跑分进度", f"Run：{run_id}", f"状态：{run_status}"]
+    status_order = ("solved", "max_rounds", "stopped", "error")
+    for player in players:
+        snapshot = progress_snapshot(run_dir, player, manifest, repeats)
+        label = str(player.get("display_name", player["slug"]))
+        line = (
+            f"{label}：已完成 {snapshot['completed']}/{snapshot['expected']}，"
+            f"运行中 {snapshot['active']}，待处理 {snapshot['pending']}，"
+            f"已评分 {snapshot['scored']}/{snapshot['expected']}"
+        )
+        status_parts = [
+            f"{status} {snapshot['statuses'][status]}"
+            for status in status_order
+            if snapshot["statuses"].get(status, 0)
+        ]
+        if status_parts:
+            line += "；" + "，".join(status_parts)
+        lines.append(line)
+        for slot in snapshot["active_slots"][:5]:
+            lines.append(
+                f"当前：{slot['puzzle_id']} / trial-{slot['trial']:02d} "
+                f"({slot['status']}，第 {slot['round']} 轮)"
+            )
+        if len(snapshot["active_slots"]) > 5:
+            lines.append(f"当前：其余 {len(snapshot['active_slots']) - 5} 局并行执行")
+    text = "\n".join(lines)
+    if len(text) > 3900:
+        suffix = "\n\n……内容已截断……"
+        text = text[: 3900 - len(suffix)] + suffix
+    return text
+
+
+class ProgressReporter:
+    def __init__(
+        self,
+        run_dir: Path,
+        players: list[dict[str, str]],
+        manifest: dict[str, Any],
+        repeats: int,
+        sender: TelegramProgressSender,
+        interval_seconds: float,
+    ):
+        if interval_seconds <= 0:
+            raise ValueError("progress interval must be greater than zero")
+        self.run_dir = run_dir
+        self.players = players
+        self.manifest = manifest
+        self.repeats = repeats
+        self.sender = sender
+        self.interval_seconds = interval_seconds
+        self._stop_event = asyncio.Event()
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    async def run(self) -> None:
+        while not self._stop_event.is_set():
+            try:
+                await asyncio.wait_for(
+                    self._stop_event.wait(), timeout=self.interval_seconds
+                )
+            except asyncio.TimeoutError:
+                if self._stop_event.is_set():
+                    break
+                text = render_progress_message(
+                    self.run_dir, self.players, self.manifest, self.repeats
+                )
+                try:
+                    await asyncio.to_thread(self.sender.send, text)
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    print(
+                        f"progress notification failed: {type(exc).__name__}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
 
 def download_verified_archive(url: str, destination: Path, expected_sha256: str, attempts: int = 8) -> None:
@@ -1113,25 +1381,48 @@ async def async_main(args: argparse.Namespace) -> None:
     meta["max_attempts_per_player"] = args.max_attempts_per_player
     atomic_json(meta_path, meta)
     summaries=[]
-    for player in players:
-        summary_path = run_dir / "summaries" / f"{player['slug']}.json"
-        existing_summary = load_json(summary_path) if summary_path.exists() else None
-        if existing_summary is not None and not summary_needs_retry(existing_summary, TARGET_VALID_GAMES):
-            summary = existing_summary
-        else:
-            summary=await run_player(
-                run_dir, player, manifest, args.repeats, args.concurrency, args.timeout,
-                max_attempts=args.max_attempts_per_player,
-                api_client=api_client,
-                api_run_slots=args.api_run_slots,
-            )
-        summaries.append(summary)
-        if player["slug"] not in meta["completed_players"]:
-            meta["completed_players"].append(player["slug"])
-        atomic_json(meta_path, meta)
-    meta["status"]="completed"; meta["completed_at"]=now_iso(); atomic_json(meta_path,meta)
-    atomic_json(run_dir / "summary.json", {"run": meta, "models": summaries})
-    (run_dir / "REPORT.md").write_text(render_report(meta,summaries),encoding="utf-8")
+    progress_config = load_progress_config()
+    progress_reporter = (
+        ProgressReporter(
+            run_dir=run_dir,
+            players=players,
+            manifest=manifest,
+            repeats=args.repeats,
+            sender=TelegramProgressSender(progress_config),
+            interval_seconds=progress_config.interval_seconds,
+        )
+        if progress_config else None
+    )
+    progress_task = (
+        asyncio.create_task(progress_reporter.run())
+        if progress_reporter else None
+    )
+    try:
+        for player in players:
+            summary_path = run_dir / "summaries" / f"{player['slug']}.json"
+            existing_summary = load_json(summary_path) if summary_path.exists() else None
+            if existing_summary is not None and not summary_needs_retry(existing_summary, TARGET_VALID_GAMES):
+                summary = existing_summary
+            else:
+                summary=await run_player(
+                    run_dir, player, manifest, args.repeats, args.concurrency, args.timeout,
+                    max_attempts=args.max_attempts_per_player,
+                    api_client=api_client,
+                    api_run_slots=args.api_run_slots,
+                )
+            summaries.append(summary)
+            if player["slug"] not in meta["completed_players"]:
+                meta["completed_players"].append(player["slug"])
+            atomic_json(meta_path, meta)
+        meta["status"]="completed"; meta["completed_at"]=now_iso(); atomic_json(meta_path,meta)
+        atomic_json(run_dir / "summary.json", {"run": meta, "models": summaries})
+        (run_dir / "REPORT.md").write_text(render_report(meta,summaries),encoding="utf-8")
+    finally:
+        if progress_reporter:
+            progress_reporter.stop()
+        if progress_task:
+            with suppress(asyncio.CancelledError):
+                await progress_task
     print(run_dir)
 
 
