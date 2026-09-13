@@ -1,4 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
+const DATA_CACHE_BUSTER = "1ad31187";
 
 const MESSAGES = {
   zh: {
@@ -657,7 +658,8 @@ function bindSegmentedControl(selector, onChange) {
 }
 
 async function loadRun(file) {
-  const response = await fetch(file, { cache: "no-store" });
+  const separator = file.includes("?") ? "&" : "?";
+  const response = await fetch(`${file}${separator}v=${DATA_CACHE_BUSTER}`, { cache: "no-store" });
   if (!response.ok) throw new Error(translate("httpReadError", { status: response.status }));
   return response.json();
 }

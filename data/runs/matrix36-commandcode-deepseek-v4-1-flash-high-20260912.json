@@ -30,7 +30,7 @@
         "source": "https://models.dev",
         "source_model_id": "deepseek/deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-13T04:15:19Z",
+        "fetched_at": "2026-09-13T04:18:57Z",
         "usd_per_million_tokens": {
           "input": 0.15,
           "output": 0.6,
@@ -57,5 +57,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-11T17:54:38.771275+00:00",
-  "published_at": "2026-09-13T04:15:19Z"
+  "published_at": "2026-09-13T04:18:57Z"
 }
