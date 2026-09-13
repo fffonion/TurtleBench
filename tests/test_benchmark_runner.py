@@ -851,6 +851,27 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("run_id: run-role", text)
         self.assertIn("done", text)
 
+    async def test_api_role_marks_timeout_as_retryable(self):
+        class TimeoutClient(br.HermesApiClient):
+            def __init__(self):
+                pass
+
+            def turn(self, **kwargs):
+                raise TimeoutError("Hermes API run timed out")
+
+        with tempfile.TemporaryDirectory() as td:
+            log = Path(td) / "timeout.log"
+            rc, usage = await br.run_api_role(
+                TimeoutClient(), "tb-timeout", "timeout title", "p", "m", "high",
+                "prompt", log, 1,
+            )
+            text = log.read_text(encoding="utf-8")
+
+        self.assertEqual(rc, 124)
+        self.assertIsNone(usage)
+        self.assertIn("API call failed after retrying", text)
+        self.assertIn("retryable: true", text)
+
     async def test_run_game_uses_api_sessions_for_both_roles(self):
         sessions = {}
         runs = {}
