@@ -116,6 +116,10 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(args.api_url, "http://127.0.0.1:9999")
         self.assertEqual(args.max_attempts_per_player, 100)
 
+    def test_parser_accepts_retry_failed_flag(self):
+        args = br.build_parser().parse_args(["--retry-failed"])
+        self.assertTrue(args.retry_failed)
+
     def test_progress_notifications_are_disabled_without_complete_environment(self):
         self.assertIsNone(br.load_progress_config({}))
         self.assertIsNone(br.load_progress_config({
@@ -299,6 +303,11 @@ class BenchmarkRunnerTests(unittest.TestCase):
             "invalid_games": 1,
             "attempt_limit_reached": True,
         }, 36))
+
+    def test_retry_failed_bypasses_attempt_limit_summary_guard(self):
+        summary = {"valid_games": 35, "invalid_games": 1, "attempt_limit_reached": True}
+        self.assertTrue(br.should_reuse_summary(summary, 36))
+        self.assertFalse(br.should_reuse_summary(summary, 36, retry_failed=True))
 
     def test_retry_stop_state_marks_attempt_limit(self):
         self.assertEqual(br.retry_stop_state(36, 36, 36, 100), (True, False))

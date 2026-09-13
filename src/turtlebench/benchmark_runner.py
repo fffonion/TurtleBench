@@ -749,6 +749,18 @@ def summary_needs_retry(summary: dict[str, Any], target_valid_games: int) -> boo
     return int(summary.get("valid_games", 0)) < target_valid_games
 
 
+def should_reuse_summary(
+    summary: dict[str, Any] | None,
+    target_valid_games: int,
+    retry_failed: bool = False,
+) -> bool:
+    return (
+        summary is not None
+        and not retry_failed
+        and not summary_needs_retry(summary, target_valid_games)
+    )
+
+
 def retry_stop_state(
     valid_games: int,
     target_valid_games: int,
@@ -1535,6 +1547,7 @@ async def async_main(args: argparse.Namespace) -> None:
     manifest = verify_suite(RUNTIME.fixtures)
     api_client = HermesApiClient(args.api_url, os.environ.get("HERMES_API_KEY", ""))
     await asyncio.to_thread(api_client.health)
+    retry_failed = bool(getattr(args, "retry_failed", False))
     run_id = args.run_id or f"baseline-luna-max-host-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     run_dir = RUNTIME.runs_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -1560,6 +1573,10 @@ async def async_main(args: argparse.Namespace) -> None:
     meta["session_source"] = SESSION_SOURCE
     meta["api_url"] = args.api_url
     meta["max_attempts_per_player"] = args.max_attempts_per_player
+    if retry_failed and meta.get("status") == "completed":
+        meta["status"] = "running"
+        meta.pop("completed_at", None)
+        meta["completed_players"] = []
     atomic_json(meta_path, meta)
     summaries=[]
     progress_config = load_progress_config()
@@ -1582,7 +1599,7 @@ async def async_main(args: argparse.Namespace) -> None:
         for player in players:
             summary_path = run_dir / "summaries" / f"{player['slug']}.json"
             existing_summary = load_json(summary_path) if summary_path.exists() else None
-            if existing_summary is not None and not summary_needs_retry(existing_summary, TARGET_VALID_GAMES):
+            if should_reuse_summary(existing_summary, TARGET_VALID_GAMES, retry_failed):
                 summary = existing_summary
             else:
                 summary=await run_player(
@@ -1615,6 +1632,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--concurrency",type=int,default=12)
     parser.add_argument("--timeout",type=int,default=7200)
     parser.add_argument("--max-attempts-per-player", type=attempt_limit_arg, default=100)
+    parser.add_argument("--retry-failed", action="store_true", help="rerun invalid slots in a completed run")
     parser.add_argument("--fixtures", type=Path, default=DEFAULT_FIXTURES)
     parser.add_argument("--runs-dir", type=Path, default=DEFAULT_RUNS)
     parser.add_argument("--state-db", type=Path, default=DEFAULT_STATE_DB)

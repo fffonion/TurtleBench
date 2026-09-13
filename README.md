@@ -69,6 +69,8 @@ Use `python -m turtlebench --help` for all options. `--players` accepts comma-se
 
 Player usage is measured from the API session before and after each run. `--state-db` remains available for dashboard compaction-time accounting of completed sessions. Transient Hermes API failures (connection errors, timeouts, HTTP 408/425/429/5xx) use bounded exponential backoff at the request layer: up to 8 attempts with delays capped at 30 seconds. Judge retries marked transient continue with 2/4/8-second backoff, capped at 60 seconds, until the per-puzzle timeout.
 
+To explicitly resume a completed run that hit its attempt limit, add `--retry-failed` and raise `--max-attempts-per-player`; valid score slots remain in place and only `invalid_*` slots are archived for another attempt.
+
 ### Optional Telegram progress notifications
 
 The runner can send a periodic progress summary to a Telegram forum topic. Notifications are opt-in: if any required variable is missing, the runner does not send anything. The topic is selected only through environment variables; no chat or topic identifier is stored in the source code.
