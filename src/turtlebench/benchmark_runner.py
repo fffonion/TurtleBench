@@ -44,6 +44,12 @@ class RuntimePaths:
 
 
 RUNTIME = RuntimePaths(DEFAULT_FIXTURES, DEFAULT_RUNS, DEFAULT_STATE_DB)
+TRANSIENT_HTTP_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
+DEFAULT_API_RETRY_ATTEMPTS = 8
+DEFAULT_API_RETRY_BASE_SECONDS = 1.0
+DEFAULT_API_RETRY_MAX_SECONDS = 30.0
+JUDGE_RETRY_BASE_SECONDS = 2.0
+JUDGE_RETRY_MAX_SECONDS = 60.0
 HOST = {"provider": "openai-codex", "model": "gpt-5.6-luna", "reasoning_effort": "max"}
 JUDGE = HOST.copy()
 PLAYER_MATRIX = [
@@ -83,10 +89,20 @@ JUDGE_REQUIRED_FIELDS = frozenset({
 
 
 class HermesApiError(RuntimeError):
-    def __init__(self, status: int | None, detail: str, retry_after: float | None = None):
+    def __init__(
+        self,
+        status: int | None,
+        detail: str,
+        retry_after: float | None = None,
+        retryable: bool | None = None,
+    ):
         super().__init__(detail)
         self.status = status
         self.retry_after = retry_after
+        self.retryable = (
+            status is None or status in TRANSIENT_HTTP_STATUSES
+            if retryable is None else retryable
+        )
 
 
 @dataclass(frozen=True)
@@ -99,10 +115,25 @@ class HermesTurnResult:
 class HermesApiClient:
     """Small synchronous client for Hermes API Server's persisted run API."""
 
-    def __init__(self, base_url: str, api_key: str, poll_interval: float = 0.1):
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        poll_interval: float = 0.1,
+        retry_attempts: int = DEFAULT_API_RETRY_ATTEMPTS,
+        retry_base_seconds: float = DEFAULT_API_RETRY_BASE_SECONDS,
+        retry_max_seconds: float = DEFAULT_API_RETRY_MAX_SECONDS,
+    ):
+        if retry_attempts < 1:
+            raise ValueError("retry attempts must be at least one")
+        if retry_base_seconds < 0 or retry_max_seconds < retry_base_seconds:
+            raise ValueError("retry delay bounds are invalid")
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.poll_interval = poll_interval
+        self.retry_attempts = retry_attempts
+        self.retry_base_seconds = retry_base_seconds
+        self.retry_max_seconds = retry_max_seconds
         self._disabled_toolsets: list[str] | None = None
 
     def _url(self, path: str) -> str:
@@ -133,17 +164,78 @@ class HermesApiClient:
                 exc.code,
                 f"Hermes API HTTP {exc.code}: {detail}",
                 float(retry_after) if retry_after else None,
+                retryable=exc.code in TRANSIENT_HTTP_STATUSES,
             ) from exc
         except urllib.error.URLError as exc:
-            raise HermesApiError(None, f"Hermes API connection failed: {exc.reason}") from exc
+            raise HermesApiError(
+                None,
+                f"Hermes API connection failed: {exc.reason}",
+                retryable=True,
+            ) from exc
         if status not in expected:
-            raise HermesApiError(status, f"Hermes API HTTP {status}")
+            raise HermesApiError(
+                status,
+                f"Hermes API HTTP {status}",
+                retryable=status in TRANSIENT_HTTP_STATUSES,
+            )
         if not response_body.strip():
             return {}
         return json.loads(response_body)
 
-    def _session_usage(self, session_id: str) -> dict[str, Any]:
-        value = self._request("GET", f"api/sessions/{urllib.parse.quote(session_id, safe='')}")
+    @staticmethod
+    def _is_retryable_error(exc: BaseException) -> bool:
+        if isinstance(exc, HermesApiError):
+            return exc.retryable
+        return isinstance(exc, (TimeoutError, OSError, urllib.error.URLError))
+
+    def _retry_delay(self, retry_number: int, exc: BaseException) -> float:
+        delay = min(
+            self.retry_max_seconds,
+            self.retry_base_seconds * (2 ** retry_number),
+        )
+        retry_after = getattr(exc, "retry_after", None)
+        if retry_after is not None:
+            delay = max(delay, min(self.retry_max_seconds, max(0.0, retry_after)))
+        return delay
+
+    def _request_with_retry(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        expected: tuple[int, ...] = (200,),
+        deadline: float | None = None,
+    ) -> dict[str, Any]:
+        deadline = deadline if deadline is not None else time.monotonic() + 300
+        last_error: BaseException | None = None
+        for attempt in range(self.retry_attempts):
+            if attempt and time.monotonic() >= deadline:
+                if last_error is not None:
+                    raise last_error
+                raise TimeoutError("API request retry deadline expired")
+            try:
+                return self._request(method, path, payload, expected)
+            except (HermesApiError, TimeoutError, OSError) as exc:
+                last_error = exc
+                if (
+                    not self._is_retryable_error(exc)
+                    or attempt + 1 >= self.retry_attempts
+                ):
+                    raise
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise
+                time.sleep(min(self._retry_delay(attempt, exc), remaining))
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("API request retry loop exited unexpectedly")
+
+    def _session_usage(self, session_id: str, deadline: float) -> dict[str, Any]:
+        value = self._request_with_retry(
+            "GET",
+            f"api/sessions/{urllib.parse.quote(session_id, safe='')}",
+            deadline=deadline,
+        )
         session = value.get("session", value)
         keys = (
             "api_call_count", "input_tokens", "output_tokens", "cache_read_tokens",
@@ -156,23 +248,31 @@ class HermesApiClient:
             **{key: int(session.get(key, 0) or 0) for key in keys},
         }
 
-    def _ensure_session(self, session_id: str, title: str, model: str) -> None:
+    def _ensure_session(self, session_id: str, title: str, model: str, deadline: float) -> None:
         try:
-            self._session_usage(session_id)
+            self._session_usage(session_id, deadline)
             return
         except HermesApiError as exc:
             if exc.status != 404:
                 raise
-        self._request("POST", "api/sessions", {
-            "id": session_id,
-            "title": title[:100],
-            "model": model,
-            "source": SESSION_SOURCE,
-        }, expected=(201, 409))
+        self._request_with_retry(
+            "POST",
+            "api/sessions",
+            {
+                "id": session_id,
+                "title": title[:100],
+                "model": model,
+                "source": SESSION_SOURCE,
+            },
+            expected=(201, 409),
+            deadline=deadline,
+        )
 
-    def _terminal_disabled_toolsets(self) -> list[str]:
+    def _terminal_disabled_toolsets(self, deadline: float) -> list[str]:
         if self._disabled_toolsets is None:
-            value = self._request("GET", "v1/toolsets")
+            value = self._request_with_retry(
+                "GET", "v1/toolsets", deadline=deadline
+            )
             names = [
                 str(item.get("name", "")).strip()
                 for item in value.get("data", [])
@@ -182,8 +282,12 @@ class HermesApiClient:
             self._disabled_toolsets = sorted({name for name in names if name and name != "terminal"})
         return self._disabled_toolsets
 
-    def health(self) -> None:
-        self._request("GET", "v1/models")
+    def health(self, timeout_s: int = 300) -> None:
+        self._request_with_retry(
+            "GET",
+            "v1/models",
+            deadline=time.monotonic() + timeout_s,
+        )
 
     @staticmethod
     def _usage_delta(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
@@ -210,10 +314,12 @@ class HermesApiClient:
         timeout_s: int,
     ) -> HermesTurnResult:
         deadline = time.monotonic() + timeout_s
-        self._ensure_session(session_id, session_title, model)
-        before = self._session_usage(session_id)
-        messages = self._request(
-            "GET", f"api/sessions/{urllib.parse.quote(session_id, safe='')}/messages"
+        self._ensure_session(session_id, session_title, model, deadline)
+        before = self._session_usage(session_id, deadline)
+        messages = self._request_with_retry(
+            "GET",
+            f"api/sessions/{urllib.parse.quote(session_id, safe='')}/messages",
+            deadline=deadline,
         ).get("data", [])
         body = {
             "input": prompt,
@@ -224,46 +330,58 @@ class HermesApiClient:
             "model_options": {"reasoning_effort": reasoning},
             "skip_memory": True,
             "skip_context_files": True,
-            "disabled_toolsets": self._terminal_disabled_toolsets(),
+            "disabled_toolsets": self._terminal_disabled_toolsets(deadline),
             "fail_fast_on_nonretryable_429": True,
         }
-        while True:
-            try:
-                started = self._request("POST", "v1/runs", body, expected=(202,))
-                break
-            except HermesApiError as exc:
-                if exc.status != 429 or time.monotonic() >= deadline:
-                    raise
-                time.sleep(min(exc.retry_after or self.poll_interval, max(0.0, deadline - time.monotonic())))
+        started = self._request_with_retry(
+            "POST", "v1/runs", body, expected=(202,), deadline=deadline
+        )
         run_id = str(started.get("run_id", ""))
         if not run_id:
-            raise HermesApiError(None, "Hermes API run response omitted run_id")
+            raise HermesApiError(
+                None,
+                "Hermes API run response omitted run_id",
+                retryable=False,
+            )
         run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
         while time.monotonic() < deadline:
             try:
-                status = self._request("GET", run_path)
-            except TimeoutError:
+                status = self._request_with_retry(
+                    "GET", run_path, deadline=deadline
+                )
+            except (TimeoutError, OSError):
                 time.sleep(min(self.poll_interval, max(0.0, deadline - time.monotonic())))
                 continue
             state = str(status.get("status", ""))
             if state == "completed":
                 output = str(status.get("output", "")).strip()
                 if not output:
-                    raise HermesApiError(None, f"Hermes API run {run_id} completed without output")
-                after = self._session_usage(session_id)
+                    raise HermesApiError(
+                        None,
+                        f"Hermes API run {run_id} completed without output",
+                        retryable=True,
+                    )
+                after = self._session_usage(session_id, deadline)
                 return HermesTurnResult(output, self._usage_delta(before, after), run_id)
             if state == "waiting_for_approval":
-                self._request(
+                self._request_with_retry(
                     "POST", f"{run_path}/approval", {"choice": "session", "all": True},
-                    expected=(200,),
+                    expected=(200,), deadline=deadline,
                 )
             elif state in {"failed", "stopped", "cancelled"}:
                 detail = status.get("error") or status.get("message") or "no error detail"
-                raise HermesApiError(None, f"Hermes API run {run_id} ended with status={state}: {detail}")
+                raise HermesApiError(
+                    None,
+                    f"Hermes API run {run_id} ended with status={state}: {detail}",
+                    retryable=False,
+                )
             time.sleep(min(self.poll_interval, max(0.0, deadline - time.monotonic())))
         try:
-            self._request("POST", f"{run_path}/stop", {}, expected=(200, 202, 409))
-        except HermesApiError:
+            self._request_with_retry(
+                "POST", f"{run_path}/stop", {},
+                expected=(200, 202, 409), deadline=deadline,
+            )
+        except (HermesApiError, TimeoutError, OSError):
             pass
         raise TimeoutError(f"Hermes API run {run_id} timed out after {timeout_s}s")
 
@@ -872,6 +990,26 @@ def init_game(path: Path, game_id: str) -> None:
     game_mailbox.initialize(path, game_id=game_id, max_rounds=50)
 
 
+def _retryable_api_exception(exc: BaseException) -> bool:
+    if isinstance(exc, HermesApiError):
+        return exc.retryable
+    return isinstance(exc, (TimeoutError, OSError, urllib.error.URLError))
+
+
+def _write_api_role_failure(
+    log_path: Path,
+    session_id: str,
+    exc: BaseException,
+    retryable: bool,
+) -> None:
+    log_path.write_text(
+        f"session_id: {session_id}\n"
+        f"API call failed after retrying: {exc}\n"
+        f"retryable: {str(retryable).lower()}\n",
+        encoding="utf-8",
+    )
+
+
 async def run_api_role(
     client: HermesApiClient,
     session_id: str,
@@ -896,15 +1034,11 @@ async def run_api_role(
             timeout_s=timeout_s,
         )
     except TimeoutError as exc:
-        log_path.write_text(
-            f"session_id: {session_id}\nAPI call failed after 1 attempt: {exc}\n",
-            encoding="utf-8",
-        )
+        _write_api_role_failure(log_path, session_id, exc, retryable=True)
         return 124, None
     except Exception as exc:
-        log_path.write_text(
-            f"session_id: {session_id}\nAPI call failed after 1 attempt: {exc}\n",
-            encoding="utf-8",
+        _write_api_role_failure(
+            log_path, session_id, exc, _retryable_api_exception(exc)
         )
         return 1, None
     log_path.write_text(
@@ -912,6 +1046,14 @@ async def run_api_role(
         encoding="utf-8",
     )
     return 0, result.usage
+
+
+def role_failure_is_retryable(log_path: Path) -> bool:
+    if not log_path.exists():
+        return False
+    return "retryable: true" in log_path.read_text(
+        encoding="utf-8", errors="replace"
+    ).lower()
 
 
 def has_infrastructure_api_failure(log_path: Path) -> bool:
@@ -1064,10 +1206,21 @@ async def run_judge(
         return output
 
     prompt = judge_prompt(RUNTIME.fixtures / puzzle["path"], trial_dirs, output, player)
+    deadline = time.monotonic() + timeout_s
     last_rc: int | None = None
     session_ids: list[str] = []
-    for attempt in range(1, 4):
-        log_path = puzzle_root / ("judge.log" if attempt == 1 else f"judge-retry-{attempt:02d}.log")
+    nonretryable_attempts = 0
+    attempt = 0
+    while True:
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"judge failed after {attempt} attempts for {player['slug']} "
+                f"{puzzle['id']} rc={last_rc} (timeout)"
+            )
+        attempt += 1
+        log_path = puzzle_root / (
+            "judge.log" if attempt == 1 else f"judge-retry-{attempt:02d}.log"
+        )
         suffix = uuid.uuid4().hex[:12]
         session_id = f"tb-{suffix}-judge"
         session_ids.append(session_id)
@@ -1075,18 +1228,45 @@ async def run_judge(
             "source": SESSION_SOURCE,
             "attempts": session_ids,
         })
+        remaining_s = max(1, math.ceil(deadline - time.monotonic()))
         last_rc, _usage = await run_api_role(
             api_client,
             session_id,
             f"TurtleBench judge {player['slug']} {puzzle['id']} a{attempt} {suffix}",
             JUDGE["provider"], JUDGE["model"], JUDGE["reasoning_effort"],
-            prompt, log_path, timeout_s,
+            prompt, log_path, remaining_s,
         )
         if last_rc == 0 and valid_output():
             return output
         if output.exists():
             output.replace(puzzle_root / f"judge-invalid-attempt-{attempt:02d}.json")
-    raise RuntimeError(f"judge failed after 3 attempts for {player['slug']} {puzzle['id']} rc={last_rc}")
+
+        retryable = last_rc != 0 and role_failure_is_retryable(log_path)
+        if not retryable:
+            nonretryable_attempts += 1
+            if nonretryable_attempts >= 3:
+                raise RuntimeError(
+                    f"judge failed after {attempt} attempts for "
+                    f"{player['slug']} {puzzle['id']} rc={last_rc}"
+                )
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"judge failed after {attempt} attempts for {player['slug']} "
+                f"{puzzle['id']} rc={last_rc} (timeout)"
+            )
+        delay = min(
+            JUDGE_RETRY_MAX_SECONDS,
+            JUDGE_RETRY_BASE_SECONDS * (2 ** min(attempt - 1, 6)),
+            max(0.0, deadline - time.monotonic()),
+        )
+        print(
+            f"judge retry: {player['slug']} {puzzle['id']} "
+            f"attempt={attempt + 1} delay={delay:.1f}s "
+            f"retryable={retryable}",
+            file=sys.stderr,
+            flush=True,
+        )
+        await asyncio.sleep(delay)
 
 
 def clamp(value: float, lo: float, hi: float) -> float:

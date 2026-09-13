@@ -521,7 +521,13 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
     def test_api_client_retries_transient_poll_timeout(self):
         state = {"session_exists": False, "polls": 0}
-        client = br.HermesApiClient("http://api", "secret", poll_interval=0.001)
+        client = br.HermesApiClient(
+            "http://api",
+            "secret",
+            poll_interval=0.001,
+            retry_base_seconds=0.001,
+            retry_max_seconds=0.002,
+        )
 
         def request(method, path, payload=None, expected=(200,)):
             if path == "api/sessions/tb-session-timeout":
@@ -559,6 +565,54 @@ class BenchmarkRunnerTests(unittest.TestCase):
 
         self.assertEqual(result.output, "role completed")
         self.assertEqual(state["polls"], 2)
+
+    def test_api_client_retries_transient_connection_with_backoff(self):
+        state = {"session_exists": False, "calls": 0}
+        client = br.HermesApiClient(
+            "http://api",
+            "secret",
+            poll_interval=0.001,
+            retry_attempts=3,
+            retry_base_seconds=0.25,
+            retry_max_seconds=1.0,
+        )
+
+        def request(method, path, payload=None, expected=(200,)):
+            state["calls"] += 1
+            if state["calls"] == 1:
+                raise br.HermesApiError(None, "connection refused", retryable=True)
+            if path == "api/sessions/tb-session-retry":
+                if not state["session_exists"]:
+                    raise br.HermesApiError(404, "missing")
+                return {"session": {
+                    "provider": "provider-a", "model": "model-a",
+                    "api_call_count": 1, "input_tokens": 20,
+                    "output_tokens": 5, "cache_read_tokens": 3,
+                    "cache_write_tokens": 0, "reasoning_tokens": 2,
+                }}
+            if path == "api/sessions":
+                state["session_exists"] = True
+                return {}
+            if path == "api/sessions/tb-session-retry/messages":
+                return {"data": []}
+            if path == "v1/toolsets":
+                return {"data": [{"name": "terminal"}]}
+            if path == "v1/runs":
+                return {"run_id": "run-retry"}
+            if path == "v1/runs/run-retry":
+                return {"status": "completed", "output": "role completed"}
+            raise AssertionError(f"unexpected request: {method} {path}")
+
+        with mock.patch.object(client, "_request", side_effect=request), mock.patch.object(br.time, "sleep") as sleep:
+            result = client.turn(
+                session_id="tb-session-retry", session_title="TurtleBench role",
+                provider="provider-a", model="model-a", reasoning="high",
+                prompt="run role", timeout_s=2,
+            )
+
+        self.assertEqual(result.output, "role completed")
+        self.assertEqual(state["calls"], 9)
+        self.assertEqual(sleep.call_args_list, [mock.call(0.25)])
 
     def test_api_sessions_keep_turtle_soup_source(self):
         self.assertEqual(br.SESSION_SOURCE, "turtle-soup")
@@ -1038,6 +1092,58 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
             sessions = json.loads((output.parent / "judge-sessions.json").read_text(encoding="utf-8"))
             self.assertEqual(sessions["source"], "turtle-soup")
             self.assertEqual(sessions["attempts"], calls)
+
+    async def test_judge_retries_transient_api_failures_with_backoff(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            player = {
+                "slug": "luna-max",
+                "provider": "openai-codex",
+                "model": "gpt-5.6-luna",
+                "reasoning_effort": "max",
+            }
+            puzzle = {"id": "SPB-C-E-01", "path": "puzzles/SPB-C-E-01.json"}
+            output = run_dir / "games/luna-max/SPB-C-E-01/judge.json"
+            calls = []
+
+            async def fake_run_api_role(client, session_id, session_title, provider, model, reasoning, prompt, log_path, timeout_s):
+                calls.append(session_id)
+                log_path.parent.mkdir(parents=True, exist_ok=True)
+                if len(calls) < 3:
+                    log_path.write_text(
+                        "API call failed after retrying: connection refused\n"
+                        "retryable: true\n",
+                        encoding="utf-8",
+                    )
+                    return 1, None
+                fields = {
+                    "validity": "valid", "atomic_question_rate": 1, "useful_constraint_rate": 1,
+                    "redundant_question_rate": 0, "unsupported_story_guess_rate": 0, "irrelevant_branch_max": 0,
+                    "contradiction_count": 0, "partial_misread_count": 0, "excluded_revisit_count": 0,
+                    "protocol_recovery_failure_count": 0, "reasoning_chain_parts": {},
+                    "question_information_parts": {}, "final_closure": 5, "hint_effective_count": 0,
+                    "hint_ineffective_count": 0, "hint_early_count": 0, "hint_consecutive": False,
+                    "hint_hoarding": False, "failure_tags": [], "notes": [],
+                }
+                output.write_text(
+                    json.dumps([fields | {"trial": i} for i in (1, 2, 3)]),
+                    encoding="utf-8",
+                )
+                return 0, {"session_id": session_id}
+
+            sleep = mock.AsyncMock()
+            with (
+                mock.patch.object(br, "run_api_role", side_effect=fake_run_api_role),
+                mock.patch.object(br.asyncio, "sleep", sleep),
+            ):
+                result = await br.run_judge(run_dir, player, puzzle, 10, api_client=mock.Mock())
+
+            self.assertEqual(result, output)
+            self.assertEqual(len(calls), 3)
+            self.assertEqual(
+                [call.args[0] for call in sleep.await_args_list],
+                [2.0, 4.0],
+            )
 
 
 if __name__ == "__main__":

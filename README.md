@@ -67,7 +67,7 @@ export HERMES_API_KEY='...'
 
 Use `python -m turtlebench --help` for all options. `--players` accepts comma-separated slugs from the model matrix in `src/turtlebench/benchmark_runner.py`. Every role receives an isolated persisted Hermes session with `source=turtle-soup`; the runner itself remains one process. `--concurrency` is the requested number of concurrent games. Each game needs two API run slots, so `--api-run-slots 8` admits up to four games at once and leaves capacity for unrelated API clients.
 
-Player usage is measured from the API session before and after each run. `--state-db` remains available for dashboard compaction-time accounting of completed sessions.
+Player usage is measured from the API session before and after each run. `--state-db` remains available for dashboard compaction-time accounting of completed sessions. Transient Hermes API failures (connection errors, timeouts, HTTP 408/425/429/5xx) use bounded exponential backoff at the request layer: up to 8 attempts with delays capped at 30 seconds. Judge retries marked transient continue with 2/4/8-second backoff, capped at 60 seconds, until the per-puzzle timeout.
 
 ### Optional Telegram progress notifications
 
