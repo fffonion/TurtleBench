@@ -1,6 +1,15 @@
 {
-  "default_run": "fixed-v1-comparison-20260909",
+  "default_run": "matrix36-commandcode-deepseek-v4-1-flash-high-20260912",
   "runs": [
+    {
+      "id": "matrix36-commandcode-deepseek-v4-1-flash-high-20260912",
+      "title": "fixed-v1 · DeepSeek V4.1 Flash",
+      "file": "data/runs/matrix36-commandcode-deepseek-v4-1-flash-high-20260912.json",
+      "suite_version": "fixed-v1",
+      "puzzle_count": 12,
+      "repeats": 3,
+      "published_at": "2026-09-13T04:15:19Z"
+    },
     {
       "id": "fixed-v1-comparison-20260909",
       "title": "fixed-v1 · 统一比较",
