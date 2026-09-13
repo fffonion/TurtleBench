@@ -124,7 +124,7 @@ test("the chart is the default view while the price axis stays available", () =>
   assert.ok(html.includes('id="axis-control" class="control-group">'));
   assert.ok(html.includes('id="chart-view">'));
   assert.ok(html.includes('id="table-view" hidden'));
-  assert.ok(html.includes('assets/app.js?v=restore-partial-row-20260910'));
+  assert.ok(html.includes('assets/app.js?v=1ad31187'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "price";'));
 });
