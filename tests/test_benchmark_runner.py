@@ -215,6 +215,35 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertGreaterEqual(len(sender.messages), 1)
         self.assertIn("Model A", sender.messages[0])
 
+    def test_progress_reporter_sends_immediately_before_long_interval(self):
+        class Sender:
+            def __init__(self):
+                self.messages = []
+
+            def send(self, text):
+                self.messages.append(text)
+
+        with tempfile.TemporaryDirectory() as td:
+            reporter = br.ProgressReporter(
+                run_dir=Path(td),
+                players=[{"slug": "model-a", "display_name": "Model A"}],
+                manifest={"puzzles": [{"id": "P1"}]},
+                repeats=3,
+                sender=Sender(),
+                interval_seconds=3600,
+            )
+            async def exercise():
+                task = asyncio.create_task(reporter.run())
+                await asyncio.sleep(0.02)
+                reporter.stop()
+                await asyncio.wait_for(task, timeout=1)
+
+            asyncio.run(exercise())
+            messages = reporter.sender.messages
+
+        self.assertEqual(len(messages), 1)
+        self.assertIn("Model A", messages[0])
+
     def test_progress_message_reports_completed_active_and_pending_slots(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)

@@ -626,7 +626,7 @@ class ProgressReporter:
         players: list[dict[str, str]],
         manifest: dict[str, Any],
         repeats: int,
-        sender: TelegramProgressSender,
+        sender: Any,
         interval_seconds: float,
     ):
         if interval_seconds <= 0:
@@ -642,7 +642,23 @@ class ProgressReporter:
     def stop(self) -> None:
         self._stop_event.set()
 
+    async def _send_once(self) -> None:
+        text = render_progress_message(
+            self.run_dir, self.players, self.manifest, self.repeats
+        )
+        try:
+            await asyncio.to_thread(self.sender.send, text)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            print(
+                f"progress notification failed: {type(exc).__name__}",
+                file=sys.stderr,
+                flush=True,
+            )
+
     async def run(self) -> None:
+        await self._send_once()
         while not self._stop_event.is_set():
             try:
                 await asyncio.wait_for(
@@ -651,19 +667,7 @@ class ProgressReporter:
             except asyncio.TimeoutError:
                 if self._stop_event.is_set():
                     break
-                text = render_progress_message(
-                    self.run_dir, self.players, self.manifest, self.repeats
-                )
-                try:
-                    await asyncio.to_thread(self.sender.send, text)
-                except asyncio.CancelledError:
-                    raise
-                except Exception as exc:
-                    print(
-                        f"progress notification failed: {type(exc).__name__}",
-                        file=sys.stderr,
-                        flush=True,
-                    )
+                await self._send_once()
 
 
 def download_verified_archive(url: str, destination: Path, expected_sha256: str, attempts: int = 8) -> None:
