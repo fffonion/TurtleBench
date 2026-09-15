@@ -222,6 +222,50 @@
       }
     },
     {
+      "slug": "bai-qwen3-8-flash-max",
+      "name": "Bai / Qwen3.8 Flash",
+      "provider": "bai",
+      "model": "qwen3.8-flash",
+      "family": "qwen3.8-flash",
+      "reasoning_effort": "max",
+      "overall_score": 83.0,
+      "games": 35,
+      "active_time_s": 21786.004,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 65411639,
+        "input": 9165491,
+        "output": 1006724,
+        "cache_read": 55239424,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.37482365,
+        "output": 0.47316028,
+        "cache_read": 0.883830784,
+        "cache_write": 0.0,
+        "total": 2.731814714
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "qwen/qwen3.8-flash",
+        "source_provider_id": "openrouter",
+        "fetched_at": "2026-09-15T09:10:35Z",
+        "usd_per_million_tokens": {
+          "input": 0.15,
+          "output": 0.47,
+          "cache_read": 0.016,
+          "cache_write": 0.2
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.971,
+        "rounds_median": 26.0,
+        "hints_median": 1,
+        "samples": 35
+      }
+    },
+    {
       "slug": "deepseek-provider-v4-flash-max",
       "name": "DeepSeek / DeepSeek V4 Flash",
       "provider": "deepseek",
@@ -579,5 +623,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-10T11:12:38Z"
+  "published_at": "2026-09-15T09:12:06Z"
 }
