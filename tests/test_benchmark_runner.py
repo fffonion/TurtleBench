@@ -362,7 +362,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
             [p["slug"] for p in br.PLAYER_MATRIX],
-            ["luna-max", "luna-high", "minimax-m3-max", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "commandcode-deepseek-v4-1-flash-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high", "bai-qwen3-8-flash-max"],
+            ["luna-max", "luna-high", "minimax-m3-max", "openrouter-stealth-union-alpha-high", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "commandcode-deepseek-v4-1-flash-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high", "bai-qwen3-8-flash-max"],
         )
 
     def test_minimax_uses_openrouter_free_route(self):
@@ -370,6 +370,12 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(minimax["provider"], "openrouter")
         self.assertEqual(minimax["model"], "minimax/minimax-m3:free")
         self.assertEqual(minimax["reasoning_effort"], "max")
+
+    def test_union_alpha_uses_openrouter_route(self):
+        union_alpha = next(p for p in br.PLAYER_MATRIX if p["slug"] == "openrouter-stealth-union-alpha-high")
+        self.assertEqual(union_alpha["provider"], "openrouter")
+        self.assertEqual(union_alpha["model"], "stealth/union-alpha")
+        self.assertEqual(union_alpha["reasoning_effort"], "high")
 
     def test_deepseek_uses_commandcode_model_id(self):
         deepseek = next(p for p in br.PLAYER_MATRIX if p["slug"] == "deepseek-v4-flash-max")

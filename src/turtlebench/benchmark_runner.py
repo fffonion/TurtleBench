@@ -56,6 +56,7 @@ PLAYER_MATRIX = [
     {"slug": "luna-max", "display_name": "Luna max baseline", "provider": "openai-codex", "model": "gpt-5.6-luna", "reasoning_effort": "max"},
     {"slug": "luna-high", "display_name": "Luna high baseline", "provider": "openai-codex", "model": "gpt-5.6-luna", "reasoning_effort": "high"},
     {"slug": "minimax-m3-max", "display_name": "OpenRouter / MiniMax M3 max", "provider": "openrouter", "model": "minimax/minimax-m3:free", "reasoning_effort": "max"},
+    {"slug": "openrouter-stealth-union-alpha-high", "display_name": "OpenRouter / stealth/union-alpha high", "provider": "openrouter", "model": "stealth/union-alpha", "reasoning_effort": "high"},
     {"slug": "deepseek-v4-flash-max", "display_name": "CommandCode / DeepSeek V4 Flash max", "provider": "commandcode", "model": "deepseek-ai/deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "deepseek-provider-v4-flash-max", "display_name": "DeepSeek provider / DeepSeek V4 Flash max", "provider": "deepseek", "model": "deepseek-v4-flash", "reasoning_effort": "max"},
     {"slug": "deepseek-deepseek-v4-1-flash-max", "display_name": "DeepSeek / DeepSeek V4.1 Flash max", "provider": "deepseek", "model": "deepseek-v4.1-flash-expires-on-0910", "reasoning_effort": "max"},
