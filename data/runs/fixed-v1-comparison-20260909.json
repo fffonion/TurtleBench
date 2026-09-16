@@ -398,6 +398,50 @@
       }
     },
     {
+      "slug": "commandcode-deepseek-v4-1-flash-high",
+      "name": "CommandCode / DeepSeek V4.1 Flash",
+      "provider": "commandcode",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "family": "deepseek-v4.1-flash",
+      "reasoning_effort": "high",
+      "overall_score": 81.0,
+      "games": 36,
+      "active_time_s": 23917.797,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 64960088,
+        "input": 1146738,
+        "output": 3034854,
+        "cache_read": 60778496,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 0.1720107,
+        "output": 1.8209124,
+        "cache_read": 0.182335488,
+        "cache_write": 0.0,
+        "total": 2.175258588
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source_provider_id": "deepseek",
+        "fetched_at": "2026-09-13T04:18:57Z",
+        "usd_per_million_tokens": {
+          "input": 0.15,
+          "output": 0.6,
+          "cache_read": 0.003,
+          "cache_write": null
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.861,
+        "rounds_median": 28.5,
+        "hints_median": 1.0,
+        "samples": 36
+      }
+    },
+    {
       "slug": "claude-sonnet-5-high",
       "name": "Anthropic / Claude Sonnet 5",
       "provider": "anthropic",
@@ -623,5 +667,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-15T09:12:06Z"
+  "published_at": "2026-09-16T18:30:09Z"
 }
