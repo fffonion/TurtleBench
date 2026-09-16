@@ -460,7 +460,7 @@ def write_site(
     web_dir: str | Path,
     retire_run_ids: list[str] | None = None,
 ) -> None:
-    """Write static assets and append or replace one sanitized run document."""
+    """Write static assets and replace the single public result batch."""
 
     assert_public_safe(run)
     run_id = str(run.get("run_id", ""))
@@ -483,7 +483,14 @@ def write_site(
         prior_runs = []
     if not isinstance(prior_runs, list):
         raise ValueError("data/index.json runs must be an array")
-    retired = {str(value) for value in (retire_run_ids or []) if str(value) != run_id}
+    retired = {
+        str(item.get("id"))
+        for item in prior_runs
+        if isinstance(item, dict) and item.get("id") != run_id
+    }
+    retired.update(
+        str(value) for value in (retire_run_ids or []) if str(value) != run_id
+    )
     for retired_id in retired:
         retired_file = output / "data" / "runs" / f"{retired_id}.json"
         if retired_file.is_file():
@@ -497,16 +504,7 @@ def write_site(
         "repeats": run.get("repeats"),
         "published_at": run.get("published_at"),
     }
-    runs = [
-        entry,
-        *[
-            item for item in prior_runs
-            if isinstance(item, dict)
-            and item.get("id") != run_id
-            and item.get("id") not in retired
-        ],
-    ]
-    _write_json(index_path, {"default_run": run_id, "runs": runs})
+    _write_json(index_path, {"default_run": run_id, "runs": [entry]})
 
 
 MODELS_DEV_URL = "https://models.dev/api.json"

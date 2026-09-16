@@ -94,7 +94,7 @@ Each run is written below `runs/<run-id>/` unless `--runs-dir` is changed. Run d
 
 ## Publish the dashboard
 
-Only completed runs can be published. The publisher reads current regular prices from models.dev, writes a sanitized aggregate, preserves older published runs, commits the static site to `gh-pages`, and pushes that branch. The chart reports average player time per game; host turns and detected Hermes context-compaction intervals are excluded. The publisher reads `~/.hermes/state.db` by default for compaction timing; use `--state-db` to override it.
+Only completed runs can be published. The publisher replaces the single public result batch, reads current regular prices from models.dev, and writes a sanitized aggregate to `gh-pages`. To combine several runs from the same fixed comparison, pass them with repeated `--run-dir` arguments and one `--batch-id`. The chart reports average player time per game; host turns and detected Hermes context-compaction intervals are excluded. The publisher reads `~/.hermes/state.db` by default for compaction timing; use `--state-db` to override it.
 
 ```bash
 .venv/bin/python -m turtlebench.pages publish \

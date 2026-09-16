@@ -375,7 +375,7 @@ class SiteBuildTests(unittest.TestCase):
             "models": [],
         }
 
-    def test_write_site_preserves_history_and_selects_latest_run(self):
+    def test_write_site_keeps_only_one_result_group(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "site"
             pages.write_site(output, self.public_run("run-one"), ROOT / "web")
@@ -384,12 +384,12 @@ class SiteBuildTests(unittest.TestCase):
             index = json.loads((output / "data" / "index.json").read_text())
 
             self.assertEqual(index["default_run"], "run-two")
-            self.assertEqual([run["id"] for run in index["runs"]], ["run-two", "run-one"])
+            self.assertEqual([run["id"] for run in index["runs"]], ["run-two"])
             self.assertEqual(index["runs"][0]["file"], "data/runs/run-two.json")
             self.assertTrue((output / "index.html").exists())
             self.assertTrue((output / "assets" / "app.js").exists())
             self.assertTrue((output / ".nojekyll").exists())
-            self.assertTrue((output / "data" / "runs" / "run-one.json").exists())
+            self.assertFalse((output / "data" / "runs" / "run-one.json").exists())
 
     def test_write_site_replaces_matching_run_id(self):
         with tempfile.TemporaryDirectory() as tmp:
