@@ -660,6 +660,50 @@
         "hints_median": 1,
         "samples": 23
       }
+    },
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-max",
+      "name": "kong-ai-gateway / Glm 5.3 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3-Flash",
+      "family": "GLM-5.3-Flash",
+      "reasoning_effort": "max",
+      "overall_score": 60.9,
+      "games": 36,
+      "active_time_s": 10366.965,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 234715821,
+        "input": 14124337,
+        "output": 553340,
+        "cache_read": 220038144,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.059325275,
+        "output": 0.138335,
+        "cache_read": 3.30057216,
+        "cache_write": 0.0,
+        "total": 4.498232435
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "zai/glm-5.3-flash",
+        "source_provider_id": "zai",
+        "fetched_at": "2026-09-10T11:12:38Z",
+        "usd_per_million_tokens": {
+          "input": 0.075,
+          "output": 0.25,
+          "cache_read": 0.015,
+          "cache_write": 0.0
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.545,
+        "rounds_median": 48.0,
+        "hints_median": 0,
+        "samples": 33
+      }
     }
   ],
   "title": "fixed-v1 · 统一比较",
@@ -667,5 +711,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-16T18:30:09Z"
+  "published_at": "2026-09-18T12:59:57Z"
 }
