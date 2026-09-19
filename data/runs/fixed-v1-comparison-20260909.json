@@ -704,6 +704,33 @@
         "hints_median": 0,
         "samples": 33
       }
+    },
+    {
+      "slug": "kong-ai-gateway-deepseek-ai-deepseek-v4-1-flash-max",
+      "name": "Kong AI Gateway / DeepSeek V4.1 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "family": "DeepSeek-V4.1-Flash",
+      "reasoning_effort": "max",
+      "overall_score": 80.2,
+      "games": 12,
+      "active_time_s": 8217.465,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 21432177,
+        "input": 6176052,
+        "output": 1099837,
+        "cache_read": 14156288,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 29.5,
+        "hints_median": 0.0,
+        "samples": 8
+      }
     }
   ],
   "title": "fixed-v1 · 统一比较",
@@ -711,5 +738,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-18T12:59:57Z"
+  "published_at": "2026-09-19T13:12:50Z"
 }
