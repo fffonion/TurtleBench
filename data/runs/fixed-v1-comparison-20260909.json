@@ -27,16 +27,18 @@
         "total": 19.434932
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "openai/gpt-6-astra",
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-6-astra",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
         "usd_per_million_tokens": {
           "input": 10.0,
           "output": 50.0,
           "cache_read": 1.0,
           "cache_write": 12.5
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.972,
@@ -71,16 +73,18 @@
         "total": 34.6058816
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "openai/gpt-5.6-sol",
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
           "cache_read": 0.4,
           "cache_write": 5.0
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -115,16 +119,18 @@
         "total": 21.9158896
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "openai/gpt-5.6-sol",
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-5.6-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
         "usd_per_million_tokens": {
           "input": 4.0,
           "output": 20.0,
           "cache_read": 0.4,
           "cache_write": 5.0
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -159,16 +165,17 @@
         "total": 64.308854
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "xai/grok-4.6",
+        "source": "https://docs.x.ai/docs/models/grok-4.6",
+        "source_model_id": "grok-4.6",
         "source_provider_id": "xai",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 6.0,
           "cache_read": 0.5,
           "cache_write": null
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -203,16 +210,18 @@
         "total": 3.81363796
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "openai/gpt-5.6-luna",
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
           "cache_read": 0.02,
           "cache_write": 0.25
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -240,23 +249,25 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 1.37482365,
+        "input": 1.46647856,
         "output": 0.47316028,
         "cache_read": 0.883830784,
         "cache_write": 0.0,
-        "total": 2.731814714
+        "total": 2.823469624
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "qwen/qwen3.8-flash",
-        "source_provider_id": "openrouter",
-        "fetched_at": "2026-09-15T09:10:35Z",
+        "source": "https://docs.b.ai/llmservice/models/qwen3-8-flash/",
+        "source_model_id": "qwen3.8-flash",
+        "source_provider_id": "bai",
+        "pricing_basis": "official_api_standard_reference",
+        "pricing_note": "B.AI standard reference price; limited-time account discounts are excluded.",
         "usd_per_million_tokens": {
-          "input": 0.15,
+          "input": 0.16,
           "output": 0.47,
           "cache_read": 0.016,
-          "cache_write": 0.2
-        }
+          "cache_write": 0.16
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.971,
@@ -284,23 +295,25 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.5601904,
-        "output": 0.59804444,
-        "cache_read": 0.5229471744,
+        "input": 0.8802992,
+        "output": 1.40967618,
+        "cache_read": 1.307367936,
         "cache_write": 0.0,
-        "total": 1.6811820144
+        "total": 3.597343316
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source": "https://api-docs.deepseek.com/quick_start/pricing",
+        "source_model_id": "deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_off_peak",
+        "pricing_note": "Official DeepSeek off-peak rate; peak input/output/cache-read rates are $0.44/$1.32/$0.014 per million tokens.",
         "usd_per_million_tokens": {
-          "input": 0.14,
-          "output": 0.28,
-          "cache_read": 0.0028,
+          "input": 0.22,
+          "output": 0.66,
+          "cache_read": 0.007,
           "cache_write": null
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.88,
@@ -330,21 +343,22 @@
       "price_usd": {
         "input": 5.7066268,
         "output": 2.4108348,
-        "cache_read": 28.21727168,
+        "cache_read": 15.19391552,
         "cache_write": 0.0,
-        "total": 36.33473328
+        "total": 23.31137712
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "zai/glm-5.3",
-        "source_provider_id": "zai",
-        "fetched_at": "2026-09-09T08:13:37Z",
+        "source": "https://us.ai-gw.konghq.tech/v1/models",
+        "source_model_id": "zai-org/GLM-5.3",
+        "source_provider_id": "kong-ai-gateway",
+        "pricing_basis": "official_provider_api_catalog",
         "usd_per_million_tokens": {
           "input": 1.4,
           "output": 4.4,
-          "cache_read": 0.26,
-          "cache_write": 0.0
-        }
+          "cache_read": 0.14,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -372,23 +386,25 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.18091304,
-        "output": 0.49355572,
-        "cache_read": 0.1860716032,
+        "input": 0.28429192,
+        "output": 1.16338134,
+        "cache_read": 0.465179008,
         "cache_write": 0.0,
-        "total": 0.8605403632
+        "total": 1.912852268
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "deepseek/deepseek-v4-flash",
+        "source": "https://api-docs.deepseek.com/quick_start/pricing",
+        "source_model_id": "deepseek-v4-flash",
         "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-10T08:03:54Z",
+        "pricing_basis": "official_api_off_peak",
+        "pricing_note": "Legacy route is served by the current DeepSeek Flash model; official off-peak rate.",
         "usd_per_million_tokens": {
-          "input": 0.14,
-          "output": 0.28,
-          "cache_read": 0.0028,
+          "input": 0.22,
+          "output": 0.66,
+          "cache_read": 0.007,
           "cache_write": null
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.871,
@@ -423,16 +439,17 @@
         "total": 2.175258588
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "deepseek/deepseek-v4-flash",
-        "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-13T04:18:57Z",
+        "source": "https://commandcode.ai/docs/resources/pricing-limits",
+        "source_model_id": "deepseek-v4.1-flash",
+        "source_provider_id": "commandcode",
+        "pricing_basis": "official_provider_api_list",
         "usd_per_million_tokens": {
           "input": 0.15,
           "output": 0.6,
           "cache_read": 0.003,
           "cache_write": null
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -467,16 +484,17 @@
         "total": 75.4105123
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "anthropic/claude-sonnet-5",
+        "source": "https://docs.anthropic.com/en/docs/about-claude/pricing",
+        "source_model_id": "claude-sonnet-5",
         "source_provider_id": "anthropic",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 10.0,
           "cache_read": 0.2,
           "cache_write": 2.5
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.912,
@@ -511,16 +529,18 @@
         "total": 4.41238536
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "openai/gpt-5.6-luna",
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-5.6-luna",
         "source_provider_id": "openai",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
         "usd_per_million_tokens": {
           "input": 0.2,
           "output": 1.2,
           "cache_read": 0.02,
           "cache_write": 0.25
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -548,23 +568,24 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.77254184,
-        "output": 0.47415536,
-        "cache_read": 0.286775552,
+        "input": 0.8277234,
+        "output": 1.0160472,
+        "cache_read": 0.30725952,
         "cache_write": 0.0,
-        "total": 1.533472752
+        "total": 2.15103012
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "deepseek/deepseek-v4-flash",
-        "source_provider_id": "deepseek",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "source": "https://commandcode.ai/docs/resources/pricing-limits",
+        "source_model_id": "deepseek-v4-flash",
+        "source_provider_id": "commandcode",
+        "pricing_basis": "official_provider_api_list",
         "usd_per_million_tokens": {
-          "input": 0.14,
-          "output": 0.28,
-          "cache_read": 0.0028,
+          "input": 0.15,
+          "output": 0.6,
+          "cache_read": 0.003,
           "cache_write": null
-        }
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -592,23 +613,24 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.5397303,
-        "output": 0.10066625,
-        "cache_read": 2.2767552,
+        "input": 1.0794606,
+        "output": 0.2013325,
+        "cache_read": 4.5535104,
         "cache_write": 0.0,
-        "total": 2.91715175
+        "total": 5.8343035
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "zai/glm-5.3-flash",
-        "source_provider_id": "zai",
-        "fetched_at": "2026-09-10T11:12:38Z",
+        "source": "https://us.ai-gw.konghq.tech/v1/models",
+        "source_model_id": "zai-org/GLM-5.3-Flash",
+        "source_provider_id": "kong-ai-gateway",
+        "pricing_basis": "official_provider_api_catalog",
         "usd_per_million_tokens": {
-          "input": 0.075,
-          "output": 0.25,
-          "cache_read": 0.015,
-          "cache_write": 0.0
-        }
+          "input": 0.15,
+          "output": 0.5,
+          "cache_read": 0.03,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.714,
@@ -636,23 +658,25 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.9152997,
-        "output": 0.3571956,
-        "cache_read": 5.81548788,
+        "input": 0.0,
+        "output": 0.0,
+        "cache_read": 0.0,
         "cache_write": 0.0,
-        "total": 7.08798318
+        "total": 0.0
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "minimax/MiniMax-M3",
-        "source_provider_id": "minimax-cn",
-        "fetched_at": "2026-09-08T15:05:47Z",
+        "source": "https://openrouter.ai/api/v1/models",
+        "source_model_id": "minimax/minimax-m3:free",
+        "source_provider_id": "openrouter",
+        "pricing_basis": "official_api_free_route",
+        "pricing_note": "The selected OpenRouter route is explicitly marked :free.",
         "usd_per_million_tokens": {
-          "input": 0.3,
-          "output": 1.2,
-          "cache_read": 0.06,
-          "cache_write": null
-        }
+          "input": 0.0,
+          "output": 0.0,
+          "cache_read": 0.0,
+          "cache_write": 0.0
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.522,
@@ -680,23 +704,24 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 1.059325275,
-        "output": 0.138335,
-        "cache_read": 3.30057216,
+        "input": 2.11865055,
+        "output": 0.27667,
+        "cache_read": 6.60114432,
         "cache_write": 0.0,
-        "total": 4.498232435
+        "total": 8.99646487
       },
       "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "zai/glm-5.3-flash",
-        "source_provider_id": "zai",
-        "fetched_at": "2026-09-10T11:12:38Z",
+        "source": "https://us.ai-gw.konghq.tech/v1/models",
+        "source_model_id": "zai-org/GLM-5.3-Flash",
+        "source_provider_id": "kong-ai-gateway",
+        "pricing_basis": "official_provider_api_catalog",
         "usd_per_million_tokens": {
-          "input": 0.075,
-          "output": 0.25,
-          "cache_read": 0.015,
-          "cache_write": 0.0
-        }
+          "input": 0.15,
+          "output": 0.5,
+          "cache_read": 0.03,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
       },
       "behavior": {
         "solve_rate": 0.545,
@@ -723,8 +748,26 @@
         "cache_read": 14156288,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 1.8528156,
+        "output": 1.3198044,
+        "cache_read": 0.42468864,
+        "cache_write": 0.0,
+        "total": 3.59730864
+      },
+      "pricing": {
+        "source": "https://us.ai-gw.konghq.tech/v1/models",
+        "source_model_id": "deepseek-ai/DeepSeek-V4.1-Flash",
+        "source_provider_id": "kong-ai-gateway",
+        "pricing_basis": "official_provider_api_catalog",
+        "usd_per_million_tokens": {
+          "input": 0.3,
+          "output": 1.2,
+          "cache_read": 0.03,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-19T13:39:10Z"
+      },
       "behavior": {
         "solve_rate": 1.0,
         "rounds_median": 29.5,
@@ -738,5 +781,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-19T13:12:50Z"
+  "published_at": "2026-09-19T13:39:10Z"
 }

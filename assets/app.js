@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "1ad31187";
+const DATA_CACHE_BUSTER = "1ad31189";
 
 const MESSAGES = {
   zh: {
@@ -25,7 +25,7 @@ const MESSAGES = {
     puzzles: "{count} 道题",
     repeats: "每题 {count} 局",
     unknown: "未知",
-    priceSource: "价格来源：models.dev",
+    priceSource: "价格来源：各 provider 官方 API 定价",
     chartRelation: "综合分与{metric}关系图",
     priceAxis: "每局平均价格（USD）",
     timeAxis: "每局平均耗时",
@@ -86,7 +86,7 @@ const MESSAGES = {
     puzzles: "{count} puzzles",
     repeats: "{count} games per puzzle",
     unknown: "Unknown",
-    priceSource: "Price source: models.dev",
+    priceSource: "Price source: official provider API pricing",
     chartRelation: "Overall score vs. {metric}",
     priceAxis: "Average price per game (USD)",
     timeAxis: "Average time per game",
@@ -257,13 +257,39 @@ export function groupByFamily(rows) {
   return groups;
 }
 
+export function chartFamilyKey(row) {
+  const parts = splitDisplayName(String(row.name ?? ""));
+  const displayModel = parts.model || row.family || row.model || "";
+  return String(displayModel)
+    .toLowerCase()
+    .replace(/\bexpires-on-\d{4}\b/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function groupByVariant(rows) {
   const groups = new Map();
   rows.forEach((row) => {
-    const family = row.family || row.model;
-    const key = `${family}|${row.reasoning_effort || ""}`;
+    const key = `${chartFamilyKey(row)}|${row.reasoning_effort || ""}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(row);
+  });
+  return groups;
+}
+
+function groupByChartFamily(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const key = chartFamilyKey(row);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  });
+  groups.forEach((items) => {
+    items.sort(
+      (a, b) =>
+        (EFFORT_ORDER.get(a.reasoning_effort) ?? 99) -
+        (EFFORT_ORDER.get(b.reasoning_effort) ?? 99),
+    );
   });
   return groups;
 }
@@ -354,7 +380,7 @@ function svgElement(name, attributes = {}) {
 }
 
 function colorMap(models) {
-  const families = [...new Set(models.map((model) => model.family || model.model))];
+  const families = [...new Set(models.map((model) => chartFamilyKey(model)))];
   return new Map(families.map((family) => [family, colorForFamily(family)]));
 }
 
@@ -486,8 +512,8 @@ function renderChart(models, axis) {
   svg.append(xTitle);
 
   const colors = colorMap(models);
-  groupByFamily(plotted.map(({ model }) => model)).forEach((items) => {
-    const family = items[0].family || items[0].model;
+  groupByChartFamily(plotted.map(({ model }) => model)).forEach((items) => {
+    const family = chartFamilyKey(items[0]);
     const points = items.map((model) => `${x(chartMetric(model, axis))},${y(model.overall_score)}`).join(" ");
     if (items.length > 1) {
       svg.append(svgElement("polyline", { points, class: "series-line", stroke: colors.get(family) }));
@@ -496,7 +522,7 @@ function renderChart(models, axis) {
 
   let pinnedModel = null;
   plotted.forEach(({ model, providers }, index) => {
-    const family = model.family || model.model;
+    const family = chartFamilyKey(model);
     const xPosition = x(chartMetric(model, axis));
     const yPosition = y(model.overall_score);
     const point = svgElement("circle", {
