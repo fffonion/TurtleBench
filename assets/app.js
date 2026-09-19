@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "1ad31189";
+const DATA_CACHE_BUSTER = "1ad31190";
 
 const MESSAGES = {
   zh: {
@@ -263,7 +263,7 @@ export function chartFamilyKey(row) {
   return String(displayModel)
     .toLowerCase()
     .replace(/\bexpires-on-\d{4}\b/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/[^a-z0-9.-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
