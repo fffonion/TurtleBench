@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   averageTimePerGame,
   averagePricePerGame,
+  chartFamilyKey,
   colorForFamily,
   detectLanguage,
   formatBehaviorName,
@@ -83,6 +84,34 @@ test("groupByVariant merges providers for one model and reasoning level", () => 
   );
 });
 
+test("groupByVariant merges provider aliases using the displayed model name", () => {
+  const groups = groupByVariant([
+    {
+      name: "DeepSeek / DeepSeek V4.1 Flash",
+      family: "deepseek-v4.1-flash-expires-on-0910",
+      provider: "deepseek",
+      reasoning_effort: "max",
+    },
+    {
+      name: "CommandCode / DeepSeek V4.1 Flash",
+      family: "deepseek-v4.1-flash",
+      provider: "commandcode",
+      reasoning_effort: "max",
+    },
+    {
+      name: "Kong AI Gateway / DeepSeek V4.1 Flash",
+      family: "DeepSeek-V4.1-Flash",
+      provider: "kong-ai-gateway",
+      reasoning_effort: "max",
+    },
+  ]);
+  assert.equal(chartFamilyKey({ name: "DeepSeek / DeepSeek V4.1 Flash" }), "deepseek-v4.1-flash");
+  assert.equal(groups.size, 1);
+  assert.deepEqual(
+    groups.values().next().value.map((row) => row.provider),
+    ["deepseek", "commandcode", "kong-ai-gateway"],
+  );
+});
 test("known model families keep stable distinct colors", () => {
   assert.equal(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-luna"));
   assert.notEqual(colorForFamily("gpt-5.6-luna"), colorForFamily("gpt-5.6-sol"));
@@ -124,7 +153,7 @@ test("the chart is the default view while the price axis stays available", () =>
   assert.ok(html.includes('id="axis-control" class="control-group">'));
   assert.ok(html.includes('id="chart-view">'));
   assert.ok(html.includes('id="table-view" hidden'));
-  assert.ok(html.includes('assets/app.js?v=1ad31187'));
+  assert.ok(html.includes('assets/app.js?v=1ad31190'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "price";'));
 });

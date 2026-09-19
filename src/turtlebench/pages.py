@@ -40,6 +40,43 @@ def load_mapping(path: str | Path) -> dict[str, Any]:
     return _read_json(Path(path))
 
 
+def load_official_pricing(path: str | Path) -> dict[str, Any]:
+    """Load the versioned official provider API pricing snapshot."""
+
+    return _read_json(Path(path))
+
+
+def resolve_official_pricing(
+    provider: str,
+    model: str,
+    pricing_catalog: dict[str, Any],
+    fetched_at: str,
+) -> dict[str, Any]:
+    """Resolve one benchmark identity to an official API pricing snapshot."""
+
+    source = pricing_catalog.get(f"{provider}:{model}")
+    if not isinstance(source, dict):
+        raise ValueError(f"missing official API pricing for {provider}:{model}")
+    source_url = source.get("source")
+    if not isinstance(source_url, str) or not source_url.startswith("https://"):
+        raise ValueError(f"official pricing source must be HTTPS for {provider}:{model}")
+    if "models.dev" in source_url.lower():
+        raise ValueError(f"models.dev is not an official provider price source: {source_url}")
+    rates = source.get("usd_per_million_tokens")
+    if not isinstance(rates, dict):
+        raise ValueError(f"missing official API rate object for {provider}:{model}")
+    selected: dict[str, float | None] = {}
+    for category in ("input", "output", "cache_read", "cache_write"):
+        value = rates.get(category)
+        if value is not None and not isinstance(value, (int, float)):
+            raise ValueError(f"invalid official API rate for {provider}:{model}:{category}")
+        selected[category] = float(value) if isinstance(value, (int, float)) else None
+    result = dict(source)
+    result["fetched_at"] = str(source.get("fetched_at") or fetched_at)
+    result["usd_per_million_tokens"] = selected
+    return result
+
+
 def resolve_pricing(
     provider: str,
     model: str,
@@ -47,7 +84,7 @@ def resolve_pricing(
     catalog: dict[str, Any],
     fetched_at: str,
 ) -> dict[str, Any]:
-    """Resolve a benchmark identity to a non-promotional models.dev rate snapshot."""
+    """Legacy models.dev resolver retained for backward-compatible tests."""
 
     source = mapping.get(f"{provider}:{model}")
     if not isinstance(source, dict):
@@ -290,8 +327,9 @@ def prepare_public_run(
     catalog: dict[str, Any],
     fetched_at: str,
     state_db: str | Path | None = None,
+    official_pricing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build one publishable run with pinned models.dev pricing."""
+    """Build one publishable run with official API pricing when supplied."""
 
     run_path = Path(run_dir)
     summary = _read_json(run_path / "summary.json")
@@ -309,13 +347,21 @@ def prepare_public_run(
         player = model_summary.get("player", {})
         if isinstance(player, dict):
             try:
-                pricing[summary_path.stem] = resolve_pricing(
-                    str(player["provider"]),
-                    str(player["model"]),
-                    mapping,
-                    catalog,
-                    fetched_at,
-                )
+                if official_pricing is not None:
+                    pricing[summary_path.stem] = resolve_official_pricing(
+                        str(player["provider"]),
+                        str(player["model"]),
+                        official_pricing,
+                        fetched_at,
+                    )
+                else:
+                    pricing[summary_path.stem] = resolve_pricing(
+                        str(player["provider"]),
+                        str(player["model"]),
+                        mapping,
+                        catalog,
+                        fetched_at,
+                    )
             except (KeyError, TypeError, ValueError):
                 pass
         puzzles = model_summary.get("puzzles", {})
@@ -361,13 +407,21 @@ def prepare_public_batch(
     state_db: str | Path | None = None,
     batch_id: str = "fixed-v1-combined",
     title: str = "fixed-v1 · merged comparison",
+    official_pricing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Merge publishable model runs into one public result batch."""
 
     if not run_dirs:
         raise ValueError("at least one run directory is required")
     prepared = [
-        prepare_public_run(path, mapping, catalog, fetched_at, state_db=state_db)
+        prepare_public_run(
+            path,
+            mapping,
+            catalog,
+            fetched_at,
+            state_db=state_db,
+            official_pricing=official_pricing,
+        )
         for path in run_dirs
     ]
     suite_versions = {item.get("suite_version") for item in prepared}
@@ -536,23 +590,34 @@ def _load_catalog(path: str | None) -> dict[str, Any]:
 
 def _prepare_from_args(args: argparse.Namespace) -> tuple[dict[str, Any], Path, list[str]]:
     root = Path(args.repo).resolve() if args.repo else _repo_root()
-    mapping_path = Path(args.mapping) if args.mapping else root / "pricing" / "models-dev-mapping.json"
+    official_path = (
+        Path(args.official_pricing)
+        if args.official_pricing
+        else root / "pricing" / "official-api-pricing.json"
+    )
+    official_pricing = load_official_pricing(official_path)
     run_dirs = list(args.run_dir)
-    mapping = load_mapping(mapping_path)
-    catalog = _load_catalog(args.catalog)
     fetched_at = _utc_now()
     state_db = Path(args.state_db).expanduser() if args.state_db else None
     if len(run_dirs) == 1:
-        run = prepare_public_run(run_dirs[0], mapping, catalog, fetched_at, state_db=state_db)
+        run = prepare_public_run(
+            run_dirs[0],
+            {},
+            {},
+            fetched_at,
+            state_db=state_db,
+            official_pricing=official_pricing,
+        )
     else:
         run = prepare_public_batch(
             run_dirs,
-            mapping,
-            catalog,
+            {},
+            {},
             fetched_at,
             state_db=state_db,
             batch_id=args.batch_id or "fixed-v1-combined",
             title=args.title or "fixed-v1 · merged comparison",
+            official_pricing=official_pricing,
         )
     if args.title:
         run["title"] = args.title
@@ -623,8 +688,12 @@ def build_parser() -> argparse.ArgumentParser:
         subparser.add_argument("--batch-id")
         subparser.add_argument("--retire-run-id", action="append", default=[])
         subparser.add_argument("--repo")
-        subparser.add_argument("--mapping")
-        subparser.add_argument("--catalog", help="local models.dev api.json; fetch live when omitted")
+        subparser.add_argument("--mapping", help="legacy models.dev mapping (ignored by the official pricing path)")
+        subparser.add_argument("--catalog", help="legacy models.dev catalog (ignored by the official pricing path)")
+        subparser.add_argument(
+            "--official-pricing",
+            help="official provider API pricing snapshot; defaults to pricing/official-api-pricing.json",
+        )
         subparser.add_argument(
             "--state-db",
             default="~/.hermes/state.db",
