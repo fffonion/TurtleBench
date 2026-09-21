@@ -459,6 +459,51 @@
       }
     },
     {
+      "slug": "kong-ai-gateway-deepseek-ai-deepseek-v4-1-flash-max",
+      "name": "Kong AI Gateway / DeepSeek V4.1 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+      "family": "DeepSeek-V4.1-Flash",
+      "reasoning_effort": "max",
+      "overall_score": 80.2,
+      "games": 12,
+      "active_time_s": 8217.465,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 21432177,
+        "input": 6176052,
+        "output": 1099837,
+        "cache_read": 14156288,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 1.8528156,
+        "output": 1.3198044,
+        "cache_read": 0.42468864,
+        "cache_write": 0.0,
+        "total": 3.59730864
+      },
+      "pricing": {
+        "source": "https://us.ai-gw.konghq.tech/v1/models",
+        "source_model_id": "deepseek-ai/DeepSeek-V4.1-Flash",
+        "source_provider_id": "kong-ai-gateway",
+        "pricing_basis": "official_provider_api_catalog",
+        "usd_per_million_tokens": {
+          "input": 0.3,
+          "output": 1.2,
+          "cache_read": 0.03,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-19T13:39:38Z"
+      },
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 29.5,
+        "hints_median": 0.0,
+        "samples": 8
+      }
+    },
+    {
       "slug": "claude-sonnet-5-high",
       "name": "Anthropic / Claude Sonnet 5",
       "provider": "anthropic",
@@ -640,52 +685,6 @@
       }
     },
     {
-      "slug": "minimax-m3-max",
-      "name": "OpenRouter / MiniMax M3",
-      "provider": "openrouter",
-      "model": "minimax/minimax-m3:free",
-      "family": "minimax-m3:free",
-      "reasoning_effort": "max",
-      "overall_score": 59.3,
-      "games": 36,
-      "active_time_s": 11517.241,
-      "compression_time_s": 0,
-      "tokens": {
-        "total": 100273460,
-        "input": 3050999,
-        "output": 297663,
-        "cache_read": 96924798,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 0.0,
-        "output": 0.0,
-        "cache_read": 0.0,
-        "cache_write": 0.0,
-        "total": 0.0
-      },
-      "pricing": {
-        "source": "https://openrouter.ai/api/v1/models",
-        "source_model_id": "minimax/minimax-m3:free",
-        "source_provider_id": "openrouter",
-        "pricing_basis": "official_api_free_route",
-        "pricing_note": "The selected OpenRouter route is explicitly marked :free.",
-        "usd_per_million_tokens": {
-          "input": 0.0,
-          "output": 0.0,
-          "cache_read": 0.0,
-          "cache_write": 0.0
-        },
-        "fetched_at": "2026-09-19T13:39:38Z"
-      },
-      "behavior": {
-        "solve_rate": 0.522,
-        "rounds_median": 40.0,
-        "hints_median": 1,
-        "samples": 23
-      }
-    },
-    {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-max",
       "name": "kong-ai-gateway / Glm 5.3 Flash",
       "provider": "kong-ai-gateway",
@@ -731,48 +730,79 @@
       }
     },
     {
-      "slug": "kong-ai-gateway-deepseek-ai-deepseek-v4-1-flash-max",
-      "name": "Kong AI Gateway / DeepSeek V4.1 Flash",
-      "provider": "kong-ai-gateway",
-      "model": "deepseek-ai/DeepSeek-V4.1-Flash",
-      "family": "DeepSeek-V4.1-Flash",
-      "reasoning_effort": "max",
-      "overall_score": 80.2,
-      "games": 12,
-      "active_time_s": 8217.465,
+      "slug": "stepfun-step-5-preview-high",
+      "name": "StepFun / Step 5 Preview",
+      "provider": "stepfun",
+      "model": "step-5-preview",
+      "family": "step-5-preview",
+      "reasoning_effort": "high",
+      "overall_score": 60.2,
+      "games": 36,
+      "active_time_s": 23419.105,
       "compression_time_s": 0,
       "tokens": {
-        "total": 21432177,
-        "input": 6176052,
-        "output": 1099837,
-        "cache_read": 14156288,
+        "total": 146176090,
+        "input": 8318559,
+        "output": 1685755,
+        "cache_read": 136171776,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.583,
+        "rounds_median": 44.5,
+        "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
+      "slug": "minimax-m3-max",
+      "name": "OpenRouter / MiniMax M3",
+      "provider": "openrouter",
+      "model": "minimax/minimax-m3:free",
+      "family": "minimax-m3:free",
+      "reasoning_effort": "max",
+      "overall_score": 59.3,
+      "games": 36,
+      "active_time_s": 11517.241,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 100273460,
+        "input": 3050999,
+        "output": 297663,
+        "cache_read": 96924798,
         "cache_write": 0
       },
       "price_usd": {
-        "input": 1.8528156,
-        "output": 1.3198044,
-        "cache_read": 0.42468864,
+        "input": 0.0,
+        "output": 0.0,
+        "cache_read": 0.0,
         "cache_write": 0.0,
-        "total": 3.59730864
+        "total": 0.0
       },
       "pricing": {
-        "source": "https://us.ai-gw.konghq.tech/v1/models",
-        "source_model_id": "deepseek-ai/DeepSeek-V4.1-Flash",
-        "source_provider_id": "kong-ai-gateway",
-        "pricing_basis": "official_provider_api_catalog",
+        "source": "https://openrouter.ai/api/v1/models",
+        "source_model_id": "minimax/minimax-m3:free",
+        "source_provider_id": "openrouter",
+        "pricing_basis": "official_api_free_route",
+        "pricing_note": "The selected OpenRouter route is explicitly marked :free.",
         "usd_per_million_tokens": {
-          "input": 0.3,
-          "output": 1.2,
-          "cache_read": 0.03,
-          "cache_write": null
+          "input": 0.0,
+          "output": 0.0,
+          "cache_read": 0.0,
+          "cache_write": 0.0
         },
         "fetched_at": "2026-09-19T13:39:38Z"
       },
       "behavior": {
-        "solve_rate": 1.0,
-        "rounds_median": 29.5,
-        "hints_median": 0.0,
-        "samples": 8
+        "solve_rate": 0.522,
+        "rounds_median": 40.0,
+        "hints_median": 1,
+        "samples": 23
       }
     }
   ],
@@ -781,5 +811,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-19T13:39:38Z"
+  "published_at": "2026-09-21T05:06:35Z"
 }
