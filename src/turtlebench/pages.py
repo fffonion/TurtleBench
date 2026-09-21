@@ -171,6 +171,7 @@ _PROVIDER_NAMES = {
     "minimax-cn": "MiniMax",
     "openrouter": "OpenRouter",
     "openai-codex": "OpenAI Codex",
+    "stepfun": "StepFun",
     "xai-oauth": "xAI",
 }
 

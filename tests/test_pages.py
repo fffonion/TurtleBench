@@ -230,6 +230,12 @@ class PublicResultTests(unittest.TestCase):
             "DeepSeek / DeepSeek V4.1 Flash",
         )
 
+    def test_stepfun_public_label_uses_provider_brand(self):
+        self.assertEqual(
+            pages._public_name("stepfun", "step-5-preview"),
+            "StepFun / Step 5 Preview",
+        )
+
 
 class PricingTests(unittest.TestCase):
     def setUp(self):
