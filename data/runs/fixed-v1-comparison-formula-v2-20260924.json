@@ -12,6 +12,8 @@
       "subjective_score": 92.4,
       "formula_score": 97.72,
       "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
       "formula_coverage": 1.0,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -64,7 +66,7 @@
           "cache_read": 1.0,
           "cache_write": 12.5
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.972,
@@ -87,6 +89,8 @@
       "subjective_score": 91.5,
       "formula_score": 97.54,
       "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
       "formula_coverage": 1.0,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -139,7 +143,7 @@
           "cache_read": 0.4,
           "cache_write": 5.0
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -162,6 +166,8 @@
       "subjective_score": 89.5,
       "formula_score": 95.87,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.944,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -214,7 +220,7 @@
           "cache_read": 0.4,
           "cache_write": 5.0
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -237,6 +243,8 @@
       "subjective_score": 87.3,
       "formula_score": 95.55,
       "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
       "formula_coverage": 1.0,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -288,7 +296,7 @@
           "cache_read": 0.5,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -311,6 +319,8 @@
       "subjective_score": 85.9,
       "formula_score": 93.2,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.944,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -363,7 +373,7 @@
           "cache_read": 0.02,
           "cache_write": 0.25
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -386,6 +396,8 @@
       "subjective_score": 83.0,
       "formula_score": 90.94,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.944,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -438,7 +450,7 @@
           "cache_read": 0.016,
           "cache_write": 0.16
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -461,6 +473,8 @@
       "subjective_score": 81.8,
       "formula_score": 86.32,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.972,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -517,6 +531,8 @@
       "subjective_score": 81.6,
       "formula_score": 85.95,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.639,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -569,7 +585,7 @@
           "cache_read": 0.007,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.88,
@@ -592,6 +608,8 @@
       "subjective_score": 81.5,
       "formula_score": 84.82,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.861,
       "formula_observed_coverage": 0.944,
       "formula_trial_records": 34,
@@ -644,7 +662,7 @@
           "cache_read": 0.007,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.871,
@@ -667,6 +685,8 @@
       "subjective_score": 81.5,
       "formula_score": 92.66,
       "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
       "formula_coverage": 1.0,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -718,7 +738,7 @@
           "cache_read": 0.14,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -741,6 +761,8 @@
       "subjective_score": 81.0,
       "formula_score": 88.21,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.944,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -792,7 +814,7 @@
           "cache_read": 0.003,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -815,6 +837,8 @@
       "subjective_score": 80.2,
       "formula_score": 93.93,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.222,
       "formula_observed_coverage": 0.333,
       "formula_trial_records": 12,
@@ -866,7 +890,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 1.0,
@@ -889,6 +913,8 @@
       "subjective_score": 79.6,
       "formula_score": 90.96,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.972,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -940,7 +966,7 @@
           "cache_read": 0.2,
           "cache_write": 2.5
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.912,
@@ -963,6 +989,8 @@
       "subjective_score": 79.0,
       "formula_score": 94.26,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.972,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -1015,7 +1043,7 @@
           "cache_read": 0.02,
           "cache_write": 0.25
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -1038,6 +1066,8 @@
       "subjective_score": 76.7,
       "formula_score": 90.1,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.889,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -1089,7 +1119,7 @@
           "cache_read": 0.003,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -1112,6 +1142,8 @@
       "subjective_score": 65.4,
       "formula_score": 62.59,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.389,
       "formula_observed_coverage": 0.889,
       "formula_trial_records": 32,
@@ -1163,7 +1195,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.714,
@@ -1186,6 +1218,8 @@
       "subjective_score": 60.9,
       "formula_score": 64.58,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.917,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -1237,7 +1271,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.545,
@@ -1260,6 +1294,8 @@
       "subjective_score": 60.2,
       "formula_score": 70.73,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.861,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -1316,6 +1352,8 @@
       "subjective_score": 59.3,
       "formula_score": 57.58,
       "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
       "formula_coverage": 0.556,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
@@ -1368,7 +1406,7 @@
           "cache_read": 0.0,
           "cache_write": 0.0
         },
-        "fetched_at": "2026-09-23T21:52:48Z"
+        "fetched_at": "2026-09-23T21:59:28Z"
       },
       "behavior": {
         "solve_rate": 0.522,
@@ -1389,5 +1427,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-23T21:52:48Z"
+  "published_at": "2026-09-23T21:59:28Z"
 }

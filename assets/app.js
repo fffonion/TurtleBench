@@ -24,6 +24,7 @@ const MESSAGES = {
     scoreMode: "评分模式",
     formulaScore: "公式得分",
     subjectiveScore: "主观评价分",
+    provisional: "临时结果",
     behavior: "模型行为",
     puzzles: "{count} 道题",
     repeats: "每题 {count} 局",
@@ -88,6 +89,7 @@ const MESSAGES = {
     scoreMode: "Score mode",
     formulaScore: "Formula score",
     subjectiveScore: "Subjective score",
+    provisional: "Provisional",
     behavior: "Model behavior",
     puzzles: "{count} puzzles",
     repeats: "{count} games per puzzle",
@@ -252,6 +254,11 @@ export function sortRows(rows, key, direction = "asc", scoreMode = "subjective")
     if (a == null && b == null) return 0;
     if (a == null) return 1;
     if (b == null) return -1;
+    if (scoreMode === "formula" && key === "overall_score") {
+      const leftProvisional = left.formula_provisional === true;
+      const rightProvisional = right.formula_provisional === true;
+      if (leftProvisional !== rightProvisional) return leftProvisional ? 1 : -1;
+    }
     if (typeof a === "number" && typeof b === "number") return (a - b) * sign;
     return String(a).localeCompare(String(b), "zh-CN", { numeric: true }) * sign;
   });
@@ -345,6 +352,7 @@ export function isDisplayableModel(row, scoreMode = "subjective") {
       && row.partial !== true
       && row.status !== "stopped"
       && row.score_status == null
+      && !(scoreMode === "formula" && row.formula_provisional === true)
       && scoreForRow(row, scoreMode) != null,
   );
 }
@@ -357,8 +365,12 @@ export function formatChartName(row) {
   return `${splitDisplayName(row.name).model} · ${formatEffort(row.reasoning_effort)}`;
 }
 
-export function formatTableModelName(row) {
-  return splitDisplayName(row.name).model;
+export function formatTableModelName(row, behavior = false, scoreMode = "subjective") {
+  const model = splitDisplayName(row.name).model;
+  if (behavior && scoreMode === "formula" && row.formula_provisional === true) {
+    return `${model} · ${translate("provisional")}`;
+  }
+  return model;
 }
 
 function formatEffort(effort) {
@@ -657,7 +669,7 @@ function renderTable(table, rows, columns, state, scoreMode = "subjective") {
         const parts = splitDisplayName(row.name);
         const primary = document.createElement("span");
         primary.className = "model-primary";
-        primary.textContent = formatTableModelName(row, columns === BEHAVIOR_COLUMNS);
+        primary.textContent = formatTableModelName(row, columns === BEHAVIOR_COLUMNS, scoreMode);
         td.append(primary);
         if (parts.provider) {
           const provider = document.createElement("small");
