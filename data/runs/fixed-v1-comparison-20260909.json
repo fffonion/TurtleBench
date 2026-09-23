@@ -277,6 +277,36 @@
       }
     },
     {
+      "slug": "gpt-6-luna-codex-max",
+      "name": "OpenAI Codex / GPT-6 Luna",
+      "provider": "openai-codex",
+      "model": "gpt-6-luna",
+      "family": "gpt-6-luna",
+      "reasoning_effort": "max",
+      "overall_score": 81.8,
+      "games": 36,
+      "active_time_s": 18777.763,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 137494641,
+        "input": 5971692,
+        "output": 854405,
+        "cache_read": 130668544,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.889,
+        "rounds_median": 23.5,
+        "hints_median": 2.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
       "slug": "deepseek-provider-v4-flash-max",
       "name": "DeepSeek / DeepSeek V4 Flash",
       "provider": "deepseek",
@@ -811,5 +841,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-09T01:04:52.646766+00:00",
-  "published_at": "2026-09-21T05:06:35Z"
+  "published_at": "2026-09-23T06:39:21Z"
 }
