@@ -1,14 +1,14 @@
 {
-  "default_run": "fixed-v1-comparison-20260909",
+  "default_run": "fixed-v1-comparison-formula-v2-20260924",
   "runs": [
     {
-      "id": "fixed-v1-comparison-20260909",
-      "title": "fixed-v1 · 统一比较",
-      "file": "data/runs/fixed-v1-comparison-20260909.json",
+      "id": "fixed-v1-comparison-formula-v2-20260924",
+      "title": "fixed-v1 · formula-v2",
+      "file": "data/runs/fixed-v1-comparison-formula-v2-20260924.json",
       "suite_version": "fixed-v1",
       "puzzle_count": 12,
       "repeats": 3,
-      "published_at": "2026-09-23T21:05:32Z"
+      "published_at": "2026-09-23T21:50:27Z"
     }
   ]
 }
