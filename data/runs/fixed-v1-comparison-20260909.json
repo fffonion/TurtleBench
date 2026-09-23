@@ -16,6 +16,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 1,
+      "formula_stability_score": 0.972,
+      "formula_volatility_penalty": 0.278,
       "games": 36,
       "active_time_s": 7308.006,
       "compression_time_s": 0,
@@ -45,7 +47,7 @@
           "cache_read": 1.0,
           "cache_write": 12.5
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.972,
@@ -72,6 +74,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 2,
+      "formula_stability_score": 0.944,
+      "formula_volatility_penalty": 0.556,
       "games": 36,
       "active_time_s": 7174.339,
       "compression_time_s": 0,
@@ -101,7 +105,7 @@
           "cache_read": 0.4,
           "cache_write": 5.0
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -128,6 +132,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 2,
+      "formula_stability_score": 0.944,
+      "formula_volatility_penalty": 0.556,
       "games": 36,
       "active_time_s": 10869.57,
       "compression_time_s": 0,
@@ -157,7 +163,7 @@
           "cache_read": 0.4,
           "cache_write": 5.0
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -184,6 +190,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 2,
+      "formula_stability_score": 0.944,
+      "formula_volatility_penalty": 0.556,
       "games": 36,
       "active_time_s": 13798.872,
       "compression_time_s": 0.0,
@@ -212,7 +220,7 @@
           "cache_read": 0.5,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -239,6 +247,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.861,
+      "formula_volatility_penalty": 1.389,
       "games": 36,
       "active_time_s": 15966.958,
       "compression_time_s": 0,
@@ -268,7 +278,7 @@
           "cache_read": 0.02,
           "cache_write": 0.25
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -295,6 +305,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 2,
+      "formula_stability_score": 0.944,
+      "formula_volatility_penalty": 0.556,
       "games": 36,
       "active_time_s": 23180.45,
       "compression_time_s": 0,
@@ -324,7 +336,7 @@
           "cache_read": 0.016,
           "cache_write": 0.16
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -351,6 +363,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 11,
       "formula_mixed_puzzles": 1,
+      "formula_stability_score": 0.889,
+      "formula_volatility_penalty": 0.278,
       "games": 36,
       "active_time_s": 18777.763,
       "compression_time_s": 0,
@@ -388,6 +402,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 11,
       "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.75,
+      "formula_volatility_penalty": 1.667,
       "games": 36,
       "active_time_s": 19793.901,
       "compression_time_s": 0,
@@ -417,7 +433,7 @@
           "cache_read": 0.007,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.88,
@@ -444,6 +460,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 11,
       "formula_mixed_puzzles": 3,
+      "formula_stability_score": 0.778,
+      "formula_volatility_penalty": 1.389,
       "games": 34,
       "active_time_s": 10312.875,
       "compression_time_s": 0,
@@ -473,7 +491,7 @@
           "cache_read": 0.007,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.871,
@@ -500,6 +518,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 1,
+      "formula_stability_score": 0.944,
+      "formula_volatility_penalty": 0.556,
       "games": 36,
       "active_time_s": 10388.747,
       "compression_time_s": 0,
@@ -528,7 +548,7 @@
           "cache_read": 0.14,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -555,6 +575,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.861,
+      "formula_volatility_penalty": 1.389,
       "games": 36,
       "active_time_s": 23917.797,
       "compression_time_s": 0,
@@ -583,7 +605,7 @@
           "cache_read": 0.003,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -610,6 +632,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 10,
       "formula_mixed_puzzles": 10,
+      "formula_stability_score": 0.278,
+      "formula_volatility_penalty": 5.556,
       "games": 12,
       "active_time_s": 8217.465,
       "compression_time_s": 0,
@@ -638,7 +662,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 1.0,
@@ -665,6 +689,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 3,
+      "formula_stability_score": 0.889,
+      "formula_volatility_penalty": 1.111,
       "games": 34,
       "active_time_s": 28167.876,
       "compression_time_s": 0,
@@ -693,7 +719,7 @@
           "cache_read": 0.2,
           "cache_write": 2.5
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.912,
@@ -720,6 +746,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.806,
+      "formula_volatility_penalty": 1.944,
       "games": 36,
       "active_time_s": 15798.465,
       "compression_time_s": 0,
@@ -749,7 +777,7 @@
           "cache_read": 0.02,
           "cache_write": 0.25
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -776,6 +804,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 12,
       "formula_mixed_puzzles": 5,
+      "formula_stability_score": 0.806,
+      "formula_volatility_penalty": 1.944,
       "games": 36,
       "active_time_s": 19180.621,
       "compression_time_s": 0,
@@ -804,7 +834,7 @@
           "cache_read": 0.003,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -831,6 +861,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 9,
       "formula_mixed_puzzles": 6,
+      "formula_stability_score": 0.5,
+      "formula_volatility_penalty": 2.5,
       "games": 32,
       "active_time_s": 8914.761,
       "compression_time_s": 0,
@@ -859,7 +891,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.714,
@@ -886,6 +918,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 9,
       "formula_mixed_puzzles": 6,
+      "formula_stability_score": 0.528,
+      "formula_volatility_penalty": 2.222,
       "games": 36,
       "active_time_s": 10366.965,
       "compression_time_s": 0,
@@ -914,7 +948,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.545,
@@ -941,6 +975,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 10,
       "formula_mixed_puzzles": 6,
+      "formula_stability_score": 0.583,
+      "formula_volatility_penalty": 2.5,
       "games": 36,
       "active_time_s": 23419.105,
       "compression_time_s": 0,
@@ -978,6 +1014,8 @@
       "formula_expected_trials": 36,
       "formula_solved_puzzles": 7,
       "formula_mixed_puzzles": 6,
+      "formula_stability_score": 0.333,
+      "formula_volatility_penalty": 2.5,
       "games": 36,
       "active_time_s": 11517.241,
       "compression_time_s": 0,
@@ -1007,7 +1045,7 @@
           "cache_read": 0.0,
           "cache_write": 0.0
         },
-        "fetched_at": "2026-09-23T21:00:54Z"
+        "fetched_at": "2026-09-23T21:05:32Z"
       },
       "behavior": {
         "solve_rate": 0.522,
@@ -1028,5 +1066,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-23T21:00:54Z"
+  "published_at": "2026-09-23T21:05:32Z"
 }
