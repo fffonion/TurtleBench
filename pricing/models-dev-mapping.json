@@ -68,5 +68,25 @@
     "provider": "openrouter",
     "model": "qwen/qwen3.8-flash",
     "canonical_model": "qwen/qwen3.8-flash"
+  },
+  "kong-ai-gateway:deepseek-ai/DeepSeek-V4.1-Flash": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "canonical_model": "deepseek/deepseek-v4-flash"
+  },
+  "openai-codex:gpt-6-luna": {
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "canonical_model": "openai/gpt-6-luna"
+  },
+  "stepfun:step-5-preview": {
+    "provider": "stepfun",
+    "model": "step-5-preview",
+    "canonical_model": "stepfun/step-5-preview"
+  },
+  "xai-oauth:grok-4.7": {
+    "provider": "xai",
+    "model": "grok-4.7",
+    "canonical_model": "xai/grok-4.7"
   }
 }

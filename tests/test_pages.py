@@ -360,10 +360,14 @@ class PricingTests(unittest.TestCase):
             "minimax-cn:minimax-m3",
             "commandcode:deepseek-ai/deepseek-v4-flash",
             "deepseek:deepseek-v4-flash",
+            "kong-ai-gateway:deepseek-ai/DeepSeek-V4.1-Flash",
             "anthropic:claude-sonnet-5",
             "openai-codex:gpt-5.6-sol",
             "xai-oauth:grok-4.6",
             "openai-codex:gpt-6-astra",
+            "openai-codex:gpt-6-luna",
+            "xai-oauth:grok-4.7",
+            "stepfun:step-5-preview",
             "bai:qwen3.8-flash",
         }
         self.assertTrue(expected.issubset(mapping))
