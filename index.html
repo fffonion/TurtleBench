@@ -6,7 +6,7 @@
     <meta name="description" content="TurtleBench 海龟汤模型基准结果">
     <title>TurtleBench · 海龟汤模型基准</title>
     <link rel="stylesheet" href="assets/styles.css">
-    <script type="module" src="assets/app.js?v=1ad31190"></script>
+    <script type="module" src="assets/app.js?v=2score01"></script>
   </head>
   <body>
     <header class="site-header">
@@ -38,6 +38,13 @@
         <div class="section-header">
           <h2 id="performance-title" data-i18n="performance">综合表现</h2>
           <div class="section-controls">
+            <label class="control-group" id="score-picker">
+              <span data-i18n="scoreMode">评分模式</span>
+              <select id="score-select" data-i18n-aria-label="scoreMode">
+                <option value="formula" selected data-i18n="formulaScore">公式得分</option>
+                <option value="subjective" data-i18n="subjectiveScore">主观评价分</option>
+              </select>
+            </label>
             <div class="control-group">
               <span data-i18n="view">视图</span>
               <div class="segmented" data-i18n-aria-label="viewModes">

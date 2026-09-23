@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "1ad31190";
+const DATA_CACHE_BUSTER = "2score01";
 
 const MESSAGES = {
   zh: {
@@ -21,6 +21,9 @@ const MESSAGES = {
     averagePrice: "每局平均价格",
     averageTime: "每局平均耗时",
     score: "综合分",
+    scoreMode: "评分模式",
+    formulaScore: "公式得分",
+    subjectiveScore: "主观评价分",
     behavior: "模型行为",
     puzzles: "{count} 道题",
     repeats: "每题 {count} 局",
@@ -54,7 +57,7 @@ const MESSAGES = {
     cacheReadShort: "读",
     cacheWriteShort: "写",
     providers: "{count} 个运营商，点击查看详情",
-    tooltipLine: "{provider} · 综合分 {score} · {metricLabel} {metric} · {games} 局",
+    tooltipLine: "{provider} · {scoreLabel} {score} · {metricLabel} {metric} · {games} 局",
     effortNone: "none",
     effortMinimal: "minimal",
     effortLow: "low",
@@ -82,6 +85,9 @@ const MESSAGES = {
     averagePrice: "Average price per game",
     averageTime: "Average time per game",
     score: "Overall score",
+    scoreMode: "Score mode",
+    formulaScore: "Formula score",
+    subjectiveScore: "Subjective score",
     behavior: "Model behavior",
     puzzles: "{count} puzzles",
     repeats: "{count} games per puzzle",
@@ -115,7 +121,7 @@ const MESSAGES = {
     cacheReadShort: "read",
     cacheWriteShort: "write",
     providers: "{count} provider(s), click for details",
-    tooltipLine: "{provider} · score {score} · {metricLabel} {metric} · {games} games",
+    tooltipLine: "{provider} · {scoreLabel} {score} · {metricLabel} {metric} · {games} games",
     effortNone: "none",
     effortMinimal: "minimal",
     effortLow: "low",
@@ -222,16 +228,27 @@ function nestedValue(row, path) {
   return path.split(".").reduce((value, key) => value?.[key], row);
 }
 
-function sortableValue(row, key) {
+export function scoreForRow(row, mode = "subjective") {
+  if (!row) return null;
+  const value = mode === "formula" ? row.formula_score : (row.subjective_score ?? row.overall_score);
+  return Number.isFinite(value) ? Number(value) : null;
+}
+
+export function scoreLabel(mode = "subjective") {
+  return mode === "formula" ? translate("formulaScore") : translate("subjectiveScore");
+}
+
+function sortableValue(row, key, scoreMode = "subjective") {
   if (key === "price_usd.total_per_game") return averagePricePerGame(row);
+  if (key === "overall_score") return scoreForRow(row, scoreMode);
   return nestedValue(row, key);
 }
 
-export function sortRows(rows, key, direction = "asc") {
+export function sortRows(rows, key, direction = "asc", scoreMode = "subjective") {
   const sign = direction === "desc" ? -1 : 1;
   return [...rows].sort((left, right) => {
-    const a = sortableValue(left, key);
-    const b = sortableValue(right, key);
+    const a = sortableValue(left, key, scoreMode);
+    const b = sortableValue(right, key, scoreMode);
     if (a == null && b == null) return 0;
     if (a == null) return 1;
     if (b == null) return -1;
@@ -322,13 +339,13 @@ export function splitDisplayName(name) {
   return { provider, model: modelParts.join(separator) };
 }
 
-export function isDisplayableModel(row) {
+export function isDisplayableModel(row, scoreMode = "subjective") {
   return Boolean(
     row
       && row.partial !== true
       && row.status !== "stopped"
       && row.score_status == null
-      && Number.isFinite(row.overall_score),
+      && scoreForRow(row, scoreMode) != null,
   );
 }
 
@@ -366,7 +383,7 @@ function formatNumber(value) {
 }
 
 function formatScore(value) {
-  return value == null ? "—" : Number(value).toFixed(1);
+  return Number.isFinite(value) ? Number(value).toFixed(1) : "—";
 }
 
 function formatPercent(value) {
@@ -388,15 +405,15 @@ function chartMetric(model, axis) {
   return axis === "price" ? averagePricePerGame(model) : averageTimePerGame(model);
 }
 
-export function isPlottable(model, axis) {
-  return isDisplayableModel(model) && Number.isFinite(chartMetric(model, axis));
+export function isPlottable(model, axis, scoreMode = "subjective") {
+  return isDisplayableModel(model, scoreMode) && Number.isFinite(chartMetric(model, axis));
 }
 
 function chartLabel(value, axis) {
   return axis === "price" ? formatMoney(value) : formatDuration(value);
 }
 
-export function formatChartDetails(row, axis, providers = [row]) {
+export function formatChartDetails(row, axis, providers = [row], scoreMode = "subjective") {
   const parts = splitDisplayName(row.name);
   return {
     model: parts.model,
@@ -405,7 +422,7 @@ export function formatChartDetails(row, axis, providers = [row]) {
       const providerParts = splitDisplayName(providerRow.name);
       return {
         provider: providerRow.provider || providerParts.provider,
-        score: formatScore(providerRow.overall_score),
+        score: formatScore(scoreForRow(providerRow, scoreMode)),
         metric: chartLabel(chartMetric(providerRow, axis), axis),
         games: formatNumber(providerRow.games),
       };
@@ -413,7 +430,7 @@ export function formatChartDetails(row, axis, providers = [row]) {
   };
 }
 
-function renderChartTooltip(host, row, axis, providers = [row]) {
+function renderChartTooltip(host, row, axis, providers = [row], scoreMode = "subjective") {
   let tooltip = host.querySelector(".chart-tooltip");
   if (!tooltip) {
     tooltip = document.createElement("div");
@@ -421,7 +438,7 @@ function renderChartTooltip(host, row, axis, providers = [row]) {
     tooltip.setAttribute("role", "status");
     host.append(tooltip);
   }
-  const details = formatChartDetails(row, axis, providers);
+  const details = formatChartDetails(row, axis, providers, scoreMode);
   tooltip.replaceChildren();
   const title = document.createElement("strong");
   title.textContent = `${details.model} · ${details.reasoning_effort}`;
@@ -431,6 +448,7 @@ function renderChartTooltip(host, row, axis, providers = [row]) {
     line.className = "chart-tooltip-provider";
     line.textContent = translate("tooltipLine", {
       provider: provider.provider || translate("unknown"),
+      scoreLabel: scoreLabel(scoreMode),
       score: provider.score,
       metricLabel: axis === "price" ? translate("priceTooltip") : translate("timeTooltip"),
       metric: provider.metric,
@@ -446,13 +464,13 @@ function hideChartTooltip(host) {
   if (tooltip) tooltip.hidden = true;
 }
 
-function renderChart(models, axis) {
+function renderChart(models, axis, scoreMode = "subjective") {
   const host = document.querySelector("#chart");
   host.replaceChildren();
-  const candidates = models.filter((model) => isPlottable(model, axis));
+  const candidates = models.filter((model) => isPlottable(model, axis, scoreMode));
   const plotted = [...groupByVariant(candidates).values()].map((providers) => ({
     model: providers.reduce((highest, row) => (
-      row.overall_score > highest.overall_score ? row : highest
+      scoreForRow(row, scoreMode) > scoreForRow(highest, scoreMode) ? row : highest
     )),
     providers,
   }));
@@ -471,8 +489,8 @@ function renderChart(models, axis) {
   const plotHeight = height - margin.top - margin.bottom;
   const xValues = plotted.map(({ model }) => chartMetric(model, axis));
   const maxX = Math.max(...xValues, 1) * 1.12;
-  const minScore = Math.min(...plotted.map(({ model }) => model.overall_score));
-  const maxScore = Math.max(...plotted.map(({ model }) => model.overall_score));
+  const minScore = Math.min(...plotted.map(({ model }) => scoreForRow(model, scoreMode)));
+  const maxScore = Math.max(...plotted.map(({ model }) => scoreForRow(model, scoreMode)));
   const yMin = Math.max(0, Math.floor((minScore - 8) / 10) * 10);
   const yMax = Math.min(100, Math.max(yMin + 10, Math.ceil((maxScore + 5) / 10) * 10));
   const x = (value) => margin.left + (value / maxX) * plotWidth;
@@ -505,7 +523,7 @@ function renderChart(models, axis) {
   }
 
   const yTitle = svgElement("text", { x: margin.left, y: 22, class: "axis-title" });
-  yTitle.textContent = translate("score");
+  yTitle.textContent = scoreLabel(scoreMode);
   svg.append(yTitle);
   const xTitle = svgElement("text", { x: margin.left + plotWidth / 2, y: height - 16, class: "axis-title", "text-anchor": "middle" });
   xTitle.textContent = axis === "price" ? translate("priceAxis") : translate("timeAxis");
@@ -514,7 +532,7 @@ function renderChart(models, axis) {
   const colors = colorMap(models);
   groupByChartFamily(plotted.map(({ model }) => model)).forEach((items) => {
     const family = chartFamilyKey(items[0]);
-    const points = items.map((model) => `${x(chartMetric(model, axis))},${y(model.overall_score)}`).join(" ");
+    const points = items.map((model) => `${x(chartMetric(model, axis))},${y(scoreForRow(model, scoreMode))}`).join(" ");
     if (items.length > 1) {
       svg.append(svgElement("polyline", { points, class: "series-line", stroke: colors.get(family) }));
     }
@@ -524,7 +542,7 @@ function renderChart(models, axis) {
   plotted.forEach(({ model, providers }, index) => {
     const family = chartFamilyKey(model);
     const xPosition = x(chartMetric(model, axis));
-    const yPosition = y(model.overall_score);
+    const yPosition = y(scoreForRow(model, scoreMode));
     const point = svgElement("circle", {
       cx: xPosition,
       cy: yPosition,
@@ -535,8 +553,8 @@ function renderChart(models, axis) {
       role: "button",
       "aria-label": `${formatChartName(model)} · ${translate("providers", { count: providers.length })}`,
     });
-    point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis, providers));
-    point.addEventListener("focus", () => renderChartTooltip(host, model, axis, providers));
+    point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis, providers, scoreMode));
+    point.addEventListener("focus", () => renderChartTooltip(host, model, axis, providers, scoreMode));
     point.addEventListener("pointerleave", () => {
       if (pinnedModel !== model) hideChartTooltip(host);
     });
@@ -545,7 +563,7 @@ function renderChart(models, axis) {
     });
     point.addEventListener("click", () => {
       pinnedModel = pinnedModel === model ? null : model;
-      if (pinnedModel) renderChartTooltip(host, model, axis, providers);
+      if (pinnedModel) renderChartTooltip(host, model, axis, providers, scoreMode);
       else hideChartTooltip(host);
     });
     point.addEventListener("keydown", (event) => {
@@ -572,7 +590,7 @@ function renderChart(models, axis) {
 const RESOURCE_COLUMNS = [
   ["model", "name", (row) => row.name],
   ["effort", "reasoning_effort", (row) => row.reasoning_effort],
-  ["score", "overall_score", (row) => formatScore(row.overall_score)],
+  ["score", "overall_score", (row, scoreMode) => formatScore(scoreForRow(row, scoreMode))],
   ["games", "games", (row) => formatNumber(row.games)],
   ["totalTime", "active_time_s", (row) => formatDuration(row.active_time_s)],
   ["totalTokens", "tokens.total", (row) => formatNumber(row.tokens.total)],
@@ -585,14 +603,14 @@ const RESOURCE_COLUMNS = [
 
 const BEHAVIOR_COLUMNS = [
   ["model", "name", (row) => formatBehaviorName(row)],
-  ["score", "overall_score", (row) => formatScore(row.overall_score)],
+  ["score", "overall_score", (row, scoreMode) => formatScore(scoreForRow(row, scoreMode))],
   ["solveRate", "behavior.solve_rate", (row) => formatPercent(row.behavior.solve_rate)],
   ["roundsMedian", "behavior.rounds_median", (row) => formatNumber(row.behavior.rounds_median)],
   ["hintsMedian", "behavior.hints_median", (row) => formatNumber(row.behavior.hints_median)],
   ["samples", "behavior.samples", (row) => formatNumber(row.behavior.samples)],
 ];
 
-function renderTable(table, rows, columns, state) {
+function renderTable(table, rows, columns, state, scoreMode = "subjective") {
   const headRow = table.querySelector("thead tr");
   const body = table.querySelector("tbody");
   headRow.replaceChildren();
@@ -605,7 +623,7 @@ function renderTable(table, rows, columns, state) {
     button.type = "button";
     button.className = "sort-button";
     button.dataset.sortKey = key;
-    button.textContent = translate(labelKey);
+    button.textContent = labelKey === "score" ? scoreLabel(scoreMode) : translate(labelKey);
     if (state.key === key) {
       th.setAttribute("aria-sort", state.direction === "asc" ? "ascending" : "descending");
       const mark = document.createElement("span");
@@ -624,7 +642,7 @@ function renderTable(table, rows, columns, state) {
     button.addEventListener("click", () => {
       state.direction = state.key === key && state.direction === "desc" ? "asc" : "desc";
       state.key = key;
-      renderTable(table, sortRows(rows, state.key, state.direction), columns, state);
+      renderTable(table, sortRows(rows, state.key, state.direction, scoreMode), columns, state, scoreMode);
     });
     th.append(button);
     headRow.append(th);
@@ -651,7 +669,7 @@ function renderTable(table, rows, columns, state) {
         }
       } else {
         if (key === "reasoning_effort") td.classList.add("effort-cell");
-        td.textContent = formatter(row);
+        td.textContent = formatter(row, scoreMode);
       }
       if (key === "price_usd.total_per_game" && row.price_usd) {
         const detail = document.createElement("small");
@@ -693,8 +711,10 @@ async function loadRun(file) {
 async function startDashboard() {
   const status = document.querySelector("#status");
   const languageSelect = document.querySelector("#language-select");
+  const scoreSelect = document.querySelector("#score-select");
   const languagePreference = readLanguagePreference();
   languageSelect.value = languagePreference;
+  scoreSelect.value = "formula";
   applyLanguage(detectLanguage(languagePreference));
   try {
     const index = await loadRun("data/index.json");
@@ -710,29 +730,32 @@ async function startDashboard() {
 
     let data = await loadRun(runSelect.value || index.runs[0].file);
     let axis = "price";
+    let scoreMode = scoreSelect.value || "formula";
     const resourceSort = { key: "overall_score", direction: "desc" };
     const behaviorSort = { key: "overall_score", direction: "desc" };
 
     const render = () => {
       const tableModels = data.models;
-      const chartModels = data.models.filter(isDisplayableModel);
+      const chartModels = data.models.filter((model) => isDisplayableModel(model, scoreMode));
       document.querySelector("#suite-meta").textContent = [
         data.suite_version,
         translate("puzzles", { count: data.puzzle_count }),
         translate("repeats", { count: data.repeats }),
       ].filter(Boolean).join(" · ");
-      renderChart(chartModels, axis);
+      renderChart(chartModels, axis, scoreMode);
       renderTable(
         document.querySelector("#resource-table"),
-        sortRows(tableModels, resourceSort.key, resourceSort.direction),
+        sortRows(tableModels, resourceSort.key, resourceSort.direction, scoreMode),
         RESOURCE_COLUMNS,
         resourceSort,
+        scoreMode,
       );
       renderTable(
         document.querySelector("#behavior-table"),
-        sortRows(tableModels, behaviorSort.key, behaviorSort.direction),
+        sortRows(tableModels, behaviorSort.key, behaviorSort.direction, scoreMode),
         BEHAVIOR_COLUMNS,
         behaviorSort,
+        scoreMode,
       );
       status.hidden = true;
     };
@@ -745,7 +768,11 @@ async function startDashboard() {
     });
     bindSegmentedControl("[data-axis]", (value) => {
       axis = value;
-      renderChart(data.models, axis);
+      renderChart(data.models, axis, scoreMode);
+    });
+    scoreSelect.addEventListener("change", () => {
+      scoreMode = scoreSelect.value === "subjective" ? "subjective" : "formula";
+      render();
     });
     languageSelect.addEventListener("change", () => {
       saveLanguagePreference(languageSelect.value);
