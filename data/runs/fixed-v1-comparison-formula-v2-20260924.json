@@ -66,7 +66,7 @@
           "cache_read": 1.0,
           "cache_write": 12.5
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.972,
@@ -143,7 +143,7 @@
           "cache_read": 0.4,
           "cache_write": 5.0
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -220,7 +220,7 @@
           "cache_read": 0.4,
           "cache_write": 5.0
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -296,7 +296,7 @@
           "cache_read": 0.5,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -373,7 +373,7 @@
           "cache_read": 0.02,
           "cache_write": 0.25
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -450,12 +450,70 @@
           "cache_read": 0.016,
           "cache_write": 0.16
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.944,
         "rounds_median": 26.5,
         "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
+      "slug": "grok-4-7-xai-high",
+      "name": "xAI / Grok 4.7",
+      "provider": "xai-oauth",
+      "model": "grok-4.7",
+      "family": "grok-4.7",
+      "reasoning_effort": "high",
+      "overall_score": 82.7,
+      "subjective_score": 82.7,
+      "formula_score": 92.66,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
+      "formula_coverage": 0.972,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 35,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 1,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.861,
+      "formula_repeat_consistency": 0.861,
+      "formula_question_quality_score": 9.04,
+      "formula_strata": {
+        "A-E": 94.579677,
+        "A-H": 96.713752,
+        "A-M": 95.482463,
+        "C-E": 89.240471,
+        "C-H": 85.530159,
+        "C-M": 94.402487
+      },
+      "games": 36,
+      "active_time_s": 23002.156,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 49995075,
+        "input": 12883326,
+        "output": 1136325,
+        "cache_read": 35975424,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.861,
+        "rounds_median": 26.0,
+        "hints_median": 0.0,
         "samples": 36
       },
       "status": "completed",
@@ -585,7 +643,7 @@
           "cache_read": 0.007,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.88,
@@ -662,7 +720,7 @@
           "cache_read": 0.007,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.871,
@@ -738,7 +796,7 @@
           "cache_read": 0.14,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.944,
@@ -814,7 +872,7 @@
           "cache_read": 0.003,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -890,7 +948,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 1.0,
@@ -966,7 +1024,7 @@
           "cache_read": 0.2,
           "cache_write": 2.5
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.912,
@@ -1043,7 +1101,7 @@
           "cache_read": 0.02,
           "cache_write": 0.25
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.806,
@@ -1119,12 +1177,128 @@
           "cache_read": 0.003,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.806,
         "rounds_median": 27.0,
         "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
+      "slug": "mimo-v2-6-flash-xiaomi-max",
+      "name": "xiaomi / Mimo V2.6 Flash",
+      "provider": "xiaomi",
+      "model": "mimo-v2.6-flash",
+      "family": "mimo-v2.6-flash",
+      "reasoning_effort": "max",
+      "overall_score": 75.0,
+      "subjective_score": 75.0,
+      "formula_score": 87.21,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
+      "formula_coverage": 0.972,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 35,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 1,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.861,
+      "formula_repeat_consistency": 0.861,
+      "formula_question_quality_score": 8.545,
+      "formula_strata": {
+        "A-E": 78.213818,
+        "A-H": 85.478128,
+        "A-M": 89.916035,
+        "C-E": 87.758149,
+        "C-H": 91.759475,
+        "C-M": 90.108895
+      },
+      "games": 36,
+      "active_time_s": 44734.909,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 95024297,
+        "input": 3537387,
+        "output": 1099198,
+        "cache_read": 90387712,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.861,
+        "rounds_median": 23.0,
+        "hints_median": 1.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
+      "slug": "minimax-m3-1-openrouter-max",
+      "name": "OpenRouter / Space Bunny Alpha",
+      "provider": "openrouter",
+      "model": "stealth/space-bunny-alpha",
+      "family": "space-bunny-alpha",
+      "reasoning_effort": "max",
+      "overall_score": 74.3,
+      "subjective_score": 74.3,
+      "formula_score": 86.22,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
+      "formula_coverage": 0.972,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 35,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 1,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 4,
+      "formula_stability_score": 0.889,
+      "formula_repeat_consistency": 0.889,
+      "formula_question_quality_score": 8.463,
+      "formula_strata": {
+        "A-E": 84.806026,
+        "A-H": 75.036793,
+        "A-M": 95.806432,
+        "C-E": 89.715167,
+        "C-H": 87.966523,
+        "C-M": 83.960134
+      },
+      "games": 36,
+      "active_time_s": 27965.877,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 167040741,
+        "input": 4179136,
+        "output": 2189008,
+        "cache_read": 160672597,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.889,
+        "rounds_median": 34.5,
+        "hints_median": 2.0,
         "samples": 36
       },
       "status": "completed",
@@ -1195,7 +1369,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.714,
@@ -1271,7 +1445,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.545,
@@ -1406,7 +1580,7 @@
           "cache_read": 0.0,
           "cache_write": 0.0
         },
-        "fetched_at": "2026-09-23T21:59:28Z"
+        "fetched_at": "2026-09-24T09:26:40Z"
       },
       "behavior": {
         "solve_rate": 0.522,
@@ -1427,5 +1601,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-23T21:59:28Z"
+  "published_at": "2026-09-24T09:26:40Z"
 }
