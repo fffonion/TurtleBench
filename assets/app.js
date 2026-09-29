@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score02";
+const DATA_CACHE_BUSTER = "2score03";
 
 const MESSAGES = {
   zh: {
@@ -24,7 +24,7 @@ const MESSAGES = {
     scoreMode: "评分模式",
     formulaScore: "公式得分",
     subjectiveScore: "主观评价分",
-    provisional: "临时结果",
+
     behavior: "模型行为",
     puzzles: "{count} 道题",
     repeats: "每题 {count} 局",
@@ -89,7 +89,7 @@ const MESSAGES = {
     scoreMode: "Score mode",
     formulaScore: "Formula score",
     subjectiveScore: "Subjective score",
-    provisional: "Provisional",
+
     behavior: "Model behavior",
     puzzles: "{count} puzzles",
     repeats: "{count} games per puzzle",
@@ -367,10 +367,11 @@ export function formatChartName(row) {
 
 export function formatTableModelName(row, behavior = false, scoreMode = "subjective") {
   const model = splitDisplayName(row.name).model;
-  if (behavior && scoreMode === "formula" && row.formula_provisional === true) {
-    return `${model} · ${translate("provisional")}`;
-  }
   return model;
+}
+
+export function formatTableProviderName(row) {
+  return row?.provider || splitDisplayName(row?.name || "").provider;
 }
 
 function formatEffort(effort) {
@@ -671,12 +672,13 @@ function renderTable(table, rows, columns, state, scoreMode = "subjective") {
         primary.className = "model-primary";
         primary.textContent = formatTableModelName(row, columns === BEHAVIOR_COLUMNS, scoreMode);
         td.append(primary);
-        if (parts.provider) {
+        const providerName = formatTableProviderName(row) || parts.provider;
+        if (providerName) {
           const provider = document.createElement("small");
           provider.className = "provider-subtitle";
           provider.textContent = columns === BEHAVIOR_COLUMNS
-            ? `${parts.provider} · ${row.reasoning_effort}`
-            : parts.provider;
+            ? providerName
+            : providerName;
           td.append(provider);
         }
       } else {
