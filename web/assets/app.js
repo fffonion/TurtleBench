@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score06";
+const DATA_CACHE_BUSTER = "2score07";
 
 const MESSAGES = {
   zh: {
@@ -29,7 +29,7 @@ const MESSAGES = {
     puzzles: "{count} 道题",
     repeats: "每题 {count} 局",
     unknown: "未知",
-    priceSource: "价格来源：各 provider 官方 API 定价",
+    priceSource: "价格来源：各 provider 官方 API / models.dev 目录",
     chartRelation: "综合分与{metric}关系图",
     priceAxis: "每局平均价格（USD）",
     timeAxis: "每局平均耗时",
@@ -94,7 +94,7 @@ const MESSAGES = {
     puzzles: "{count} puzzles",
     repeats: "{count} games per puzzle",
     unknown: "Unknown",
-    priceSource: "Price source: official provider API pricing",
+    priceSource: "Price source: provider API pricing / models.dev catalog",
     chartRelation: "Overall score vs. {metric}",
     priceAxis: "Average price per game (USD)",
     timeAxis: "Average time per game",

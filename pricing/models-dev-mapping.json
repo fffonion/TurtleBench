@@ -64,6 +64,16 @@
     "model": "gpt-6-astra",
     "canonical_model": "openai/gpt-6-astra"
   },
+  "openai-codex:gpt-6.1-sol": {
+    "provider": "openai",
+    "model": "gpt-6.1-sol",
+    "canonical_model": "openai/gpt-6.1-sol"
+  },
+  "openai-codex:gpt-6-sol": {
+    "provider": "openai",
+    "model": "gpt-6-sol",
+    "canonical_model": "openai/gpt-6-sol"
+  },
   "bai:qwen3.8-flash": {
     "provider": "openrouter",
     "model": "qwen/qwen3.8-flash",
@@ -78,6 +88,16 @@
     "provider": "openai",
     "model": "gpt-6-luna",
     "canonical_model": "openai/gpt-6-luna"
+  },
+  "xiaomi:mimo-v2.6-flash": {
+    "provider": "xiaomi",
+    "model": "mimo-v2.6-flash",
+    "canonical_model": "xiaomi/mimo-v2.6-flash"
+  },
+  "xiaomi:mimo-v2.6-pro": {
+    "provider": "xiaomi",
+    "model": "mimo-v2.6-pro",
+    "canonical_model": "xiaomi/mimo-v2.6-pro"
   },
   "stepfun:step-5-preview": {
     "provider": "stepfun",
