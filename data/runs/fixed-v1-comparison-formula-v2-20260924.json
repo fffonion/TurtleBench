@@ -156,6 +156,64 @@
       "stop_reason": null
     },
     {
+      "slug": "gpt-6-1-sol-high",
+      "name": "GPT-6.1 Sol",
+      "provider": "openai-codex",
+      "model": "gpt-6.1-sol",
+      "family": "gpt-6.1-sol",
+      "reasoning_effort": "high",
+      "overall_score": 90.7,
+      "subjective_score": 90.7,
+      "formula_score": 97.6,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 0,
+      "formula_stability_score": 1.0,
+      "formula_repeat_consistency": 1.0,
+      "formula_question_quality_score": 9.08,
+      "formula_strata": {
+        "A-E": 98.089452,
+        "A-H": 97.48997,
+        "A-M": 97.336711,
+        "C-E": 98.154758,
+        "C-H": 97.814447,
+        "C-M": 96.710318
+      },
+      "games": 36,
+      "active_time_s": 6606.44,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 11932234,
+        "input": 1157724,
+        "output": 143086,
+        "cache_read": 10631424,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 9.0,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
       "slug": "gpt-5-6-sol-medium",
       "name": "OpenAI Codex / GPT-5.6 Sol",
       "provider": "openai-codex",
@@ -1717,5 +1775,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-30T21:02:10Z"
+  "published_at": "2026-09-30T23:25:36Z"
 }
