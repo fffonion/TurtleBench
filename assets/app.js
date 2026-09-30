@@ -352,7 +352,6 @@ export function isDisplayableModel(row, scoreMode = "subjective") {
       && row.partial !== true
       && row.status !== "stopped"
       && row.score_status == null
-      && !(scoreMode === "formula" && row.formula_provisional === true)
       && scoreForRow(row, scoreMode) != null,
   );
 }
@@ -728,7 +727,7 @@ async function startDashboard() {
   const scoreSelect = document.querySelector("#score-select");
   const languagePreference = readLanguagePreference();
   languageSelect.value = languagePreference;
-  scoreSelect.value = "formula";
+  scoreSelect.value = "subjective";
   applyLanguage(detectLanguage(languagePreference));
   try {
     const index = await loadRun("data/index.json");
@@ -744,7 +743,7 @@ async function startDashboard() {
 
     let data = await loadRun(runSelect.value || index.runs[0].file);
     let axis = "price";
-    let scoreMode = scoreSelect.value || "formula";
+    let scoreMode = scoreSelect.value || "subjective";
     const resourceSort = { key: "overall_score", direction: "desc" };
     const behaviorSort = { key: "overall_score", direction: "desc" };
 
