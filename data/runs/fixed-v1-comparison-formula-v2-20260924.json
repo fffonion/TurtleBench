@@ -201,8 +201,27 @@
         "cache_read": 10631424,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 2.315448,
+        "output": 1.43086,
+        "cache_read": 1.0631424,
+        "cache_write": 0.0,
+        "total": 4.8094504
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "openai/gpt-6.1-sol",
+        "source_provider_id": "openai",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-29.",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 10.0,
+          "cache_read": 0.1,
+          "cache_write": 2.5
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 1.0,
         "rounds_median": 9.0,
@@ -336,8 +355,27 @@
         "cache_read": 30844544,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 4.882374,
+        "output": 2.16202,
+        "cache_read": 6.1689088,
+        "cache_write": 0.0,
+        "total": 13.2133028
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "openai/gpt-6-sol",
+        "source_provider_id": "openai",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-22.",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 10.0,
+          "cache_read": 0.2,
+          "cache_write": 2.5
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.972,
         "rounds_median": 17.0,
@@ -624,8 +662,27 @@
         "cache_read": 35975424,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 25.766652,
+        "output": 6.81795,
+        "cache_read": 17.987712,
+        "cache_write": 0.0,
+        "total": 50.572314
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "xai/grok-4.7",
+        "source_provider_id": "xai",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-21.",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 6.0,
+          "cache_read": 0.5,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.861,
         "rounds_median": 26.0,
@@ -682,8 +739,27 @@
         "cache_read": 130668544,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 0.5971692,
+        "output": 0.4272025,
+        "cache_read": 1.30668544,
+        "cache_write": 0.0,
+        "total": 2.33105714
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "openai/gpt-6-luna",
+        "source_provider_id": "openai",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-22.",
+        "usd_per_million_tokens": {
+          "input": 0.1,
+          "output": 0.5,
+          "cache_read": 0.01,
+          "cache_write": 0.125
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.889,
         "rounds_median": 23.5,
@@ -1351,8 +1427,27 @@
         "cache_read": 90387712,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 0.49523418,
+        "output": 0.30777544,
+        "cache_read": 0.2530855936,
+        "cache_write": 0.0,
+        "total": 1.0560952136
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "xiaomi/mimo-v2.6-flash",
+        "source_provider_id": "xiaomi",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-22.",
+        "usd_per_million_tokens": {
+          "input": 0.14,
+          "output": 0.28,
+          "cache_read": 0.0028,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.861,
         "rounds_median": 23.0,
@@ -1409,8 +1504,27 @@
         "cache_read": 160672597,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 0.0,
+        "output": 0.0,
+        "cache_read": 0.0,
+        "cache_write": 0.0,
+        "total": 0.0
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "openrouter/stealth/space-bunny-alpha",
+        "source_provider_id": "openrouter",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev marks this OpenRouter route as free; zero cost is retained.",
+        "usd_per_million_tokens": {
+          "input": 0.0,
+          "output": 0.0,
+          "cache_read": 0.0,
+          "cache_write": 0.0
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.889,
         "rounds_median": 34.5,
@@ -1467,8 +1581,27 @@
         "cache_read": 159240320,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 2.493011535,
+        "output": 1.39976127,
+        "cache_read": 0.573265152,
+        "cache_write": 0.0,
+        "total": 4.466037957
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "xiaomi/mimo-v2.6-pro",
+        "source_provider_id": "xiaomi",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-22.",
+        "usd_per_million_tokens": {
+          "input": 0.435,
+          "output": 0.87,
+          "cache_read": 0.0036,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.861,
         "rounds_median": 26.0,
@@ -1677,8 +1810,27 @@
         "cache_read": 136171776,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 7.977498081,
+        "output": 4.620654455,
+        "cache_read": 6.536245248,
+        "cache_write": 0.0,
+        "total": 19.134397784
+      },
+      "pricing": {
+        "source": "https://models.dev/api.json",
+        "source_model_id": "stepfun/step-5-preview",
+        "source_provider_id": "stepfun",
+        "pricing_basis": "models_dev_provider_catalog",
+        "pricing_note": "models.dev provider catalog; last_updated=2026-09-20.",
+        "usd_per_million_tokens": {
+          "input": 0.959,
+          "output": 2.741,
+          "cache_read": 0.048,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-30T23:38:34Z"
+      },
       "behavior": {
         "solve_rate": 0.583,
         "rounds_median": 44.5,
@@ -1775,5 +1927,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-30T23:25:36Z"
+  "published_at": "2026-09-30T23:38:34Z"
 }
