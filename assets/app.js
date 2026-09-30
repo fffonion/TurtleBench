@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score03";
+const DATA_CACHE_BUSTER = "2score05";
 
 const MESSAGES = {
   zh: {
@@ -615,6 +615,7 @@ const RESOURCE_COLUMNS = [
 
 const BEHAVIOR_COLUMNS = [
   ["model", "name", (row) => formatBehaviorName(row)],
+  ["effort", "reasoning_effort", (row) => row.reasoning_effort],
   ["score", "overall_score", (row, scoreMode) => formatScore(scoreForRow(row, scoreMode))],
   ["solveRate", "behavior.solve_rate", (row) => formatPercent(row.behavior.solve_rate)],
   ["roundsMedian", "behavior.rounds_median", (row) => formatNumber(row.behavior.rounds_median)],
