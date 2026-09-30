@@ -271,6 +271,11 @@ class PricingTests(unittest.TestCase):
                 "model": "deepseek-v4-flash",
                 "canonical_model": "deepseek/deepseek-v4-flash",
             },
+            "openrouter:stealth/space-bunny-alpha": {
+                "provider": "minimax",
+                "model": "MiniMax-M3",
+                "canonical_model": "minimax/MiniMax-M3",
+            },
         }
 
     def test_resolves_mapping_and_prefers_off_peak_rates(self):
@@ -329,6 +334,32 @@ class PricingTests(unittest.TestCase):
         )
 
         self.assertEqual(price["source_provider_id"], "deepseek")
+
+    def test_minimax_m31_route_uses_m3_models_dev_price(self):
+        catalog = {
+            "minimax": {
+                "models": {
+                    "MiniMax-M3": {
+                        "cost": {"input": 0.3, "output": 1.2, "cache_read": 0.06}
+                    }
+                }
+            }
+        }
+
+        price = pages.resolve_pricing(
+            "openrouter",
+            "stealth/space-bunny-alpha",
+            self.mapping,
+            catalog,
+            "2026-10-01T00:00:00Z",
+        )
+
+        self.assertEqual(price["source_provider_id"], "minimax")
+        self.assertEqual(price["source_model_id"], "minimax/MiniMax-M3")
+        self.assertEqual(
+            price["usd_per_million_tokens"],
+            {"input": 0.3, "output": 1.2, "cache_read": 0.06, "cache_write": None},
+        )
 
     def test_rejects_promotional_or_free_plan_prices(self):
         for provider, cost in (
@@ -404,6 +435,7 @@ class PricingTests(unittest.TestCase):
             "openai-codex:gpt-6-luna",
             "xiaomi:mimo-v2.6-flash",
             "xiaomi:mimo-v2.6-pro",
+            "openrouter:stealth/space-bunny-alpha",
             "xai-oauth:grok-4.7",
             "stepfun:step-5-preview",
             "bai:qwen3.8-flash",

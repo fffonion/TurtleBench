@@ -14,6 +14,11 @@
     "model": "MiniMax-M3",
     "canonical_model": "minimax/MiniMax-M3"
   },
+  "openrouter:stealth/space-bunny-alpha": {
+    "provider": "minimax",
+    "model": "MiniMax-M3",
+    "canonical_model": "minimax/MiniMax-M3"
+  },
   "commandcode:deepseek-ai/deepseek-v4-flash": {
     "provider": "deepseek",
     "model": "deepseek-v4-flash",
