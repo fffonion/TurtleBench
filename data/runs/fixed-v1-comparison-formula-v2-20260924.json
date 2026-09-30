@@ -1307,7 +1307,7 @@
     },
     {
       "slug": "minimax-m3-1-openrouter-max",
-      "name": "OpenRouter / Space Bunny Alpha",
+      "name": "MiniMax M3.1 Flash Preview",
       "provider": "openrouter",
       "model": "stealth/space-bunny-alpha",
       "family": "space-bunny-alpha",
