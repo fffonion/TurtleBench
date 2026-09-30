@@ -1677,8 +1677,27 @@
         "cache_read": 134614973,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 1.2271149,
+        "output": 0.5498616,
+        "cache_read": 8.07689838,
+        "cache_write": 0.0,
+        "total": 9.85387488
+      },
+      "pricing": {
+        "source": "https://platform.minimax.io/docs/guides/pricing-paygo",
+        "source_model_id": "MiniMax-M3",
+        "source_provider_id": "minimax",
+        "pricing_basis": "official_api_standard_payg",
+        "pricing_note": "Current standard pay-as-you-go rate for <=512k input tokens; the official page shows a permanent 50% discount. Prompt-cache write pricing is not listed.",
+        "usd_per_million_tokens": {
+          "input": 0.3,
+          "output": 1.2,
+          "cache_read": 0.06,
+          "cache_write": null
+        },
+        "fetched_at": "2026-09-30T21:02:10Z"
+      },
       "behavior": {
         "solve_rate": 0.528,
         "rounds_median": 46.0,
@@ -1698,5 +1717,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-29T05:43:55Z"
+  "published_at": "2026-09-30T21:02:10Z"
 }
