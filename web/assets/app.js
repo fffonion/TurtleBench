@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score05";
+const DATA_CACHE_BUSTER = "2score06";
 
 const MESSAGES = {
   zh: {
@@ -370,7 +370,10 @@ export function formatTableModelName(row, behavior = false, scoreMode = "subject
 }
 
 export function formatTableProviderName(row) {
-  return row?.provider || splitDisplayName(row?.name || "").provider;
+  const provider = row?.provider || splitDisplayName(row?.name || "").provider;
+  if (!provider) return "";
+  const effort = row?.reasoning_effort;
+  return effort ? `${provider} · ${formatEffort(effort)}` : provider;
 }
 
 function formatEffort(effort) {
@@ -601,7 +604,6 @@ function renderChart(models, axis, scoreMode = "subjective") {
 
 const RESOURCE_COLUMNS = [
   ["model", "name", (row) => row.name],
-  ["effort", "reasoning_effort", (row) => row.reasoning_effort],
   ["score", "overall_score", (row, scoreMode) => formatScore(scoreForRow(row, scoreMode))],
   ["games", "games", (row) => formatNumber(row.games)],
   ["totalTime", "active_time_s", (row) => formatDuration(row.active_time_s)],
@@ -615,7 +617,6 @@ const RESOURCE_COLUMNS = [
 
 const BEHAVIOR_COLUMNS = [
   ["model", "name", (row) => formatBehaviorName(row)],
-  ["effort", "reasoning_effort", (row) => row.reasoning_effort],
   ["score", "overall_score", (row, scoreMode) => formatScore(scoreForRow(row, scoreMode))],
   ["solveRate", "behavior.solve_rate", (row) => formatPercent(row.behavior.solve_rate)],
   ["roundsMedian", "behavior.rounds_median", (row) => formatNumber(row.behavior.rounds_median)],

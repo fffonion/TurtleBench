@@ -175,11 +175,11 @@ test("the chart is the default view while the price axis stays available", () =>
   assert.ok(html.includes('id="score-select"'));
   assert.ok(html.includes('value="subjective" selected'));
   assert.ok(html.includes('value="formula"'));
-  assert.ok(html.includes('assets/app.js?v=2score05'));
+  assert.ok(html.includes('assets/app.js?v=2score06'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "price";'));
   assert.ok(app.includes('scoreSelect.value = "subjective";'));
-  assert.ok(app.includes('["effort", "reasoning_effort", (row) => row.reasoning_effort],'));
+  assert.ok(app.includes('return effort ? `${provider} · ${formatEffort(effort)}` : provider;'));
 });
 
 test("formatters keep resource values compact and explicit", () => {
@@ -245,7 +245,7 @@ test("all partial rows stay out of the public model view even with a score", () 
     name: "MiMo v2.6 Pro",
     provider: "xiaomi",
     reasoning_effort: "max",
-  }), "xiaomi");
+  }), "xiaomi · max");
   const eligible = { ...rows[1], formula_score: 80, formula_provisional: false };
   assert.deepEqual(
     sortRows([provisional, eligible], "overall_score", "desc", "formula"),
