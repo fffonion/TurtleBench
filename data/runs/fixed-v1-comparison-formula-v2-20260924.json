@@ -1505,25 +1505,25 @@
         "cache_write": 0
       },
       "price_usd": {
-        "input": 0.0,
-        "output": 0.0,
-        "cache_read": 0.0,
+        "input": 1.2537408,
+        "output": 2.6268096,
+        "cache_read": 9.64035582,
         "cache_write": 0.0,
-        "total": 0.0
+        "total": 13.52090622
       },
       "pricing": {
         "source": "https://models.dev/api.json",
-        "source_model_id": "openrouter/stealth/space-bunny-alpha",
-        "source_provider_id": "openrouter",
+        "source_model_id": "minimax/MiniMax-M3",
+        "source_provider_id": "minimax",
         "pricing_basis": "models_dev_provider_catalog",
-        "pricing_note": "models.dev marks this OpenRouter route as free; zero cost is retained.",
+        "pricing_note": "MiniMax M3.1 Flash Preview uses the MiniMax-M3 models.dev rate.",
         "usd_per_million_tokens": {
-          "input": 0.0,
-          "output": 0.0,
-          "cache_read": 0.0,
-          "cache_write": 0.0
+          "input": 0.3,
+          "output": 1.2,
+          "cache_read": 0.06,
+          "cache_write": null
         },
-        "fetched_at": "2026-09-30T23:38:34Z"
+        "fetched_at": "2026-09-30T23:48:23Z"
       },
       "behavior": {
         "solve_rate": 0.889,
@@ -1927,5 +1927,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-30T23:38:34Z"
+  "published_at": "2026-09-30T23:48:23Z"
 }
