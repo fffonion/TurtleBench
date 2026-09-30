@@ -161,6 +161,19 @@
       "cache_write": null
     }
   },
+  "minimax-cn:MiniMax-M3": {
+    "source": "https://platform.minimax.io/docs/guides/pricing-paygo",
+    "source_model_id": "MiniMax-M3",
+    "source_provider_id": "minimax",
+    "pricing_basis": "official_api_standard_payg",
+    "pricing_note": "Current standard pay-as-you-go rate for <=512k input tokens; the official page shows a permanent 50% discount. Prompt-cache write pricing is not listed.",
+    "usd_per_million_tokens": {
+      "input": 0.3,
+      "output": 1.2,
+      "cache_read": 0.06,
+      "cache_write": null
+    }
+  },
   "openrouter:minimax/minimax-m3:free": {
     "source": "https://openrouter.ai/api/v1/models",
     "source_model_id": "minimax/minimax-m3:free",

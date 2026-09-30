@@ -15,6 +15,11 @@ class PublicResultTests(unittest.TestCase):
         (run / "summaries").mkdir(parents=True)
         summary = {
             "overall_score": 85.9,
+            "subjective_score": 85.9,
+            "formula_score": 73.2,
+            "formula_coverage": 1.0,
+            "formula_trial_records": 3,
+            "formula_expected_trials": 3,
             "success_rate": 0.75,
             "rounds_median": 22.0,
             "valid_games": 3,
@@ -72,6 +77,9 @@ class PublicResultTests(unittest.TestCase):
         self.assertEqual(model["family"], "gpt-5.6-luna")
         self.assertEqual(model["reasoning_effort"], "max")
         self.assertEqual(model["overall_score"], 85.9)
+        self.assertEqual(model["subjective_score"], 85.9)
+        self.assertEqual(model["formula_score"], 73.2)
+        self.assertEqual(model["formula_coverage"], 1.0)
         self.assertEqual(model["games"], 3)
         self.assertEqual(model["active_time_s"], 120.5)
         self.assertEqual(
@@ -98,6 +106,18 @@ class PublicResultTests(unittest.TestCase):
         self.assertNotIn(str(run), serialized)
         self.assertNotIn("display_name", serialized)
 
+    def test_build_public_run_uses_explicit_public_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = self.make_run(Path(tmp))
+            summary_path = run / "summaries" / "luna-max.json"
+            summary = json.loads(summary_path.read_text())
+            summary["player"]["public_name"] = "MiniMax M3"
+            summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+            result = pages.build_public_run(run, pricing={})
+
+        self.assertEqual(result["models"][0]["name"], "MiniMax M3")
+
     def test_invalid_and_retry_directories_do_not_affect_hint_median(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = self.make_run(Path(tmp))
@@ -122,6 +142,7 @@ class PublicResultTests(unittest.TestCase):
             ):
                 summary = dict(base_summary)
                 summary["overall_score"] = score
+                summary["subjective_score"] = score
                 summary["player"] = {
                     "slug": slug,
                     "display_name": slug,
@@ -328,6 +349,19 @@ class PricingTests(unittest.TestCase):
                     pages.resolve_pricing(
                         "bench", "model", mapping, catalog, "2026-09-05T00:00:00Z"
                     )
+
+    def test_official_pricing_covers_minimax_api_model(self):
+        catalog = pages.load_official_pricing(ROOT / "pricing" / "official-api-pricing.json")
+        price = pages.resolve_official_pricing(
+            "minimax-cn", "MiniMax-M3", catalog, "2026-09-30T00:00:00Z"
+        )
+
+        self.assertEqual(price["source_provider_id"], "minimax")
+        self.assertEqual(price["source_model_id"], "MiniMax-M3")
+        self.assertEqual(
+            price["usd_per_million_tokens"],
+            {"input": 0.3, "output": 1.2, "cache_read": 0.06, "cache_write": None},
+        )
 
     def test_calculates_category_prices_and_handles_missing_rates(self):
         tokens = {"total": 425, "input": 100, "output": 20, "cache_read": 300, "cache_write": 5}
