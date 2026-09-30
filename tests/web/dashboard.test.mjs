@@ -14,10 +14,13 @@ import {
   formatDuration,
   formatMoney,
   formatTableModelName,
+  formatTableProviderName,
   groupByFamily,
   groupByVariant,
   isDisplayableModel,
   isPlottable,
+  scoreForRow,
+  scoreLabel,
   splitDisplayName,
   sortRows,
   translate,
@@ -60,6 +63,22 @@ test("sortRows sorts nested numeric values without mutating input", () => {
   assert.deepEqual(
     sortRows(rows, "overall_score", "desc").map((row) => row.overall_score),
     [85.9, 78.1, 68.2],
+  );
+});
+
+test("score mode selects formula or subjective values for tables and charts", () => {
+  const formulaRows = rows.map((row, index) => ({
+    ...row,
+    subjective_score: row.overall_score,
+    formula_score: [55.2, 91.4, 72.8][index],
+  }));
+  assert.equal(scoreForRow(formulaRows[0], "formula"), 55.2);
+  assert.equal(scoreForRow(formulaRows[0], "subjective"), 85.9);
+  assert.equal(scoreForRow({ overall_score: 80 }, "formula"), null);
+  assert.equal(scoreLabel("formula"), "公式得分");
+  assert.deepEqual(
+    sortRows(formulaRows, "overall_score", "desc", "formula").map((row) => row.formula_score),
+    [91.4, 72.8, 55.2],
   );
 });
 
@@ -153,9 +172,14 @@ test("the chart is the default view while the price axis stays available", () =>
   assert.ok(html.includes('id="axis-control" class="control-group">'));
   assert.ok(html.includes('id="chart-view">'));
   assert.ok(html.includes('id="table-view" hidden'));
-  assert.ok(html.includes('assets/app.js?v=1ad31190'));
+  assert.ok(html.includes('id="score-select"'));
+  assert.ok(html.includes('value="subjective" selected'));
+  assert.ok(html.includes('value="formula"'));
+  assert.ok(html.includes('assets/app.js?v=2score05'));
   const app = readFileSync(new URL("../../web/assets/app.js", import.meta.url), "utf8");
   assert.ok(app.includes('let axis = "price";'));
+  assert.ok(app.includes('scoreSelect.value = "subjective";'));
+  assert.ok(app.includes('["effort", "reasoning_effort", (row) => row.reasoning_effort],'));
 });
 
 test("formatters keep resource values compact and explicit", () => {
@@ -212,4 +236,19 @@ test("all partial rows stay out of the public model view even with a score", () 
   assert.equal(isDisplayableModel({ ...rows[0], score_status: "pending_judge" }), false);
   assert.equal(isDisplayableModel({ ...rows[0], status: "stopped" }), false);
   assert.equal(isDisplayableModel({ ...rows[0], overall_score: null }), false);
+  const provisional = { ...rows[0], formula_score: 99, formula_provisional: true };
+  assert.equal(isDisplayableModel(provisional, "formula"), true);
+  assert.equal(isPlottable(provisional, "price", "formula"), true);
+  assert.equal(isDisplayableModel(provisional, "subjective"), true);
+  assert.equal(formatTableModelName(provisional, true, "formula"), "Luna");
+  assert.equal(formatTableProviderName({
+    name: "MiMo v2.6 Pro",
+    provider: "xiaomi",
+    reasoning_effort: "max",
+  }), "xiaomi");
+  const eligible = { ...rows[1], formula_score: 80, formula_provisional: false };
+  assert.deepEqual(
+    sortRows([provisional, eligible], "overall_score", "desc", "formula"),
+    [eligible, provisional],
+  );
 });
