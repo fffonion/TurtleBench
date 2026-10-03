@@ -79,6 +79,158 @@
       "stop_reason": null
     },
     {
+      "slug": "gpt-6-1-sol-xhigh",
+      "name": "GPT-6.1 Sol",
+      "provider": "openai-codex",
+      "model": "gpt-6.1-sol",
+      "family": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "overall_score": 92.3,
+      "subjective_score": 92.3,
+      "formula_score": 97.11,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 1,
+      "formula_stability_score": 0.972,
+      "formula_repeat_consistency": 0.972,
+      "formula_question_quality_score": 9.216,
+      "formula_strata": {
+        "A-E": 98.052614,
+        "A-H": 96.843977,
+        "A-M": 96.00964,
+        "C-E": 97.872739,
+        "C-H": 97.474919,
+        "C-M": 96.398477
+      },
+      "games": 36,
+      "active_time_s": 10580.376,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 18843671,
+        "input": 1443818,
+        "output": 184877,
+        "cache_read": 17214976,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 2.887636,
+        "output": 1.84877,
+        "cache_read": 1.7214976,
+        "cache_write": 0.0,
+        "total": 6.4579036
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-6.1-sol",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-10-03T09:07:07Z",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 10.0,
+          "cache_read": 0.1,
+          "cache_write": 2.5
+        }
+      },
+      "behavior": {
+        "solve_rate": 0.972,
+        "rounds_median": 10.0,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
+      "slug": "gpt-6-astra-xhigh",
+      "name": "OpenAI Codex / GPT-6 Astra",
+      "provider": "openai-codex",
+      "model": "gpt-6-astra",
+      "family": "gpt-6-astra",
+      "reasoning_effort": "xhigh",
+      "overall_score": 91.8,
+      "subjective_score": 91.8,
+      "formula_score": 97.01,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 0,
+      "formula_stability_score": 1.0,
+      "formula_repeat_consistency": 1.0,
+      "formula_question_quality_score": 9.221,
+      "formula_strata": {
+        "A-E": 98.103743,
+        "A-H": 96.54366,
+        "A-M": 97.583157,
+        "C-E": 97.287668,
+        "C-H": 96.842025,
+        "C-M": 95.72311
+      },
+      "games": 36,
+      "active_time_s": 8818.293,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 7512484,
+        "input": 966115,
+        "output": 125889,
+        "cache_read": 6420480,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 9.66115,
+        "output": 6.29445,
+        "cache_read": 6.42048,
+        "cache_write": 0.0,
+        "total": 22.37608
+      },
+      "pricing": {
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-6-astra",
+        "source_provider_id": "openai",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
+        "usd_per_million_tokens": {
+          "input": 10.0,
+          "output": 50.0,
+          "cache_read": 1.0,
+          "cache_write": 12.5
+        },
+        "fetched_at": "2026-10-03T09:07:07Z"
+      },
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 9.0,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
+    },
+    {
       "slug": "gpt-5-6-sol-high",
       "name": "OpenAI Codex / GPT-5.6 Sol",
       "provider": "openai-codex",
@@ -1927,5 +2079,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-09-30T23:48:23Z"
+  "published_at": "2026-10-03T09:07:07Z"
 }
