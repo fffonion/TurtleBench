@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score12";
+const DATA_CACHE_BUSTER = "2score13";
 
 const MESSAGES = {
   zh: {
@@ -589,70 +589,47 @@ function hideChartTooltip(host) {
   if (tooltip) tooltip.hidden = true;
 }
 
-function setChartFamilyState(svg, family = null) {
-  svg.querySelectorAll("[data-chart-family]").forEach((element) => {
-    const active = family != null && element.dataset.chartFamily === family;
-    element.classList.toggle("is-active", active);
-    element.classList.toggle("is-dimmed", family != null && !active);
+function setChartFamilyState(svg, legendHost, family = null) {
+  [svg, legendHost].forEach((container) => {
+    container.querySelectorAll("[data-chart-family]").forEach((element) => {
+      const active = family != null && element.dataset.chartFamily === family;
+      element.classList.toggle("is-active", active);
+    });
   });
 }
 
-function renderChartLegend(svg, models, colors, width, height, margin) {
+function renderChartLegend(legendHost, svg, models, colors) {
   const entries = chartLegendEntries(models);
-  const legend = svgElement("g", { class: "chart-legend", role: "list" });
-  const dividerX = width - margin.right + 4;
-  legend.append(svgElement("line", {
-    x1: dividerX,
-    y1: margin.top,
-    x2: dividerX,
-    y2: height - margin.bottom,
-    class: "legend-divider",
-  }));
-  const legendX = dividerX + 20;
-  const title = svgElement("text", { x: legendX, y: margin.top - 14, class: "chart-legend-title" });
+  const title = document.createElement("h3");
+  title.className = "chart-legend-title";
   title.textContent = translate("model");
-  legend.append(title);
+  legendHost.append(title);
 
-  const columnCount = entries.length > 12 ? 2 : 1;
-  const columnGap = 18;
-  const availableWidth = margin.right - 34;
-  const columnWidth = (availableWidth - columnGap * (columnCount - 1)) / columnCount;
-  const rowsPerColumn = Math.ceil(entries.length / columnCount);
-  const rowHeight = 21;
-  entries.forEach((entry, index) => {
-    const column = Math.floor(index / rowsPerColumn);
-    const row = index % rowsPerColumn;
-    const item = svgElement("g", {
-      class: "chart-legend-item",
-      role: "listitem",
-      tabindex: 0,
-      "data-chart-family": entry.family,
-      "aria-label": `${entry.label} · ${entry.reasoning.join(", ")}`,
-      transform: `translate(${legendX + column * (columnWidth + columnGap)},${margin.top + row * rowHeight + 8})`,
-    });
-    const swatch = svgElement("rect", {
-      x: 0,
-      y: -10,
-      width: 10,
-      height: 10,
-      rx: 2,
-      fill: colors.get(entry.family),
-      class: "chart-legend-swatch",
-    });
+  entries.forEach((entry) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "chart-legend-item";
+    item.dataset.chartFamily = entry.family;
+    item.setAttribute("aria-label", `${entry.label} · ${entry.reasoning.join(", ")}`);
+    item.title = `${entry.label} · ${entry.reasoning.join(", ")}`;
+
+    const swatch = document.createElement("span");
+    swatch.className = "chart-legend-swatch";
+    swatch.style.backgroundColor = colors.get(entry.family);
+    swatch.setAttribute("aria-hidden", "true");
     item.append(swatch);
-    const label = svgElement("text", { x: 16, y: -1, class: "chart-legend-label" });
-    label.textContent = entry.label.length > 24 ? `${entry.label.slice(0, 23)}…` : entry.label;
+
+    const label = document.createElement("span");
+    label.className = "chart-legend-label";
+    label.textContent = entry.label;
     item.append(label);
-    const fullLabel = svgElement("title");
-    fullLabel.textContent = `${entry.label} · ${entry.reasoning.join(", ")}`;
-    item.append(fullLabel);
-    item.addEventListener("pointerenter", () => setChartFamilyState(svg, entry.family));
-    item.addEventListener("pointerleave", () => setChartFamilyState(svg));
-    item.addEventListener("focus", () => setChartFamilyState(svg, entry.family));
-    item.addEventListener("blur", () => setChartFamilyState(svg));
-    legend.append(item);
+
+    item.addEventListener("pointerenter", () => setChartFamilyState(svg, legendHost, entry.family));
+    item.addEventListener("pointerleave", () => setChartFamilyState(svg, legendHost));
+    item.addEventListener("focus", () => setChartFamilyState(svg, legendHost, entry.family));
+    item.addEventListener("blur", () => setChartFamilyState(svg, legendHost));
+    legendHost.append(item);
   });
-  svg.append(legend);
 }
 
 function renderChart(models, axis, scoreMode = "subjective") {
@@ -673,9 +650,9 @@ function renderChart(models, axis, scoreMode = "subjective") {
     return;
   }
 
-  const width = 1240;
+  const width = 900;
   const height = 500;
-  const margin = { top: 42, right: 340, bottom: 72, left: 72 };
+  const margin = { top: 42, right: 30, bottom: 72, left: 72 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const xValues = plotted.map(({ model }) => chartMetric(model, axis));
@@ -782,8 +759,18 @@ function renderChart(models, axis, scoreMode = "subjective") {
     });
     svg.append(point);
   });
-  renderChartLegend(svg, plotted.map(({ model }) => model), colors, width, height, margin);
-  host.append(svg);
+  const layout = document.createElement("div");
+  layout.className = "chart-layout";
+  const plot = document.createElement("div");
+  plot.className = "chart-plot";
+  plot.append(svg);
+  const legendHost = document.createElement("aside");
+  legendHost.className = "chart-legend";
+  legendHost.setAttribute("role", "list");
+  legendHost.setAttribute("aria-label", translate("model"));
+  renderChartLegend(legendHost, svg, plotted.map(({ model }) => model), colors);
+  layout.append(plot, legendHost);
+  host.append(layout);
 }
 
 const RESOURCE_COLUMNS = [
