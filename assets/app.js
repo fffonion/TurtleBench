@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score10";
+const DATA_CACHE_BUSTER = "2score11";
 
 const MESSAGES = {
   zh: {
@@ -211,6 +211,29 @@ const FAMILY_GROUP_COLORS = new Map([
   ["union", "#50657a"],
 ]);
 
+const FAMILY_VARIANT_COLORS = new Map([
+  ["gpt-5.6-luna", "#173b63"],
+  ["gpt-6-luna", "#2c5d89"],
+  ["gpt-5.6-sol", "#a06b13"],
+  ["gpt-6-sol", "#c18a25"],
+  ["gpt-6.1-sol", "#81510a"],
+  ["gpt-6-astra", "#2774a8"],
+  ["deepseek-v4-flash", "#c2553d"],
+  ["deepseek-v4.1-flash", "#dc7257"],
+  ["claude-sonnet-5", "#6d4ca1"],
+  ["grok-4.6", "#9c3f69"],
+  ["grok-4.7", "#b85a80"],
+  ["minimax-m3", "#0f766e"],
+  ["minimax-m3.1-flash-preview", "#2b9988"],
+  ["mimo-v2.6-flash", "#0b7f8c"],
+  ["mimo-v2.6-pro", "#3a9ca7"],
+  ["glm-5.3", "#4f6b3d"],
+  ["glm-5.3-flash", "#729352"],
+  ["qwen3.8-flash", "#80553f"],
+  ["step-5-preview", "#b14b32"],
+  ["union-alpha", "#50657a"],
+]);
+
 const FALLBACK_FAMILY_COLORS = [
   "#265d91",
   "#8b5a9b",
@@ -240,7 +263,9 @@ function familyColorGroup(family) {
 }
 
 export function colorForFamily(family) {
-  const group = familyColorGroup(family);
+  const value = String(family).toLowerCase();
+  if (FAMILY_VARIANT_COLORS.has(value)) return FAMILY_VARIANT_COLORS.get(value);
+  const group = familyColorGroup(value);
   if (FAMILY_GROUP_COLORS.has(group)) return FAMILY_GROUP_COLORS.get(group);
   let hash = 0;
   for (const character of group) hash = (hash * 31 + character.codePointAt(0)) >>> 0;
