@@ -231,7 +231,6 @@ h2 {
 }
 
 .axis-tick,
-.point-label,
 .axis-title {
   font-family: inherit;
 }
@@ -247,19 +246,10 @@ h2 {
   font-weight: 700;
 }
 
-.point-label {
-  font-size: 12px;
-  font-weight: 700;
-  paint-order: stroke;
-  stroke: white;
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-
 .series-line {
   fill: none;
   stroke-width: 2;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .chart-point {
@@ -270,8 +260,9 @@ h2 {
 
 .chart-tooltip {
   position: absolute;
-  top: 20px;
-  right: 18px;
+  top: 0;
+  left: 0;
+  right: auto;
   z-index: 5;
   display: grid;
   gap: 4px;
@@ -285,6 +276,7 @@ h2 {
   color: var(--text);
   font-size: 0.76rem;
   line-height: 1.35;
+  pointer-events: none;
 }
 
 .chart-tooltip strong {

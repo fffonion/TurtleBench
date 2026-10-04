@@ -196,34 +196,67 @@ const EFFORT_ORDER = new Map([
   ["xhigh", 6],
 ]);
 
-const FAMILY_COLORS = [
-  "#173b63",
-  "#0f766e",
-  "#c2553d",
-  "#6d4ca1",
-  "#a06b13",
-  "#2774a8",
-  "#9c3f69",
-  "#4f6b3d",
-  "#80553f",
-  "#50657a",
-];
-
-const FIXED_FAMILY_COLORS = new Map([
-  ["gpt-5.6-luna", "#173b63"],
-  ["minimax-m3", "#0f766e"],
-  ["deepseek-v4-flash", "#c2553d"],
-  ["claude-sonnet-5", "#6d4ca1"],
-  ["gpt-5.6-sol", "#a06b13"],
-  ["gpt-6-astra", "#2774a8"],
-  ["grok-4.6", "#9c3f69"],
+const FAMILY_GROUP_COLORS = new Map([
+  ["gpt-luna", "#173b63"],
+  ["gpt-sol", "#a06b13"],
+  ["gpt-astra", "#2774a8"],
+  ["deepseek", "#c2553d"],
+  ["claude", "#6d4ca1"],
+  ["grok", "#9c3f69"],
+  ["minimax", "#0f766e"],
+  ["mimo", "#0b7f8c"],
+  ["glm", "#4f6b3d"],
+  ["qwen", "#80553f"],
+  ["step", "#b14b32"],
+  ["union", "#50657a"],
 ]);
 
+const FALLBACK_FAMILY_COLORS = [
+  "#265d91",
+  "#8b5a9b",
+  "#a36a1d",
+  "#287d69",
+  "#b2475d",
+  "#526c35",
+  "#725b96",
+  "#2f7183",
+];
+
+function familyColorGroup(family) {
+  const value = String(family).toLowerCase();
+  if (/^gpt-[0-9.]+-luna$/.test(value)) return "gpt-luna";
+  if (/^gpt-[0-9.]+-sol$/.test(value)) return "gpt-sol";
+  if (/^gpt-[0-9.]+-astra$/.test(value)) return "gpt-astra";
+  if (value.startsWith("deepseek-")) return "deepseek";
+  if (value.startsWith("claude-")) return "claude";
+  if (value.startsWith("grok-")) return "grok";
+  if (value.startsWith("minimax-")) return "minimax";
+  if (value.startsWith("mimo-")) return "mimo";
+  if (value.startsWith("glm-")) return "glm";
+  if (value.startsWith("qwen")) return "qwen";
+  if (value.startsWith("step-")) return "step";
+  if (value.startsWith("union-")) return "union";
+  return value;
+}
+
 export function colorForFamily(family) {
-  if (FIXED_FAMILY_COLORS.has(family)) return FIXED_FAMILY_COLORS.get(family);
+  const group = familyColorGroup(family);
+  if (FAMILY_GROUP_COLORS.has(group)) return FAMILY_GROUP_COLORS.get(group);
   let hash = 0;
-  for (const character of family) hash = (hash * 31 + character.codePointAt(0)) >>> 0;
-  return FAMILY_COLORS[hash % FAMILY_COLORS.length];
+  for (const character of group) hash = (hash * 31 + character.codePointAt(0)) >>> 0;
+  return FALLBACK_FAMILY_COLORS[hash % FALLBACK_FAMILY_COLORS.length];
+}
+
+export function reasoningOpacity(rows, row) {
+  const levels = rows
+    .map((item) => EFFORT_ORDER.get(item.reasoning_effort))
+    .filter((value) => Number.isFinite(value));
+  const level = EFFORT_ORDER.get(row?.reasoning_effort);
+  if (!Number.isFinite(level) || !levels.length) return 1;
+  const minimum = Math.min(...levels);
+  const maximum = Math.max(...levels);
+  if (minimum === maximum) return 1;
+  return Number((0.65 + ((level - minimum) / (maximum - minimum)) * 0.35).toFixed(3));
 }
 
 function nestedValue(row, path) {
@@ -445,7 +478,35 @@ export function formatChartDetails(row, axis, providers = [row], scoreMode = "su
   };
 }
 
-function renderChartTooltip(host, row, axis, providers = [row], scoreMode = "subjective") {
+function positionChartTooltip(host, tooltip, clientX, clientY) {
+  const hostRect = host.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const padding = 10;
+  const offset = 14;
+  const preferredLeft = clientX - hostRect.left + offset;
+  const preferredTop = clientY - hostRect.top + offset;
+  const left = Math.min(
+    Math.max(padding, preferredLeft),
+    Math.max(padding, hostRect.width - tooltipRect.width - padding),
+  );
+  const top = Math.min(
+    Math.max(padding, preferredTop),
+    Math.max(padding, hostRect.height - tooltipRect.height - padding),
+  );
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+  tooltip.style.right = "auto";
+}
+
+function renderChartTooltip(
+  host,
+  row,
+  axis,
+  providers = [row],
+  scoreMode = "subjective",
+  pointerEvent = null,
+  anchorElement = null,
+) {
   let tooltip = host.querySelector(".chart-tooltip");
   if (!tooltip) {
     tooltip = document.createElement("div");
@@ -472,6 +533,17 @@ function renderChartTooltip(host, row, axis, providers = [row], scoreMode = "sub
     tooltip.append(line);
   });
   tooltip.hidden = false;
+  if (pointerEvent && Number.isFinite(pointerEvent.clientX) && Number.isFinite(pointerEvent.clientY)) {
+    positionChartTooltip(host, tooltip, pointerEvent.clientX, pointerEvent.clientY);
+  } else if (anchorElement) {
+    const anchorRect = anchorElement.getBoundingClientRect();
+    positionChartTooltip(
+      host,
+      tooltip,
+      anchorRect.left + anchorRect.width / 2,
+      anchorRect.top + anchorRect.height / 2,
+    );
+  }
 }
 
 function hideChartTooltip(host) {
@@ -545,17 +617,28 @@ function renderChart(models, axis, scoreMode = "subjective") {
   svg.append(xTitle);
 
   const colors = colorMap(models);
-  groupByChartFamily(plotted.map(({ model }) => model)).forEach((items) => {
+  const chartFamilies = groupByChartFamily(plotted.map(({ model }) => model));
+  chartFamilies.forEach((items) => {
     const family = chartFamilyKey(items[0]);
-    const points = items.map((model) => `${x(chartMetric(model, axis))},${y(scoreForRow(model, scoreMode))}`).join(" ");
-    if (items.length > 1) {
-      svg.append(svgElement("polyline", { points, class: "series-line", stroke: colors.get(family) }));
+    for (let index = 0; index < items.length - 1; index += 1) {
+      const from = items[index];
+      const to = items[index + 1];
+      svg.append(svgElement("line", {
+        x1: x(chartMetric(from, axis)),
+        y1: y(scoreForRow(from, scoreMode)),
+        x2: x(chartMetric(to, axis)),
+        y2: y(scoreForRow(to, scoreMode)),
+        class: "series-line",
+        stroke: colors.get(family),
+        "stroke-opacity": reasoningOpacity(items, to),
+      }));
     }
   });
 
   let pinnedModel = null;
-  plotted.forEach(({ model, providers }, index) => {
+  plotted.forEach(({ model, providers }) => {
     const family = chartFamilyKey(model);
+    const familyItems = chartFamilies.get(family) || [model];
     const xPosition = x(chartMetric(model, axis));
     const yPosition = y(scoreForRow(model, scoreMode));
     const point = svgElement("circle", {
@@ -563,23 +646,27 @@ function renderChart(models, axis, scoreMode = "subjective") {
       cy: yPosition,
       r: 6.5,
       fill: colors.get(family),
+      opacity: reasoningOpacity(familyItems, model),
       class: "chart-point",
       tabindex: 0,
       role: "button",
       "aria-label": `${formatChartName(model)} · ${translate("providers", { count: providers.length })}`,
     });
-    point.addEventListener("pointerenter", () => renderChartTooltip(host, model, axis, providers, scoreMode));
-    point.addEventListener("focus", () => renderChartTooltip(host, model, axis, providers, scoreMode));
+    point.addEventListener("pointerenter", (event) => renderChartTooltip(host, model, axis, providers, scoreMode, event, point));
+    point.addEventListener("pointermove", (event) => renderChartTooltip(host, model, axis, providers, scoreMode, event, point));
+    point.addEventListener("focus", () => renderChartTooltip(host, model, axis, providers, scoreMode, null, point));
     point.addEventListener("pointerleave", () => {
       if (pinnedModel !== model) hideChartTooltip(host);
     });
     point.addEventListener("blur", () => {
       if (pinnedModel !== model) hideChartTooltip(host);
     });
-    point.addEventListener("click", () => {
+    point.addEventListener("click", (event) => {
       pinnedModel = pinnedModel === model ? null : model;
-      if (pinnedModel) renderChartTooltip(host, model, axis, providers, scoreMode);
-      else hideChartTooltip(host);
+      if (pinnedModel) {
+        const clickPosition = event.detail > 0 ? event : null;
+        renderChartTooltip(host, model, axis, providers, scoreMode, clickPosition, point);
+      } else hideChartTooltip(host);
     });
     point.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -588,16 +675,6 @@ function renderChart(models, axis, scoreMode = "subjective") {
       }
     });
     svg.append(point);
-    const nearRight = xPosition > margin.left + plotWidth * 0.76;
-    const label = svgElement("text", {
-      x: xPosition + (nearRight ? -11 : 11),
-      y: yPosition + (index % 2 ? 18 : -11),
-      class: "point-label",
-      fill: colors.get(family),
-      "text-anchor": nearRight ? "end" : "start",
-    });
-    label.textContent = formatChartName(model);
-    svg.append(label);
   });
   host.append(svg);
 }
