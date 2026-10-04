@@ -135,7 +135,7 @@
         "source": "https://models.dev",
         "source_model_id": "openai/gpt-6.1-sol",
         "source_provider_id": "openai",
-        "fetched_at": "2026-10-04T17:08:54Z",
+        "fetched_at": "2026-10-03T14:47:15Z",
         "usd_per_million_tokens": {
           "input": 2.0,
           "output": 10.0,
@@ -218,7 +218,7 @@
           "cache_read": 1.0,
           "cache_write": 12.5
         },
-        "fetched_at": "2026-10-04T17:08:54Z"
+        "fetched_at": "2026-10-03T14:47:15Z"
       },
       "behavior": {
         "solve_rate": 1.0,
@@ -1598,7 +1598,7 @@
           "cache_read": 0.03,
           "cache_write": null
         },
-        "fetched_at": "2026-10-04T17:08:54Z"
+        "fetched_at": "2026-10-03T14:47:15Z"
       },
       "behavior": {
         "solve_rate": 0.861,
@@ -2079,5 +2079,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-04T17:08:54Z"
+  "published_at": "2026-10-03T14:47:15Z"
 }
