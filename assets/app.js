@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score11";
+const DATA_CACHE_BUSTER = "2score12";
 
 const MESSAGES = {
   zh: {
@@ -376,6 +376,19 @@ function groupByChartFamily(rows) {
   return groups;
 }
 
+export function chartLegendEntries(models) {
+  return [...groupByChartFamily(models).entries()]
+    .map(([family, items]) => ({
+      family,
+      label: splitDisplayName(items[0].name).model,
+      reasoning: items.map((item) => item.reasoning_effort),
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }));
+}
+
 export function formatDuration(seconds) {
   if (seconds == null || !Number.isFinite(seconds)) return "—";
   const value = Math.max(0, Math.round(seconds));
@@ -576,6 +589,72 @@ function hideChartTooltip(host) {
   if (tooltip) tooltip.hidden = true;
 }
 
+function setChartFamilyState(svg, family = null) {
+  svg.querySelectorAll("[data-chart-family]").forEach((element) => {
+    const active = family != null && element.dataset.chartFamily === family;
+    element.classList.toggle("is-active", active);
+    element.classList.toggle("is-dimmed", family != null && !active);
+  });
+}
+
+function renderChartLegend(svg, models, colors, width, height, margin) {
+  const entries = chartLegendEntries(models);
+  const legend = svgElement("g", { class: "chart-legend", role: "list" });
+  const dividerX = width - margin.right + 4;
+  legend.append(svgElement("line", {
+    x1: dividerX,
+    y1: margin.top,
+    x2: dividerX,
+    y2: height - margin.bottom,
+    class: "legend-divider",
+  }));
+  const legendX = dividerX + 20;
+  const title = svgElement("text", { x: legendX, y: margin.top - 14, class: "chart-legend-title" });
+  title.textContent = translate("model");
+  legend.append(title);
+
+  const columnCount = entries.length > 12 ? 2 : 1;
+  const columnGap = 18;
+  const availableWidth = margin.right - 34;
+  const columnWidth = (availableWidth - columnGap * (columnCount - 1)) / columnCount;
+  const rowsPerColumn = Math.ceil(entries.length / columnCount);
+  const rowHeight = 21;
+  entries.forEach((entry, index) => {
+    const column = Math.floor(index / rowsPerColumn);
+    const row = index % rowsPerColumn;
+    const item = svgElement("g", {
+      class: "chart-legend-item",
+      role: "listitem",
+      tabindex: 0,
+      "data-chart-family": entry.family,
+      "aria-label": `${entry.label} · ${entry.reasoning.join(", ")}`,
+      transform: `translate(${legendX + column * (columnWidth + columnGap)},${margin.top + row * rowHeight + 8})`,
+    });
+    const swatch = svgElement("rect", {
+      x: 0,
+      y: -10,
+      width: 10,
+      height: 10,
+      rx: 2,
+      fill: colors.get(entry.family),
+      class: "chart-legend-swatch",
+    });
+    item.append(swatch);
+    const label = svgElement("text", { x: 16, y: -1, class: "chart-legend-label" });
+    label.textContent = entry.label.length > 24 ? `${entry.label.slice(0, 23)}…` : entry.label;
+    item.append(label);
+    const fullLabel = svgElement("title");
+    fullLabel.textContent = `${entry.label} · ${entry.reasoning.join(", ")}`;
+    item.append(fullLabel);
+    item.addEventListener("pointerenter", () => setChartFamilyState(svg, entry.family));
+    item.addEventListener("pointerleave", () => setChartFamilyState(svg));
+    item.addEventListener("focus", () => setChartFamilyState(svg, entry.family));
+    item.addEventListener("blur", () => setChartFamilyState(svg));
+    legend.append(item);
+  });
+  svg.append(legend);
+}
+
 function renderChart(models, axis, scoreMode = "subjective") {
   const host = document.querySelector("#chart");
   host.replaceChildren();
@@ -594,9 +673,9 @@ function renderChart(models, axis, scoreMode = "subjective") {
     return;
   }
 
-  const width = 1000;
+  const width = 1240;
   const height = 500;
-  const margin = { top: 42, right: 170, bottom: 72, left: 72 };
+  const margin = { top: 42, right: 340, bottom: 72, left: 72 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const xValues = plotted.map(({ model }) => chartMetric(model, axis));
@@ -654,6 +733,7 @@ function renderChart(models, axis, scoreMode = "subjective") {
         x2: x(chartMetric(to, axis)),
         y2: y(scoreForRow(to, scoreMode)),
         class: "series-line",
+        "data-chart-family": family,
         stroke: colors.get(family),
         "stroke-opacity": reasoningOpacity(items, to),
       }));
@@ -673,6 +753,7 @@ function renderChart(models, axis, scoreMode = "subjective") {
       fill: colors.get(family),
       opacity: reasoningOpacity(familyItems, model),
       class: "chart-point",
+      "data-chart-family": family,
       tabindex: 0,
       role: "button",
       "aria-label": `${formatChartName(model)} · ${translate("providers", { count: providers.length })}`,
@@ -701,6 +782,7 @@ function renderChart(models, axis, scoreMode = "subjective") {
     });
     svg.append(point);
   });
+  renderChartLegend(svg, plotted.map(({ model }) => model), colors, width, height, margin);
   host.append(svg);
 }
 

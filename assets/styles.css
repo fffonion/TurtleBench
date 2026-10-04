@@ -256,6 +256,73 @@ h2 {
   cursor: pointer;
   stroke: white;
   stroke-width: 2.5;
+  transition: opacity 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+}
+
+.series-line {
+  transition: opacity 140ms ease, stroke-width 140ms ease;
+}
+
+.series-line.is-active {
+  stroke-width: 3.5;
+  opacity: 1 !important;
+}
+
+.chart-point.is-active {
+  stroke-width: 3.5;
+  opacity: 1 !important;
+  filter: drop-shadow(0 1px 2px rgba(23, 59, 99, 0.26));
+}
+
+.series-line.is-dimmed,
+.chart-point.is-dimmed {
+  opacity: 0.14 !important;
+}
+
+.legend-divider {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart-legend-title {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chart-legend-item {
+  cursor: pointer;
+  outline: none;
+}
+
+.chart-legend-item.is-dimmed {
+  opacity: 0.34;
+}
+
+.chart-legend-swatch {
+  stroke: transparent;
+  stroke-width: 2;
+  transition: stroke 140ms ease, transform 140ms ease;
+}
+
+.chart-legend-label {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 550;
+  transition: fill 140ms ease, font-weight 140ms ease;
+}
+
+.chart-legend-item:hover .chart-legend-label,
+.chart-legend-item:focus-visible .chart-legend-label,
+.chart-legend-item.is-active .chart-legend-label {
+  fill: var(--accent);
+  font-weight: 750;
+}
+
+.chart-legend-item:hover .chart-legend-swatch,
+.chart-legend-item:focus-visible .chart-legend-swatch,
+.chart-legend-item.is-active .chart-legend-swatch {
+  stroke: var(--accent);
 }
 
 .chart-tooltip {
@@ -525,7 +592,7 @@ footer a {
   }
 
   .score-chart {
-    width: 760px;
+    width: 1120px;
     min-height: 360px;
   }
 
