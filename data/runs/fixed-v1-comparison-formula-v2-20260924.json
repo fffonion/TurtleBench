@@ -2069,6 +2069,83 @@
       "status": "completed",
       "partial": false,
       "stop_reason": null
+    },
+    {
+      "slug": "gpt-6-astra-light",
+      "name": "OpenAI Codex / GPT-6 Astra",
+      "provider": "openai-codex",
+      "model": "gpt-6-astra",
+      "family": "gpt-6-astra",
+      "reasoning_effort": "light",
+      "overall_score": 87.4,
+      "subjective_score": 87.4,
+      "formula_score": 98.52,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 2,
+      "formula_stability_score": 0.917,
+      "formula_repeat_consistency": 0.917,
+      "formula_question_quality_score": 9.017,
+      "formula_strata": {
+        "A-E": 99.348039,
+        "A-H": 99.024583,
+        "A-M": 98.328869,
+        "C-E": 99.489584,
+        "C-H": 96.527267,
+        "C-M": 98.375321
+      },
+      "games": 36,
+      "active_time_s": 3997.853,
+      "compression_time_s": 0,
+      "tokens": {
+        "total": 9240252,
+        "input": 769665,
+        "output": 86715,
+        "cache_read": 8383872,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 7.69665,
+        "output": 4.33575,
+        "cache_read": 8.383872,
+        "cache_write": 0.0,
+        "total": 20.416272
+      },
+      "pricing": {
+        "source": "https://developers.openai.com/api/docs/pricing",
+        "source_model_id": "gpt-6-astra",
+        "source_provider_id": "openai",
+        "pricing_basis": "official_api_standard_short_context",
+        "pricing_note": "OpenAI API standard short-context rate.",
+        "usd_per_million_tokens": {
+          "input": 10.0,
+          "output": 50.0,
+          "cache_read": 1.0,
+          "cache_write": 12.5
+        },
+        "fetched_at": "2026-10-06T00:21:13Z"
+      },
+      "behavior": {
+        "solve_rate": 0.917,
+        "rounds_median": 9.0,
+        "hints_median": 0.0,
+        "samples": 36
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
     }
   ],
   "title": "fixed-v1 · formula-v2",
@@ -2079,5 +2156,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-03T14:47:15Z"
+  "published_at": "2026-10-06T00:21:13Z"
 }
