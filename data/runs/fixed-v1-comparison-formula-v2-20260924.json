@@ -73,10 +73,7 @@
         "rounds_median": 8.5,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-6-1-sol-xhigh",
@@ -148,10 +145,7 @@
         "rounds_median": 10.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-6-astra-xhigh",
@@ -225,10 +219,7 @@
         "rounds_median": 9.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-5-6-sol-high",
@@ -302,10 +293,7 @@
         "rounds_median": 13.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-6-1-sol-high",
@@ -379,10 +367,7 @@
         "rounds_median": 9.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-5-6-sol-medium",
@@ -456,10 +441,7 @@
         "rounds_median": 13.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-6-sol-high",
@@ -533,10 +515,7 @@
         "rounds_median": 17.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "grok-4-6-high",
@@ -609,10 +588,7 @@
         "rounds_median": 24.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "luna-max",
@@ -686,10 +662,7 @@
         "rounds_median": 22.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "bai-qwen3-8-flash-max",
@@ -763,10 +736,7 @@
         "rounds_median": 26.5,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "grok-4-7-xai-high",
@@ -840,10 +810,7 @@
         "rounds_median": 26.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-6-luna-codex-max",
@@ -917,10 +884,7 @@
         "rounds_median": 23.5,
         "hints_median": 2.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "deepseek-provider-v4-flash-max",
@@ -994,10 +958,7 @@
         "rounds_median": 21.0,
         "hints_median": 1,
         "samples": 25
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "deepseek-deepseek-v4-1-flash-max",
@@ -1071,10 +1032,7 @@
         "rounds_median": 24.0,
         "hints_median": 0,
         "samples": 31
-      },
-      "status": "stopped",
-      "partial": true,
-      "stop_reason": "operator_requested"
+      }
     },
     {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
@@ -1147,10 +1105,7 @@
         "rounds_median": 28.5,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "commandcode-deepseek-v4-1-flash-high",
@@ -1223,10 +1178,7 @@
         "rounds_median": 28.5,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "claude-sonnet-5-high",
@@ -1299,10 +1251,7 @@
         "rounds_median": 22.5,
         "hints_median": 1.0,
         "samples": 34
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "luna-high",
@@ -1376,10 +1325,7 @@
         "rounds_median": 25.0,
         "hints_median": 2.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "deepseek-v4-flash-max",
@@ -1452,10 +1398,7 @@
         "rounds_median": 27.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "mimo-v2-6-flash-xiaomi-max",
@@ -1529,10 +1472,7 @@
         "rounds_median": 23.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "kong-ai-gateway-deepseek-ai-deepseek-v4-1-flash-max",
@@ -1605,10 +1545,7 @@
         "rounds_median": 30.5,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "minimax-m3-1-openrouter-max",
@@ -1682,10 +1619,7 @@
         "rounds_median": 34.5,
         "hints_median": 2.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "mimo-v2-6-pro-xiaomi-max",
@@ -1759,10 +1693,7 @@
         "rounds_median": 26.0,
         "hints_median": 0.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
@@ -1835,86 +1766,7 @@
         "rounds_median": 49.5,
         "hints_median": 0.0,
         "samples": 14
-      },
-      "status": "stopped",
-      "partial": true,
-      "stop_reason": "operator_requested"
-    },
-    {
-      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-max",
-      "name": "kong-ai-gateway / Glm 5.3 Flash",
-      "provider": "kong-ai-gateway",
-      "model": "zai-org/GLM-5.3-Flash",
-      "family": "GLM-5.3-Flash",
-      "reasoning_effort": "max",
-      "overall_score": 60.9,
-      "subjective_score": 60.9,
-      "formula_score": 64.58,
-      "formula_score_version": "formula-v2",
-      "formula_provisional": true,
-      "formula_rank_eligible": false,
-      "formula_coverage": 0.917,
-      "formula_observed_coverage": 1.0,
-      "formula_trial_records": 36,
-      "formula_terminal_trial_records": 33,
-      "formula_expected_trials": 36,
-      "formula_puzzles_covered": 12,
-      "formula_puzzles_observed": 12,
-      "formula_puzzles_total": 12,
-      "formula_infrastructure_trials": 3,
-      "formula_pending_trials": 0,
-      "formula_solved_puzzles": 9,
-      "formula_mixed_puzzles": 7,
-      "formula_stability_score": 0.5,
-      "formula_repeat_consistency": 0.5,
-      "formula_question_quality_score": 6.352,
-      "formula_strata": {
-        "A-E": 92.188352,
-        "A-H": 40.82186,
-        "A-M": 87.048261,
-        "C-E": 41.15372,
-        "C-H": 46.01526,
-        "C-M": 80.28034
-      },
-      "games": 36,
-      "active_time_s": 10366.965,
-      "compression_time_s": 0,
-      "tokens": {
-        "total": 234715821,
-        "input": 14124337,
-        "output": 553340,
-        "cache_read": 220038144,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 2.11865055,
-        "output": 0.27667,
-        "cache_read": 6.60114432,
-        "cache_write": 0.0,
-        "total": 8.99646487
-      },
-      "pricing": {
-        "source": "https://us.ai-gw.konghq.tech/v1/models",
-        "source_model_id": "zai-org/GLM-5.3-Flash",
-        "source_provider_id": "kong-ai-gateway",
-        "pricing_basis": "official_provider_api_catalog",
-        "usd_per_million_tokens": {
-          "input": 0.15,
-          "output": 0.5,
-          "cache_read": 0.03,
-          "cache_write": null
-        },
-        "fetched_at": "2026-09-24T09:26:40Z"
-      },
-      "behavior": {
-        "solve_rate": 0.545,
-        "rounds_median": 48.0,
-        "hints_median": 0,
-        "samples": 33
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "stepfun-step-5-preview-high",
@@ -1988,10 +1840,7 @@
         "rounds_median": 44.5,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "minimax-m3-max",
@@ -2065,10 +1914,7 @@
         "rounds_median": 46.0,
         "hints_median": 1.0,
         "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      }
     },
     {
       "slug": "gpt-6-astra-light",
@@ -2142,10 +1988,135 @@
         "rounds_median": 9.0,
         "hints_median": 0.0,
         "samples": 36
+      }
+    },
+    {
+      "slug": "meta-muse-spark-1-3-contributor-max",
+      "name": "opencode-go / Muse Spark 1.3 Contributor",
+      "provider": "opencode-go",
+      "model": "meta/muse-spark-1.3-contributor",
+      "family": "muse-spark-1.3-contributor",
+      "reasoning_effort": "max",
+      "overall_score": 79.6,
+      "subjective_score": 79.6,
+      "formula_score": 80.94,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": true,
+      "formula_rank_eligible": false,
+      "formula_coverage": 0.917,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 33,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 3,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 10,
+      "formula_mixed_puzzles": 2,
+      "formula_stability_score": 0.778,
+      "formula_repeat_consistency": 0.778,
+      "formula_question_quality_score": 7.346,
+      "formula_strata": {
+        "A-E": 97.430504,
+        "A-H": 49.264807,
+        "A-M": 98.307087,
+        "C-E": 94.160639,
+        "C-H": 49.171053,
+        "C-M": 97.326293
       },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
+      "games": 36,
+      "active_time_s": 9615.794,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 105861053,
+        "input": 6126094,
+        "output": 766742,
+        "cache_read": 98968217,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.778,
+        "rounds_median": 24.5,
+        "hints_median": 0.0,
+        "samples": 36
+      }
+    },
+    {
+      "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-max",
+      "name": "kong-ai-gateway / Glm 5.3 Flash",
+      "provider": "kong-ai-gateway",
+      "model": "zai-org/GLM-5.3-Flash",
+      "family": "GLM-5.3-Flash",
+      "reasoning_effort": "max",
+      "overall_score": 61.3,
+      "subjective_score": 61.3,
+      "formula_score": 63.94,
+      "formula_score_version": "formula-v2",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 9,
+      "formula_mixed_puzzles": 5,
+      "formula_stability_score": 0.556,
+      "formula_repeat_consistency": 0.556,
+      "formula_question_quality_score": 6.386,
+      "formula_strata": {
+        "A-E": 92.188352,
+        "A-H": 40.82186,
+        "A-M": 87.048261,
+        "C-E": 40.158005,
+        "C-H": 46.01526,
+        "C-M": 77.393883
+      },
+      "games": 36,
+      "active_time_s": 10581.221,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 228124675,
+        "input": 15248106,
+        "output": 545561,
+        "cache_read": 212331008,
+        "cache_write": 0
+      },
+      "price_usd": {
+        "input": 2.2872159,
+        "output": 0.2727805,
+        "cache_read": 6.36993024,
+        "cache_write": 0.0,
+        "total": 8.92992664
+      },
+      "pricing": {
+        "source": "https://us.ai-gw.konghq.tech/v1/models",
+        "source_model_id": "zai-org/GLM-5.3-Flash",
+        "source_provider_id": "kong-ai-gateway",
+        "pricing_basis": "official_provider_api_catalog",
+        "usd_per_million_tokens": {
+          "input": 0.15,
+          "output": 0.5,
+          "cache_read": 0.03,
+          "cache_write": null
+        },
+        "fetched_at": "2026-10-07T18:57:28Z"
+      },
+      "behavior": {
+        "solve_rate": 0.556,
+        "rounds_median": 48.0,
+        "hints_median": 0.0,
+        "samples": 36
+      }
     }
   ],
   "title": "fixed-v1 · formula-v2",
@@ -2156,5 +2127,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-06T00:21:13Z"
+  "published_at": "2026-10-07T18:57:28Z"
 }
