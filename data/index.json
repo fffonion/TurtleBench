@@ -1,14 +1,14 @@
 {
-  "default_run": "fixed-v1-comparison-formula-v2-20260924",
+  "default_run": "fixed-v1-unified-comparison-20260924",
   "runs": [
     {
-      "id": "fixed-v1-comparison-formula-v2-20260924",
-      "title": "fixed-v1 · versioned formula scores",
-      "file": "data/runs/fixed-v1-comparison-formula-v2-20260924.json",
+      "id": "fixed-v1-unified-comparison-20260924",
+      "title": "fixed-v1 · unified score",
+      "file": "data/runs/fixed-v1-unified-comparison-20260924.json",
       "suite_version": "fixed-v1",
       "puzzle_count": 12,
       "repeats": 3,
-      "published_at": "2026-10-08T11:09:54Z"
+      "published_at": "2026-10-08T17:38:32Z"
     }
   ]
 }
