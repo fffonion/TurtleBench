@@ -312,11 +312,6 @@ export function sortRows(rows, key, direction = "asc", scoreMode = "subjective")
     if (a == null && b == null) return 0;
     if (a == null) return 1;
     if (b == null) return -1;
-    if (scoreMode === "formula" && key === "overall_score") {
-      const leftProvisional = left.formula_provisional === true;
-      const rightProvisional = right.formula_provisional === true;
-      if (leftProvisional !== rightProvisional) return leftProvisional ? 1 : -1;
-    }
     if (typeof a === "number" && typeof b === "number") return (a - b) * sign;
     return String(a).localeCompare(String(b), "zh-CN", { numeric: true }) * sign;
   });
