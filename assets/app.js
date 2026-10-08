@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score14";
+const DATA_CACHE_BUSTER = "2score15";
 
 const MESSAGES = {
   zh: {
@@ -463,6 +463,18 @@ export function averagePricePerGame(model) {
   return model.price_usd.total / model.games;
 }
 
+export function formatPriceVariantDetails(model) {
+  const variants = model?.price_variants;
+  if (!variants || typeof variants !== "object") return "";
+  return [
+    ["contributor", "Contributor"],
+    ["standard", "Standard"],
+  ].flatMap(([key, label]) => {
+    const total = variants[key]?.total_usd;
+    return Number.isFinite(total) ? [`${label}: ${formatMoney(total)}`] : [];
+  }).join(" · ");
+}
+
 function formatNumber(value) {
   if (value == null || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat(currentLanguage === "en" ? "en-US" : "zh-CN").format(value);
@@ -867,6 +879,15 @@ function renderTable(table, rows, columns, state, scoreMode = "subjective") {
           `写 ${formatMoney(row.price_usd.cache_write)}`,
         ].join(" · ");
         td.append(detail);
+      }
+      if (key === "price_usd.total_per_game") {
+        const variantDetails = formatPriceVariantDetails(row);
+        if (variantDetails) {
+          const detail = document.createElement("small");
+          detail.className = "price-detail price-variants";
+          detail.textContent = variantDetails;
+          td.append(detail);
+        }
       }
       tr.append(td);
     });
