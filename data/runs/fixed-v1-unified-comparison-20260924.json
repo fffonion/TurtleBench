@@ -10,7 +10,7 @@
       "reasoning_effort": "high",
       "overall_score": 92.4,
       "subjective_score": 92.4,
-      "formula_score": 93.36,
+      "formula_score": 87.26,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -56,13 +56,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 92.4,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 73.92,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 35,
       "formula_solve_rate": 0.972222,
-      "formula_solve_component": 19.44
+      "formula_solve_component": 48.7,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-6-1-sol-xhigh",
@@ -73,7 +71,7 @@
       "reasoning_effort": "xhigh",
       "overall_score": 92.3,
       "subjective_score": 92.3,
-      "formula_score": 93.28,
+      "formula_score": 87.26,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -117,13 +115,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 92.3,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 73.84,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 35,
       "formula_solve_rate": 0.972222,
-      "formula_solve_component": 19.44
+      "formula_solve_component": 48.7,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-6-astra-xhigh",
@@ -134,7 +130,7 @@
       "reasoning_effort": "xhigh",
       "overall_score": 91.8,
       "subjective_score": 91.8,
-      "formula_score": 93.44,
+      "formula_score": 88.65,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -180,13 +176,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 91.8,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 73.44,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 36,
       "formula_solve_rate": 1.0,
-      "formula_solve_component": 20.0
+      "formula_solve_component": 50.09,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-5-6-sol-high",
@@ -197,7 +191,7 @@
       "reasoning_effort": "high",
       "overall_score": 91.5,
       "subjective_score": 91.5,
-      "formula_score": 92.09,
+      "formula_score": 85.87,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -243,13 +237,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 91.5,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 73.2,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 34,
       "formula_solve_rate": 0.944444,
-      "formula_solve_component": 18.89
+      "formula_solve_component": 47.3,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-6-1-sol-high",
@@ -260,7 +252,7 @@
       "reasoning_effort": "high",
       "overall_score": 90.7,
       "subjective_score": 90.7,
-      "formula_score": 92.56,
+      "formula_score": 88.65,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -306,13 +298,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 90.7,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 72.56,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 36,
       "formula_solve_rate": 1.0,
-      "formula_solve_component": 20.0
+      "formula_solve_component": 50.09,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-5-6-sol-medium",
@@ -323,7 +313,7 @@
       "reasoning_effort": "medium",
       "overall_score": 89.5,
       "subjective_score": 89.5,
-      "formula_score": 90.49,
+      "formula_score": 85.87,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -369,13 +359,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 89.5,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 71.6,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 34,
       "formula_solve_rate": 0.944444,
-      "formula_solve_component": 18.89
+      "formula_solve_component": 47.3,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-6-sol-high",
@@ -386,7 +374,7 @@
       "reasoning_effort": "high",
       "overall_score": 88.0,
       "subjective_score": 88.0,
-      "formula_score": 89.84,
+      "formula_score": 87.26,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -432,13 +420,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 88.0,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 70.4,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 35,
       "formula_solve_rate": 0.972222,
-      "formula_solve_component": 19.44
+      "formula_solve_component": 48.7,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-6-astra-light",
@@ -449,7 +435,7 @@
       "reasoning_effort": "light",
       "overall_score": 87.4,
       "subjective_score": 87.4,
-      "formula_score": 88.25,
+      "formula_score": 84.48,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -495,13 +481,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 87.4,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 69.92,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 33,
       "formula_solve_rate": 0.916667,
-      "formula_solve_component": 18.33
+      "formula_solve_component": 45.91,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "grok-4-6-high",
@@ -512,7 +496,7 @@
       "reasoning_effort": "high",
       "overall_score": 87.3,
       "subjective_score": 87.3,
-      "formula_score": 88.73,
+      "formula_score": 85.87,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -557,13 +541,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 87.3,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 69.84,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 34,
       "formula_solve_rate": 0.944444,
-      "formula_solve_component": 18.89
+      "formula_solve_component": 47.3,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "luna-max",
@@ -574,7 +556,7 @@
       "reasoning_effort": "max",
       "overall_score": 85.9,
       "subjective_score": 85.9,
-      "formula_score": 85.94,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -620,13 +602,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 85.9,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 68.72,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "bai-qwen3-8-flash-max",
@@ -637,7 +617,7 @@
       "reasoning_effort": "max",
       "overall_score": 83.0,
       "subjective_score": 83.0,
-      "formula_score": 85.29,
+      "formula_score": 85.87,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -683,13 +663,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 83.0,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 66.4,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 34,
       "formula_solve_rate": 0.944444,
-      "formula_solve_component": 18.89
+      "formula_solve_component": 47.3,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "grok-4-7-xai-high",
@@ -700,7 +678,7 @@
       "reasoning_effort": "high",
       "overall_score": 82.7,
       "subjective_score": 82.7,
-      "formula_score": 83.38,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -746,13 +724,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 82.7,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 66.16,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "gpt-6-luna-codex-max",
@@ -763,7 +739,7 @@
       "reasoning_effort": "max",
       "overall_score": 81.8,
       "subjective_score": 81.8,
-      "formula_score": 83.22,
+      "formula_score": 83.09,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -809,13 +785,11 @@
         "hints_median": 2.0,
         "samples": 36
       },
-      "formula_quality_score": 81.8,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 65.44,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 32,
       "formula_solve_rate": 0.888889,
-      "formula_solve_component": 17.78
+      "formula_solve_component": 44.52,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "deepseek-provider-v4-flash-max",
@@ -826,7 +800,7 @@
       "reasoning_effort": "max",
       "overall_score": 81.6,
       "subjective_score": 81.6,
-      "formula_score": 77.5,
+      "formula_score": 69.17,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -872,13 +846,11 @@
         "hints_median": 1,
         "samples": 25
       },
-      "formula_quality_score": 81.6,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 65.28,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 22,
       "formula_solve_rate": 0.611111,
-      "formula_solve_component": 12.22
+      "formula_solve_component": 30.61,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "deepseek-deepseek-v4-1-flash-max",
@@ -889,7 +861,7 @@
       "reasoning_effort": "max",
       "overall_score": 81.5,
       "subjective_score": 81.5,
-      "formula_score": 80.2,
+      "formula_score": 76.13,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -935,13 +907,11 @@
         "hints_median": 0,
         "samples": 31
       },
-      "formula_quality_score": 81.5,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 65.2,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 27,
       "formula_solve_rate": 0.75,
-      "formula_solve_component": 15.0
+      "formula_solve_component": 37.57,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-high",
@@ -952,7 +922,7 @@
       "reasoning_effort": "high",
       "overall_score": 81.5,
       "subjective_score": 81.5,
-      "formula_score": 84.09,
+      "formula_score": 85.87,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -997,13 +967,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 81.5,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 65.2,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 34,
       "formula_solve_rate": 0.944444,
-      "formula_solve_component": 18.89
+      "formula_solve_component": 47.3,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "commandcode-deepseek-v4-1-flash-high",
@@ -1014,7 +982,7 @@
       "reasoning_effort": "high",
       "overall_score": 81.0,
       "subjective_score": 81.0,
-      "formula_score": 82.02,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1059,13 +1027,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 81.0,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 64.8,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "claude-sonnet-5-high",
@@ -1076,7 +1042,7 @@
       "reasoning_effort": "high",
       "overall_score": 79.6,
       "subjective_score": 79.6,
-      "formula_score": 80.9,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1121,13 +1087,11 @@
         "hints_median": 1.0,
         "samples": 34
       },
-      "formula_quality_score": 79.6,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 63.68,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "meta-muse-spark-1-3-contributor-max",
@@ -1138,7 +1102,7 @@
       "reasoning_effort": "max",
       "overall_score": 79.6,
       "subjective_score": 79.6,
-      "formula_score": 79.24,
+      "formula_score": 77.52,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1195,13 +1159,11 @@
           "per_game_usd": 0.7155973208333334
         }
       },
-      "formula_quality_score": 79.6,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 63.68,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 28,
       "formula_solve_rate": 0.777778,
-      "formula_solve_component": 15.56
+      "formula_solve_component": 38.96,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "luna-high",
@@ -1212,7 +1174,7 @@
       "reasoning_effort": "high",
       "overall_score": 79.0,
       "subjective_score": 79.0,
-      "formula_score": 79.31,
+      "formula_score": 78.91,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1258,13 +1220,11 @@
         "hints_median": 2.0,
         "samples": 36
       },
-      "formula_quality_score": 79.0,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 63.2,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 29,
       "formula_solve_rate": 0.805556,
-      "formula_solve_component": 16.11
+      "formula_solve_component": 40.35,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "deepseek-v4-flash-max",
@@ -1275,7 +1235,7 @@
       "reasoning_effort": "max",
       "overall_score": 76.7,
       "subjective_score": 76.7,
-      "formula_score": 77.47,
+      "formula_score": 78.91,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1320,13 +1280,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 76.7,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 61.36,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 29,
       "formula_solve_rate": 0.805556,
-      "formula_solve_component": 16.11
+      "formula_solve_component": 40.35,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "mimo-v2-6-flash-xiaomi-max",
@@ -1337,7 +1295,7 @@
       "reasoning_effort": "max",
       "overall_score": 75.0,
       "subjective_score": 75.0,
-      "formula_score": 77.22,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1383,13 +1341,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 75.0,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 60.0,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "kong-ai-gateway-deepseek-ai-deepseek-v4-1-flash-max",
@@ -1400,7 +1356,7 @@
       "reasoning_effort": "max",
       "overall_score": 74.4,
       "subjective_score": 74.4,
-      "formula_score": 76.74,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1445,13 +1401,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 74.4,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 59.52,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "minimax-m3-1-openrouter-max",
@@ -1462,7 +1416,7 @@
       "reasoning_effort": "max",
       "overall_score": 74.3,
       "subjective_score": 74.3,
-      "formula_score": 77.22,
+      "formula_score": 83.09,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1508,13 +1462,11 @@
         "hints_median": 2.0,
         "samples": 36
       },
-      "formula_quality_score": 74.3,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 59.44,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 32,
       "formula_solve_rate": 0.888889,
-      "formula_solve_component": 17.78
+      "formula_solve_component": 44.52,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "mimo-v2-6-pro-xiaomi-max",
@@ -1525,7 +1477,7 @@
       "reasoning_effort": "max",
       "overall_score": 74.1,
       "subjective_score": 74.1,
-      "formula_score": 76.5,
+      "formula_score": 81.7,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1571,13 +1523,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 74.1,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 59.28,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 31,
       "formula_solve_rate": 0.861111,
-      "formula_solve_component": 17.22
+      "formula_solve_component": 43.13,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-high",
@@ -1588,7 +1538,7 @@
       "reasoning_effort": "high",
       "overall_score": 65.4,
       "subjective_score": 65.4,
-      "formula_score": 57.88,
+      "formula_score": 52.48,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1633,13 +1583,11 @@
         "hints_median": 0.0,
         "samples": 14
       },
-      "formula_quality_score": 65.4,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 52.32,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 10,
       "formula_solve_rate": 0.277778,
-      "formula_solve_component": 5.56
+      "formula_solve_component": 13.91,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "kong-ai-gateway-zai-org-glm-5-3-flash-max",
@@ -1650,7 +1598,7 @@
       "reasoning_effort": "max",
       "overall_score": 61.3,
       "subjective_score": 61.3,
-      "formula_score": 60.15,
+      "formula_score": 66.39,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -1695,13 +1643,11 @@
         "hints_median": 0.0,
         "samples": 36
       },
-      "formula_quality_score": 61.3,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 49.04,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 20,
       "formula_solve_rate": 0.555556,
-      "formula_solve_component": 11.11
+      "formula_solve_component": 27.83,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "stepfun-step-5-preview-high",
@@ -1712,7 +1658,7 @@
       "reasoning_effort": "high",
       "overall_score": 60.2,
       "subjective_score": 60.2,
-      "formula_score": 59.83,
+      "formula_score": 67.78,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1758,13 +1704,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 60.2,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 48.16,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 21,
       "formula_solve_rate": 0.583333,
-      "formula_solve_component": 11.67
+      "formula_solve_component": 29.22,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "minimax-m3-max",
@@ -1775,7 +1719,7 @@
       "reasoning_effort": "max",
       "overall_score": 57.3,
       "subjective_score": 57.3,
-      "formula_score": 56.4,
+      "formula_score": 65.0,
       "formula_score_version": "single",
       "formula_provisional": true,
       "formula_rank_eligible": false,
@@ -1821,13 +1765,11 @@
         "hints_median": 1.0,
         "samples": 36
       },
-      "formula_quality_score": 57.3,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 45.84,
-      "formula_solve_weight": 0.2,
       "formula_solved_trials": 19,
       "formula_solve_rate": 0.527778,
-      "formula_solve_component": 10.56
+      "formula_solve_component": 26.43,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
       "slug": "meituan-longcat-2-5-preview-free-medium",
@@ -1838,7 +1780,7 @@
       "reasoning_effort": "medium",
       "overall_score": 36.4,
       "subjective_score": 36.4,
-      "formula_score": 29.68,
+      "formula_score": 39.96,
       "formula_score_version": "single",
       "formula_provisional": false,
       "formula_rank_eligible": true,
@@ -1889,11 +1831,9 @@
       "status": "completed",
       "partial": false,
       "stop_reason": null,
-      "formula_quality_score": 36.4,
-      "formula_quality_weight": 0.8,
-      "formula_quality_component": 29.12,
-      "formula_solve_weight": 0.2,
-      "formula_solve_component": 0.56
+      "formula_solve_component": 1.39,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417
     }
   ],
   "title": "fixed-v1 · unified score",
