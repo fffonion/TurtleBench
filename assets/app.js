@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score15";
+const DATA_CACHE_BUSTER = "2score16";
 
 const MESSAGES = {
   zh: {
@@ -463,16 +463,32 @@ export function averagePricePerGame(model) {
   return model.price_usd.total / model.games;
 }
 
-export function formatPriceVariantDetails(model) {
-  const variants = model?.price_variants;
-  if (!variants || typeof variants !== "object") return "";
-  return [
-    ["contributor", "Contributor"],
-    ["standard", "Standard"],
-  ].flatMap(([key, label]) => {
-    const total = variants[key]?.total_usd;
-    return Number.isFinite(total) ? [`${label}: ${formatMoney(total)}`] : [];
-  }).join(" · ");
+export function expandPriceVariantsForPerformance(models) {
+  return models.flatMap((model) => {
+    const variants = model?.price_variants;
+    if (!variants || typeof variants !== "object") return [model];
+    const entries = [
+      ["contributor", "Contributor"],
+      ["standard", ""],
+    ];
+    const prepared = entries.map(([key, suffix]) => {
+      const price = variants[key]?.price_usd;
+      return Number.isFinite(price?.total) ? { key, suffix, price } : null;
+    });
+    if (prepared.some((entry) => entry == null)) return [model];
+    const parts = splitDisplayName(String(model.name ?? ""));
+    const provider = model.provider || parts.provider;
+    return prepared.map(({ key, suffix, price }) => {
+      const displayName = `${parts.model || model.name}${suffix ? ` ${suffix}` : ""}`;
+      return {
+        ...model,
+        slug: `${model.slug || "model"}-${key}`,
+        name: provider ? `${provider} / ${displayName}` : displayName,
+        price_variant: key,
+        price_usd: { ...price },
+      };
+    });
+  });
 }
 
 function formatNumber(value) {
@@ -880,15 +896,6 @@ function renderTable(table, rows, columns, state, scoreMode = "subjective") {
         ].join(" · ");
         td.append(detail);
       }
-      if (key === "price_usd.total_per_game") {
-        const variantDetails = formatPriceVariantDetails(row);
-        if (variantDetails) {
-          const detail = document.createElement("small");
-          detail.className = "price-detail price-variants";
-          detail.textContent = variantDetails;
-          td.append(detail);
-        }
-      }
       tr.append(td);
     });
     body.append(tr);
@@ -942,8 +949,8 @@ async function startDashboard() {
     const behaviorSort = { key: "overall_score", direction: "desc" };
 
     const render = () => {
-      const tableModels = data.models;
-      const chartModels = data.models.filter((model) => isDisplayableModel(model, scoreMode));
+      const performanceModels = expandPriceVariantsForPerformance(data.models);
+      const chartModels = performanceModels.filter((model) => isDisplayableModel(model, scoreMode));
       document.querySelector("#suite-meta").textContent = [
         data.suite_version,
         translate("puzzles", { count: data.puzzle_count }),
@@ -952,14 +959,14 @@ async function startDashboard() {
       renderChart(chartModels, axis, scoreMode);
       renderTable(
         document.querySelector("#resource-table"),
-        sortRows(tableModels, resourceSort.key, resourceSort.direction, scoreMode),
+        sortRows(performanceModels, resourceSort.key, resourceSort.direction, scoreMode),
         RESOURCE_COLUMNS,
         resourceSort,
         scoreMode,
       );
       renderTable(
         document.querySelector("#behavior-table"),
-        sortRows(tableModels, behaviorSort.key, behaviorSort.direction, scoreMode),
+        sortRows(data.models, behaviorSort.key, behaviorSort.direction, scoreMode),
         BEHAVIOR_COLUMNS,
         behaviorSort,
         scoreMode,
@@ -975,7 +982,7 @@ async function startDashboard() {
     });
     bindSegmentedControl("[data-axis]", (value) => {
       axis = value;
-      renderChart(data.models, axis, scoreMode);
+      renderChart(expandPriceVariantsForPerformance(data.models), axis, scoreMode);
     });
     scoreSelect.addEventListener("change", () => {
       scoreMode = scoreSelect.value === "subjective" ? "subjective" : "formula";

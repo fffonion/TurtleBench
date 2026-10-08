@@ -2052,10 +2052,24 @@
       },
       "price_variants": {
         "contributor": {
+          "price_usd": {
+            "input": 0.6126094,
+            "output": 0.1533484,
+            "cache_read": 0.197936434,
+            "cache_write": 0.0,
+            "total": 0.963894234
+          },
           "total_usd": 0.963894234,
           "per_game_usd": 0.026774839833333335
         },
         "standard": {
+          "price_usd": {
+            "input": 7.6576175,
+            "output": 3.2586535,
+            "cache_read": 14.84523255,
+            "cache_write": 0.0,
+            "total": 25.76150355
+          },
           "total_usd": 25.76150355,
           "per_game_usd": 0.7155973208333334
         }
@@ -2143,5 +2157,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-08T00:12:27Z"
+  "published_at": "2026-10-08T00:36:15Z"
 }
