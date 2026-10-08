@@ -2157,27 +2157,34 @@
       "reasoning_effort": "medium",
       "overall_score": 36.4,
       "subjective_score": 36.4,
-      "formula_score": 95.16,
-      "formula_score_version": "formula-v2",
-      "formula_provisional": true,
-      "formula_rank_eligible": false,
-      "formula_coverage": 0.028,
+      "formula_score": 2.64,
+      "formula_score_version": "formula-v3",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
       "formula_observed_coverage": 1.0,
       "formula_trial_records": 36,
-      "formula_terminal_trial_records": 1,
+      "formula_terminal_trial_records": 36,
       "formula_expected_trials": 36,
-      "formula_puzzles_covered": 1,
+      "formula_solved_trials": 1,
+      "formula_solve_rate": 0.028,
+      "formula_puzzles_covered": 12,
       "formula_puzzles_observed": 12,
       "formula_puzzles_total": 12,
-      "formula_infrastructure_trials": 35,
+      "formula_infrastructure_trials": 0,
       "formula_pending_trials": 0,
       "formula_solved_puzzles": 1,
       "formula_mixed_puzzles": 1,
-      "formula_stability_score": 0.333,
-      "formula_repeat_consistency": 0.333,
-      "formula_question_quality_score": 9.625,
+      "formula_stability_score": 0.028,
+      "formula_repeat_consistency": 0.028,
+      "formula_question_quality_score": 0.802,
       "formula_strata": {
-        "A-E": 95.155955
+        "A-E": 15.859326,
+        "A-H": 0.0,
+        "A-M": 0.0,
+        "C-E": 0.0,
+        "C-H": 0.0,
+        "C-M": 0.0
       },
       "games": 36,
       "active_time_s": 12024.14,
@@ -2208,7 +2215,7 @@
           "cache_read": 0.04,
           "cache_write": null
         },
-        "fetched_at": "2026-10-08T09:10:09Z"
+        "fetched_at": "2026-10-08T11:09:54Z"
       },
       "behavior": {
         "solve_rate": 0.028,
@@ -2221,7 +2228,7 @@
       "stop_reason": null
     }
   ],
-  "title": "fixed-v1 · formula-v2",
+  "title": "fixed-v1 · versioned formula scores",
   "status": "completed",
   "partial": false,
   "stop_reason": null,
@@ -2229,5 +2236,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-08T09:10:09Z"
+  "published_at": "2026-10-08T11:09:54Z"
 }
