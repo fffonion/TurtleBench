@@ -1905,6 +1905,7 @@
       "formula_solve_rate_coefficient": 0.500871780911417
     },
     {
+      "fake": true,
       "slug": "vyceai-deepseek-v4-1-max",
       "name": "VyceAI / DeepSeek V4.1 Flash",
       "provider": "vyceai",
@@ -2034,5 +2035,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-09T12:11:45Z"
+  "published_at": "2026-10-09T12:19:01Z"
 }

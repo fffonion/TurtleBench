@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score18";
+const DATA_CACHE_BUSTER = "2score19";
 
 const MESSAGES = {
   zh: {
@@ -355,8 +355,9 @@ export function groupByVariant(rows) {
 }
 
 export function chartRepresentative(rows, scoreMode = "subjective") {
-  if (!rows.length) return null;
-  return rows.reduce((highest, row) => (
+  const eligible = rows.filter((row) => row?.fake !== true && scoreForRow(row, scoreMode) != null);
+  if (!eligible.length) return null;
+  return eligible.reduce((highest, row) => (
     scoreForRow(row, scoreMode) > scoreForRow(highest, scoreMode) ? row : highest
   ));
 }
@@ -423,6 +424,7 @@ export function isDisplayableModel(row, scoreMode = "subjective") {
   return Boolean(
     row
       && row.partial !== true
+      && row.fake !== true
       && row.status !== "stopped"
       && row.score_status == null
       && scoreForRow(row, scoreMode) != null,
@@ -430,7 +432,8 @@ export function isDisplayableModel(row, scoreMode = "subjective") {
 }
 
 export function formatBehaviorName(row) {
-  return `${row.name} · ${formatEffort(row.reasoning_effort)}`;
+  const marker = row.fake === true ? " [FAKE]" : "";
+  return `${row.name} · ${formatEffort(row.reasoning_effort)}${marker}`;
 }
 
 export function formatChartName(row) {
@@ -439,7 +442,7 @@ export function formatChartName(row) {
 
 export function formatTableModelName(row, behavior = false, scoreMode = "subjective") {
   const model = splitDisplayName(row.name).model;
-  return model;
+  return row.fake === true ? `${model} [FAKE]` : model;
 }
 
 export function formatTableProviderName(row) {
