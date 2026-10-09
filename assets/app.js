@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score17";
+const DATA_CACHE_BUSTER = "2score18";
 
 const MESSAGES = {
   zh: {
@@ -354,6 +354,13 @@ export function groupByVariant(rows) {
   return groups;
 }
 
+export function chartRepresentative(rows, scoreMode = "subjective") {
+  if (!rows.length) return null;
+  return rows.reduce((highest, row) => (
+    scoreForRow(row, scoreMode) > scoreForRow(highest, scoreMode) ? row : highest
+  ));
+}
+
 function groupByChartFamily(rows) {
   const groups = new Map();
   rows.forEach((row) => {
@@ -436,10 +443,15 @@ export function formatTableModelName(row, behavior = false, scoreMode = "subject
 }
 
 export function formatTableProviderName(row) {
-  const provider = row?.provider || splitDisplayName(row?.name || "").provider;
+  const provider = providerDisplayName(row?.provider || splitDisplayName(row?.name || "").provider);
   if (!provider) return "";
   const effort = row?.reasoning_effort;
   return effort ? `${provider} · ${formatEffort(effort)}` : provider;
+}
+
+function providerDisplayName(provider) {
+  const value = String(provider ?? "");
+  return value.toLowerCase() === "vyceai" ? "VyceAI" : value;
 }
 
 function formatEffort(effort) {
@@ -530,7 +542,7 @@ export function formatChartDetails(row, axis, providers = [row], scoreMode = "su
     providers: providers.map((providerRow) => {
       const providerParts = splitDisplayName(providerRow.name);
       return {
-        provider: providerRow.provider || providerParts.provider,
+        provider: providerDisplayName(providerRow.provider || providerParts.provider),
         score: formatScore(scoreForRow(providerRow, scoreMode)),
         metric: chartLabel(chartMetric(providerRow, axis), axis),
         games: formatNumber(providerRow.games),
@@ -660,9 +672,7 @@ function renderChart(models, axis, scoreMode = "subjective") {
   host.replaceChildren();
   const candidates = models.filter((model) => isPlottable(model, axis, scoreMode));
   const plotted = [...groupByVariant(candidates).values()].map((providers) => ({
-    model: providers.reduce((highest, row) => (
-      scoreForRow(row, scoreMode) > scoreForRow(highest, scoreMode) ? row : highest
-    )),
+    model: chartRepresentative(providers, scoreMode),
     providers,
   }));
   if (!plotted.length) {
