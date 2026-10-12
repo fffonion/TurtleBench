@@ -1900,7 +1900,7 @@
     },
     {
       "slug": "sensenova-6-8-flash-lite",
-      "name": "SenseNova / 6.8 Flash Lite",
+      "name": "SenseNova 6.8 Lite",
       "provider": "sensenova",
       "model": "sensenova-6.8-flash-lite",
       "family": "sensenova-6.8-flash-lite",
@@ -1956,7 +1956,7 @@
         "source_provider_id": "sensenova",
         "pricing_basis": "models.dev listed USD per million input/output tokens",
         "pricing_note": "Models.dev lists input and output at $0.00 per million tokens. No separate cache rates are listed; cache token categories use the listed input rate.",
-        "fetched_at": "2026-10-12T23:40:53Z",
+        "fetched_at": "2026-10-12T23:46:16Z",
         "usd_per_million_tokens": {
           "input": 0.0,
           "output": 0.0,
@@ -2097,5 +2097,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-10-12T23:40:53Z"
+  "published_at": "2026-10-12T23:46:16Z"
 }
