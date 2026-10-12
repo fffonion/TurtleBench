@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score19";
+const DATA_CACHE_BUSTER = "2score20";
 
 const MESSAGES = {
   zh: {
@@ -469,7 +469,8 @@ export function averageTimePerGame(model) {
 }
 
 export function averagePricePerGame(model) {
-  if (!Number.isFinite(model.price_usd?.total) || !Number.isFinite(model.games) || model.games <= 0) return null;
+  if (!Number.isFinite(model.price_usd?.total) || model.price_usd.total <= 0) return null;
+  if (!Number.isFinite(model.games) || model.games <= 0) return null;
   return model.price_usd.total / model.games;
 }
 
