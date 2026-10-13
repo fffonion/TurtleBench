@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "2score20";
+const DATA_CACHE_BUSTER = "time-free-v1";
 
 const MESSAGES = {
   zh: {
@@ -24,6 +24,9 @@ const MESSAGES = {
     scoreMode: "评分模式",
     formulaScore: "公式得分",
     subjectiveScore: "主观评价分",
+    subjectiveScoreNote: "主观分不计价格或响应时长。",
+    subjectiveScoreNoteWithMissing: "主观分不计价格或响应时长；{count} 个模型缺少可重算的评分分项，暂不列入主观分排名。",
+    formulaScoreNote: "公式分只由 solve rate 决定，不计价格、token 成本或时长。",
 
     behavior: "模型行为",
     puzzles: "{count} 道题",
@@ -89,6 +92,9 @@ const MESSAGES = {
     scoreMode: "Score mode",
     formulaScore: "Formula score",
     subjectiveScore: "Subjective score",
+    subjectiveScoreNote: "Subjective scores exclude price and response latency.",
+    subjectiveScoreNoteWithMissing: "Subjective scores exclude price and response latency; {count} model(s) lack components for recalculation and are omitted from subjective rankings.",
+    formulaScoreNote: "Formula scores depend only on solve rate; price, token cost, and elapsed time are excluded.",
 
     behavior: "Model behavior",
     puzzles: "{count} puzzles",
@@ -296,6 +302,15 @@ export function scoreForRow(row, mode = "subjective") {
 
 export function scoreLabel(mode = "subjective") {
   return mode === "formula" ? translate("formulaScore") : translate("subjectiveScore");
+}
+
+export function scoreMethodNote(data, mode = "subjective") {
+  if (mode === "formula") return translate("formulaScoreNote");
+  if (mode !== "subjective" || data?.subjective_score_version !== "time-free-v1") return null;
+  const unavailable = Number(data.subjective_score_unavailable_models ?? 0);
+  return unavailable > 0 && Number.isFinite(unavailable)
+    ? translate("subjectiveScoreNoteWithMissing", { count: unavailable })
+    : translate("subjectiveScoreNote");
 }
 
 function sortableValue(row, key, scoreMode = "subjective") {
@@ -964,6 +979,7 @@ async function startDashboard() {
         data.suite_version,
         translate("puzzles", { count: data.puzzle_count }),
         translate("repeats", { count: data.repeats }),
+        scoreMethodNote(data, scoreMode),
       ].filter(Boolean).join(" · ");
       renderChart(chartModels, axis, scoreMode);
       renderTable(
