@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "time-free-v1";
+const DATA_CACHE_BUSTER = "response-speed-v1";
 
 const MESSAGES = {
   zh: {
@@ -24,8 +24,7 @@ const MESSAGES = {
     scoreMode: "评分模式",
     formulaScore: "公式得分",
     subjectiveScore: "主观评价分",
-    subjectiveScoreNote: "主观分不计价格或响应时长。",
-    subjectiveScoreNoteWithMissing: "主观分不计价格或响应时长；{count} 个模型缺少可重算的评分分项，暂不列入主观分排名。",
+    subjectiveScoreNote: "主观分计入响应时长维度，价格独立展示。",
     formulaScoreNote: "公式分只由 solve rate 决定，不计价格、token 成本或时长。",
 
     behavior: "模型行为",
@@ -92,8 +91,7 @@ const MESSAGES = {
     scoreMode: "Score mode",
     formulaScore: "Formula score",
     subjectiveScore: "Subjective score",
-    subjectiveScoreNote: "Subjective scores exclude price and response latency.",
-    subjectiveScoreNoteWithMissing: "Subjective scores exclude price and response latency; {count} model(s) lack components for recalculation and are omitted from subjective rankings.",
+    subjectiveScoreNote: "Subjective scores include response latency; price is reported separately.",
     formulaScoreNote: "Formula scores depend only on solve rate; price, token cost, and elapsed time are excluded.",
 
     behavior: "Model behavior",
@@ -306,11 +304,8 @@ export function scoreLabel(mode = "subjective") {
 
 export function scoreMethodNote(data, mode = "subjective") {
   if (mode === "formula") return translate("formulaScoreNote");
-  if (mode !== "subjective" || data?.subjective_score_version !== "time-free-v1") return null;
-  const unavailable = Number(data.subjective_score_unavailable_models ?? 0);
-  return unavailable > 0 && Number.isFinite(unavailable)
-    ? translate("subjectiveScoreNoteWithMissing", { count: unavailable })
-    : translate("subjectiveScoreNote");
+  if (mode !== "subjective") return null;
+  return translate("subjectiveScoreNote");
 }
 
 function sortableValue(row, key, scoreMode = "subjective") {
