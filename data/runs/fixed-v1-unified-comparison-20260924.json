@@ -2134,7 +2134,8 @@
       "formula_baseline_component": 38.56,
       "formula_solve_rate_coefficient": 0.500871780911417,
       "subjective_score_status": "raw_components_unavailable"
-    }
+    },
+    {"slug":"opencode-go-deepseek-v4-1-flash-max","name":"opencode-go / DeepSeek V4.1 Flash","provider":"opencode-go","model":"deepseek-v4.1-flash","family":"deepseek-v4.1-flash","reasoning_effort":"max","overall_score":73.6,"subjective_score":73.6,"formula_score":80.3,"formula_score_version":"single","formula_provisional":false,"formula_rank_eligible":true,"formula_coverage":1.0,"formula_observed_coverage":1.0,"formula_baseline_component":38.56,"formula_solve_rate_coefficient":0.500871780911417,"formula_solve_component":41.74,"question_quality_score":8.594,"formula_trial_records":36,"formula_terminal_trial_records":36,"formula_expected_trials":36,"formula_solved_trials":30,"formula_solve_rate":0.833333,"formula_puzzles_covered":12,"formula_puzzles_observed":12,"formula_puzzles_total":12,"formula_infrastructure_trials":0,"formula_pending_trials":0,"formula_solved_puzzles":11,"formula_mixed_puzzles":2,"formula_stability_score":0.833,"formula_repeat_consistency":0.833,"formula_question_quality_score":8.594,"formula_strata":{},"games":36,"active_time_s":58462.99,"compression_time_s":0.0,"tokens":{"total":225593812,"input":6225517,"output":5754215,"cache_read":213614080,"cache_write":0},"price_usd":null,"pricing":null,"behavior":{"solve_rate":0.833,"rounds_median":22.0,"hints_median":0.0,"samples":36},"status":"completed","partial":false,"stop_reason":null}
   ],
   "title": "fixed-v1 · unified score",
   "status": "completed",
