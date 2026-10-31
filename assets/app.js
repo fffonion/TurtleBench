@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "free-results-20261029";
+const DATA_CACHE_BUSTER = "opencode-free-20261031";
 
 const MESSAGES = {
   zh: {
