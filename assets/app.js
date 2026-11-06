@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "senseflash-max-20261105T034151Z";
+const DATA_CACHE_BUSTER = "opendesign-max-20261106T214837Z";
 
 const MESSAGES = {
   zh: {
