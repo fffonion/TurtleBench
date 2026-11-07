@@ -421,7 +421,9 @@ function chartMetric(model, axis) {
 }
 
 export function isPlottable(model, axis, scoreMode = "subjective") {
-  return isDisplayableModel(model, scoreMode) && Number.isFinite(chartMetric(model, axis));
+  return isDisplayableModel(model, scoreMode)
+    && model.price_usd?.total !== 0
+    && Number.isFinite(chartMetric(model, axis));
 }
 
 function chartLabel(value, axis) {
