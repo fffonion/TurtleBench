@@ -2786,6 +2786,60 @@
         "hints_median": 1.0,
         "samples": 36
       }
+    },
+    {
+      "slug": "workbuddy-hy4free-high",
+      "name": "WorkBuddy / Hy4 Free",
+      "provider": "workbuddy",
+      "model": "hy4free",
+      "family": "hy4free",
+      "reasoning_effort": "high",
+      "overall_score": 78.2,
+      "subjective_score": 78.2,
+      "formula_score": 85.87,
+      "formula_score_version": "single",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417,
+      "formula_solve_component": 47.3,
+      "question_quality_score": 8.883,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_solved_trials": 34,
+      "formula_solve_rate": 0.944444,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 1,
+      "formula_stability_score": 0.944,
+      "formula_repeat_consistency": 0.944,
+      "formula_question_quality_score": 8.883,
+      "formula_strata": {},
+      "games": 36,
+      "active_time_s": 32409.621,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 25463298,
+        "input": 18428235,
+        "output": 2400951,
+        "cache_read": 4634112,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 0.944,
+        "rounds_median": 17.0,
+        "hints_median": 0.0,
+        "samples": 36
+      }
     }
   ],
   "title": "fixed-v1 · unified score",
@@ -2796,5 +2850,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-11-07T09:07:19.602578+00:00"
+  "published_at": "2026-11-07T15:42:12.882988+00:00"
 }

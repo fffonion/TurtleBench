@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "crouton-max-20261107T090719Z";
+const DATA_CACHE_BUSTER = "hy4-high-20261107T154212Z";
 
 const MESSAGES = {
   zh: {
