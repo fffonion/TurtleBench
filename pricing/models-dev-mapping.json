@@ -16,8 +16,8 @@
   },
   "openrouter:stealth/space-bunny-alpha": {
     "provider": "minimax",
-    "model": "MiniMax-M3",
-    "canonical_model": "minimax/MiniMax-M3"
+    "model": "MiniMax-M3.1-Flash",
+    "canonical_model": "minimax/MiniMax-M3.1-Flash"
   },
   "commandcode:deepseek-ai/deepseek-v4-flash": {
     "provider": "deepseek",
@@ -113,5 +113,105 @@
     "provider": "xai",
     "model": "grok-4.7",
     "canonical_model": "xai/grok-4.7"
+  },
+  "minimax-cn:MiniMax-M3": {
+    "provider": "minimax-cn",
+    "model": "MiniMax-M3",
+    "canonical_model": "minimax-cn/MiniMax-M3"
+  },
+  "kong-ai-gateway:deepseek-ai/DeepSeek-V4.1-Flash-1017": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "canonical_model": "deepseek/deepseek-flash"
+  },
+  "opencode-go:meta/muse-spark-1.3-contributor": {
+    "provider": "meta",
+    "model": "muse-spark-1.3-contributor",
+    "canonical_model": "meta/muse-spark-1.3-contributor"
+  },
+  "opencode-go:deepseek-v4.1-flash": {
+    "provider": "opencode-go",
+    "model": "deepseek-v4.1-flash",
+    "canonical_model": "opencode-go/deepseek-v4.1-flash"
+  },
+  "opencode-go:beam-free": {
+    "provider": "openrouter",
+    "model": "reflection/beam-1.0-501b-a23b",
+    "canonical_model": "openrouter/reflection/beam-1.0-501b-a23b"
+  },
+  "anthropic:claude-haiku-5-5": {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "canonical_model": "anthropic/claude-haiku-5-5"
+  },
+  "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
+    "provider": "openrouter",
+    "model": "nvidia/nemotron-3-ultra-550b-a55b",
+    "canonical_model": "openrouter/nvidia/nemotron-3-ultra-550b-a55b"
+  },
+  "openrouter:thinkingmachines/inkling:free": {
+    "provider": "openrouter",
+    "model": "thinkingmachines/inkling",
+    "canonical_model": "openrouter/thinkingmachines/inkling"
+  },
+  "vyceai:agnes-3.0-flash": {
+    "provider": "nano-gpt",
+    "model": "agnes-3.0-flash",
+    "canonical_model": "nano-gpt/agnes-3.0-flash"
+  },
+  "sensenova:sensenova-6.8-flash-lite": {
+    "provider": "sensenova",
+    "model": "sensenova-6.8-flash-lite",
+    "canonical_model": "sensenova/sensenova-6.8-flash-lite"
+  },
+  "openrouter:minimax/minimax-m3.1-flash:free": {
+    "provider": "openrouter",
+    "model": "minimax/minimax-m3.1-flash",
+    "canonical_model": "openrouter/minimax/minimax-m3.1-flash"
+  },
+  "vyceai:deepseek-v4.1": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "canonical_model": "deepseek/deepseek-flash"
+  },
+  "openrouter:dots-studio/dots-3-note-preview:free": {
+    "provider": "openrouter",
+    "model": "dots-studio/dots-3-note-preview:free",
+    "canonical_model": "openrouter/dots-studio/dots-3-note-preview:free"
+  },
+  "opencode-go:iceman-contributor-free": {
+    "provider": "opencode-go",
+    "model": "iceman-contributor-free",
+    "canonical_model": "opencode-go/iceman-contributor-free"
+  },
+  "opencode-go:meituan/longcat-2.5-preview-free": {
+    "provider": "longcat",
+    "model": "LongCat-2.5-Preview",
+    "canonical_model": "longcat/LongCat-2.5-Preview"
+  },
+  "openrouter:thinkingmachines/inkling-small:free": {
+    "provider": "openrouter",
+    "model": "thinkingmachines/inkling-small",
+    "canonical_model": "openrouter/thinkingmachines/inkling-small"
+  },
+  "openrouter:cohere/north-mini-code:free": {
+    "provider": "cohere",
+    "model": "north-mini-code-1-0",
+    "canonical_model": "cohere/north-mini-code-1-0"
+  },
+  "opendesign:deepseek-v4.1-flash": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "canonical_model": "deepseek/deepseek-flash"
+  },
+  "openrouter:stealth/crouton-alpha": {
+    "provider": "openrouter",
+    "model": "stealth/crouton-alpha",
+    "canonical_model": "openrouter/stealth/crouton-alpha"
+  },
+  "workbuddy:hy4free": {
+    "provider": "tencent-tokenhub",
+    "model": "hy4",
+    "canonical_model": "tencent-tokenhub/hy4"
   }
 }

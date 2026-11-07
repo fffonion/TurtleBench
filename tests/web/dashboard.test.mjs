@@ -155,6 +155,25 @@ test("chart price uses the per-game average", () => {
   );
 });
 
+test("a confirmed zero price remains ranked and renders numerically", () => {
+  const free = {
+    name: "Provider / Free",
+    overall_score: 60,
+    active_time_s: 60,
+    games: 3,
+    price_usd: { input: 0, output: 0, cache_read: 0, cache_write: 0, total: 0 },
+  };
+  const paid = { ...free, name: "Provider / Paid", price_usd: { total: 3 } };
+  assert.equal(averagePricePerGame(free), 0);
+  assert.equal(formatMoney(averagePricePerGame(free)), "$0.0000");
+  assert.equal(isPlottable(free, "price"), true);
+  assert.equal(isPlottable(free, "time"), true);
+  assert.deepEqual(
+    sortRows([free, paid], "price_usd.total_per_game", "asc").map((row) => row.name),
+    ["Provider / Free", "Provider / Paid"],
+  );
+});
+
 test("language detection supports browser preference and explicit overrides", () => {
   assert.equal(detectLanguage("auto", ["en-US", "en"]), "en");
   assert.equal(detectLanguage("auto", ["zh-CN", "en-US"]), "zh");
