@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "models-dev-pricing-20261107T161017Z";
+const DATA_CACHE_BUSTER = "hide-zero-price-20261107T162728Z";
 
 const MESSAGES = {
   zh: {
@@ -541,7 +541,9 @@ function chartMetric(model, axis) {
 }
 
 export function isPlottable(model, axis, scoreMode = "subjective") {
-  return isDisplayableModel(model, scoreMode) && Number.isFinite(chartMetric(model, axis));
+  return isDisplayableModel(model, scoreMode)
+    && model.price_usd?.total !== 0
+    && Number.isFinite(chartMetric(model, axis));
 }
 
 function chartLabel(value, axis) {
