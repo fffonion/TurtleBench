@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "hy4-high-20261107T154212Z";
+const DATA_CACHE_BUSTER = "models-dev-pricing-20261107T161017Z";
 
 const MESSAGES = {
   zh: {
@@ -31,7 +31,7 @@ const MESSAGES = {
     puzzles: "{count} 道题",
     repeats: "每题 {count} 局",
     unknown: "未知",
-    priceSource: "价格来源：各 provider 官方 API / models.dev 目录",
+    priceSource: "价格来源：models.dev",
     chartRelation: "综合分与{metric}关系图",
     priceAxis: "每局平均价格（USD）",
     timeAxis: "每局平均耗时",
@@ -98,7 +98,7 @@ const MESSAGES = {
     puzzles: "{count} puzzles",
     repeats: "{count} games per puzzle",
     unknown: "Unknown",
-    priceSource: "Price source: provider API pricing / models.dev catalog",
+    priceSource: "Price source: models.dev",
     chartRelation: "Overall score vs. {metric}",
     priceAxis: "Average price per game (USD)",
     timeAxis: "Average time per game",
@@ -479,7 +479,7 @@ export function averageTimePerGame(model) {
 }
 
 export function averagePricePerGame(model) {
-  if (!Number.isFinite(model.price_usd?.total) || model.price_usd.total <= 0) return null;
+  if (!Number.isFinite(model.price_usd?.total) || model.price_usd.total < 0) return null;
   if (!Number.isFinite(model.games) || model.games <= 0) return null;
   return model.price_usd.total / model.games;
 }
