@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "opendesign-max-20261106T214837Z";
+const DATA_CACHE_BUSTER = "crouton-max-20261107T090719Z";
 
 const MESSAGES = {
   zh: {
