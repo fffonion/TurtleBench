@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "hide-zero-price-20261107T162728Z";
+const DATA_CACHE_BUSTER = "ernie-20261113T081424Z";
 
 const MESSAGES = {
   zh: {
