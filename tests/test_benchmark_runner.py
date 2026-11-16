@@ -117,7 +117,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(args.max_attempts_per_player, 100)
         self.assertEqual(
             br.build_parser().parse_args([]).runs_dir,
-            Path("/home/wow/workspace/TurtleBench/runs"),
+            br.PROJECT_ROOT / "runs",
         )
 
     def test_parser_accepts_retry_failed_flag(self):
