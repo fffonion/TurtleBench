@@ -26,6 +26,7 @@ from collections import Counter
 from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -112,6 +113,19 @@ JUDGE_REQUIRED_FIELDS = frozenset({
     "final_closure", "hint_effective_count", "hint_ineffective_count", "hint_early_count",
     "hint_consecutive", "hint_hoarding", "failure_tags", "notes",
 })
+
+
+def retry_after_seconds(value: str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            seconds = parsedate_to_datetime(value).timestamp() - time.time()
+        except (TypeError, ValueError, OverflowError):
+            return None
+    return max(0.0, seconds) if math.isfinite(seconds) else None
 
 
 class HermesApiError(RuntimeError):
@@ -265,11 +279,11 @@ class HermesApiClient:
                 response_body = response.read()
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            retry_after = exc.headers.get("Retry-After")
+            retry_after = retry_after_seconds(exc.headers.get("Retry-After"))
             raise HermesApiError(
                 exc.code,
                 f"Hermes API HTTP {exc.code}: {detail}",
-                float(retry_after) if retry_after else None,
+                retry_after,
                 retryable=exc.code in TRANSIENT_HTTP_STATUSES,
             ) from exc
         except urllib.error.URLError as exc:
@@ -301,8 +315,17 @@ class HermesApiClient:
         )
         retry_after = getattr(exc, "retry_after", None)
         if retry_after is not None:
-            delay = max(delay, min(self.retry_max_seconds, max(0.0, retry_after)))
+            delay = max(delay, max(0.0, retry_after))
         return delay
+
+    def wait_for_retry_after(self, delay: float) -> float:
+        started = time.monotonic()
+        try:
+            time.sleep(max(0.0, delay))
+        finally:
+            waited = max(0.0, time.monotonic() - started)
+            self._quota_wait_seconds_total += waited
+        return waited
 
     def _request_with_retry(
         self,
@@ -316,13 +339,18 @@ class HermesApiClient:
         last_error: BaseException | None = None
         attempt = 0
         while attempt < self.retry_attempts:
-            if attempt and time.monotonic() >= deadline:
+            if time.monotonic() >= deadline:
                 if last_error is not None:
                     raise last_error
                 raise TimeoutError("API request retry deadline expired")
             try:
                 return self._request(method, path, payload, expected)
             except (HermesApiError, TimeoutError, OSError) as exc:
+                retry_after = getattr(exc, "retry_after", None)
+                if self.is_rate_limit_error(exc) and retry_after is not None:
+                    deadline += self.wait_for_retry_after(retry_after)
+                    last_error = exc
+                    continue
                 if self.quota_window_seconds is not None and self.is_rate_limit_error(exc):
                     if self.is_rpm_rate_limit_error(exc):
                         waited = self.wait_out_rpm_limit()
@@ -334,6 +362,8 @@ class HermesApiClient:
                     last_error = None
                     attempt = 0
                     continue
+                if self.is_rate_limit_error(exc):
+                    raise
                 last_error = exc
                 if (
                     not self._is_retryable_error(exc)
@@ -454,7 +484,7 @@ class HermesApiClient:
             "skip_memory": True,
             "skip_context_files": True,
             "disabled_toolsets": self._terminal_disabled_toolsets(current_deadline()),
-            "fail_fast_on_nonretryable_429": True,
+            "fail_fast_on_nonretryable_429": False,
         }
         if reasoning != "default":
             body["model_options"] = {"reasoning_effort": reasoning}
@@ -1254,6 +1284,11 @@ async def run_api_role(
         _write_api_role_failure(log_path, session_id, exc, retryable=True)
         return 124, None
     except Exception as exc:
+        if (client.is_rate_limit_error(exc)
+                and getattr(exc, "retry_after", None) is None
+                and client.quota_window_seconds is None):
+            _write_api_role_failure(log_path, session_id, exc, retryable=False)
+            raise
         rate_limited = (
             client.quota_window_seconds is not None
             and client.is_rate_limit_error(exc)
@@ -1400,7 +1435,12 @@ async def run_game(
         player_prompt(game_path, game_id),
         trial_dir / "player.log", timeout_s,
     ))
-    (host_rc, _host_usage), (player_rc, player_usage) = await asyncio.gather(host_task, player_task)
+    try:
+        (host_rc, _host_usage), (player_rc, player_usage) = await asyncio.gather(host_task, player_task)
+    except HermesApiError as exc:
+        await mark_error_if_needed(game_path, str(exc))
+        await asyncio.gather(host_task, player_task, return_exceptions=True)
+        raise
     await mark_error_if_needed(game_path, f"角色进程提前退出 host={host_rc} player={player_rc}")
     game = load_json(game_path)
     raw = compute_raw_metrics(game)
