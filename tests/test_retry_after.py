@@ -4,6 +4,9 @@ import tempfile
 from pathlib import Path
 import unittest
 import urllib.error
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from email.message import Message
 from unittest import mock
 
@@ -107,6 +110,52 @@ class RetryAfterTests(unittest.TestCase):
             )
 
         self.assertIs(posted[0]["fail_fast_on_nonretryable_429"], False)
+
+
+    def test_real_http_429_waits_until_retry_after_before_resubmitting(self):
+        received = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                received.append(time.monotonic())
+                if len(received) == 1:
+                    self.send_response(429)
+                    self.send_header("Retry-After", "1")
+                    body = b'{"error":{"message":"Rate limit exceeded","type":"rate_limit_error"}}'
+                else:
+                    self.send_response(200)
+                    body = b'{"data":[]}'
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            client = br.HermesApiClient(
+                "http://127.0.0.1:" + str(server.server_port), "", retry_attempts=1,
+                retry_base_seconds=0.001, retry_max_seconds=0.01,
+            )
+            result = client._request_with_retry("GET", "v1/models")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
+        self.assertEqual(result, {"data": []})
+        self.assertEqual(len(received), 2)
+        self.assertGreaterEqual(received[1] - received[0], 1)
+
+
+    def test_unusable_retry_after_does_not_create_an_immediate_retry_loop(self):
+        with mock.patch.object(br.time, "time", return_value=120):
+            for value in ("0", "-1", "Thu, 01 Jan 1970 00:00:00 GMT", "nan", "inf", "invalid"):
+                with self.subTest(value=value):
+                    self.assertIsNone(br.retry_after_seconds(value))
 
 
 class RateLimitRoleTests(unittest.IsolatedAsyncioTestCase):

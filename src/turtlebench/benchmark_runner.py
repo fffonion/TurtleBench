@@ -16,6 +16,7 @@ import sqlite3
 import statistics
 import sys
 import tempfile
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -28,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from . import game_mailbox
 from .formula_scoring import formula_summary_from_run
@@ -125,7 +126,7 @@ def retry_after_seconds(value: str | None) -> float | None:
             seconds = parsedate_to_datetime(value).timestamp() - time.time()
         except (TypeError, ValueError, OverflowError):
             return None
-    return max(0.0, seconds) if math.isfinite(seconds) else None
+    return seconds if math.isfinite(seconds) and seconds > 0 else None
 
 
 class HermesApiError(RuntimeError):
@@ -202,8 +203,17 @@ class HermesApiClient:
             (time.time() if quota_window_start_epoch is None else quota_window_start_epoch)
             if quota_window_seconds is not None else None
         )
+        self._retry_state = threading.local()
         self._quota_wait_seconds_total = 0.0
         self._disabled_toolsets: list[str] | None = None
+
+    @property
+    def _quota_wait_seconds_total(self) -> float:
+        return getattr(self._retry_state, "wait_seconds", 0.0)
+
+    @_quota_wait_seconds_total.setter
+    def _quota_wait_seconds_total(self, value: float) -> None:
+        self._retry_state.wait_seconds = value
 
     @staticmethod
     def is_rate_limit_error(exc: BaseException) -> bool:
@@ -320,11 +330,24 @@ class HermesApiClient:
 
     def wait_for_retry_after(self, delay: float) -> float:
         started = time.monotonic()
+        started_at = time.time()
+        event = {
+            "started_at": datetime.fromtimestamp(started_at, timezone.utc).isoformat(),
+            "until": datetime.fromtimestamp(started_at + delay, timezone.utc).isoformat(),
+            "ended_at": None,
+            "retry_after_s": delay,
+        }
+        callback = getattr(self._retry_state, "on_rate_limit_wait", None)
+        if callback is not None:
+            callback(event)
         try:
             time.sleep(max(0.0, delay))
         finally:
             waited = max(0.0, time.monotonic() - started)
             self._quota_wait_seconds_total += waited
+            event["ended_at"] = datetime.fromtimestamp(time.time(), timezone.utc).isoformat()
+            if callback is not None:
+                callback(event)
         return waited
 
     def _request_with_retry(
@@ -452,6 +475,16 @@ class HermesApiClient:
         }
 
     def turn(
+        self, *, on_rate_limit_wait: Callable[[dict[str, Any]], None] | None = None,
+        **kwargs: Any,
+    ) -> HermesTurnResult:
+        self._retry_state.on_rate_limit_wait = on_rate_limit_wait
+        try:
+            return self._turn(**kwargs)
+        finally:
+            self._retry_state.on_rate_limit_wait = None
+
+    def _turn(
         self,
         *,
         session_id: str,
@@ -1051,15 +1084,23 @@ def compute_raw_metrics(game: dict[str, Any]) -> dict[str, Any]:
     terminal = next((e for e in reversed(events) if e.get("type") in {"answer", "exit"}), events[-1] if events else None)
     first = 0.0
     if surface and questions:
-        first = (parse_time(questions[0]["at"]) - parse_time(surface["at"])).total_seconds()
+        start, end = parse_time(surface["at"]), parse_time(questions[0]["at"])
+        first = max(
+            0.0, (end - start).total_seconds()
+            - game_mailbox.rate_limit_wait_seconds(game, start, end, actor="player"),
+        )
     latencies: list[float] = []
     player_intervals: list[float] = []
+    player_wait = 0.0
     last_host_action: dict[str, Any] | None = surface
     for event in events:
         if event.get("actor") == "host" and event.get("type") in {"surface", "response", "hint"}:
             last_host_action = event
         elif event.get("actor") == "player" and event.get("type") == "question" and last_host_action:
-            interval = max(0.0, (parse_time(event["at"]) - parse_time(last_host_action["at"])).total_seconds())
+            start, end = parse_time(last_host_action["at"]), parse_time(event["at"])
+            waited = game_mailbox.rate_limit_wait_seconds(game, start, end, actor="player")
+            player_wait += waited
+            interval = max(0.0, (end - start).total_seconds() - waited)
             player_intervals.append(interval)
             if last_host_action is not surface or event is not questions[0]:
                 latencies.append(interval)
@@ -1075,6 +1116,7 @@ def compute_raw_metrics(game: dict[str, Any]) -> dict[str, Any]:
         "player_latency_p90_s": percentile(latencies, 0.9),
         "total_wall_time_s": round(wall, 3),
         "player_active_time_s": round(sum(player_intervals), 3),
+        "player_rate_limit_wait_s": round(player_wait, 3),
         "question_count": len(questions),
     }
 
@@ -1269,6 +1311,12 @@ async def run_api_role(
     timeout_s: int,
 ) -> tuple[int, dict[str, Any] | None]:
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    turn_options: dict[str, Any] = {}
+    game_path = log_path.parent / "game.json"
+    if log_path.stem in {"host", "player"} and game_path.is_file():
+        turn_options["on_rate_limit_wait"] = lambda wait: game_mailbox.record_rate_limit_wait(
+            game_path, log_path.stem, wait,
+        )
     try:
         result = await asyncio.to_thread(
             client.turn,
@@ -1279,14 +1327,17 @@ async def run_api_role(
             reasoning=reasoning,
             prompt=prompt,
             timeout_s=timeout_s,
+            **turn_options,
         )
     except TimeoutError as exc:
         _write_api_role_failure(log_path, session_id, exc, retryable=True)
         return 124, None
     except Exception as exc:
-        if (client.is_rate_limit_error(exc)
-                and getattr(exc, "retry_after", None) is None
-                and client.quota_window_seconds is None):
+        if (
+            client.is_rate_limit_error(exc)
+            and getattr(exc, "retry_after", None) is None
+            and client.quota_window_seconds is None
+        ):
             _write_api_role_failure(log_path, session_id, exc, retryable=False)
             raise
         rate_limited = (

@@ -258,6 +258,43 @@ def _relevant(event: dict[str, Any], role: str) -> bool:
     }
 
 
+def record_rate_limit_wait(path: Path, actor: str, wait: dict[str, Any]) -> None:
+    """Persist an observed runner wait without adding a public game event."""
+    with _locked(path, exclusive=True):
+        state = _read_unlocked(path)
+        waits = state.setdefault("rate_limit_waits", [])
+        entry = {"actor": actor, **wait}
+        for index, current in enumerate(waits):
+            if current["actor"] == actor and current["started_at"] == wait["started_at"]:
+                waits[index] = entry
+                break
+        else:
+            waits.append(entry)
+        _write_unlocked(path, state)
+
+
+def rate_limit_wait_seconds(
+    state: dict[str, Any], start: datetime, end: datetime, actor: str | None = None,
+) -> float:
+    """Measure the union of recorded waits overlapping an action interval."""
+    intervals = []
+    for wait in state.get("rate_limit_waits", []):
+        if actor is not None and wait["actor"] != actor:
+            continue
+        left = max(start, datetime.fromisoformat(wait["started_at"]))
+        right = min(end, datetime.fromisoformat(wait.get("ended_at") or wait["until"]))
+        if right > left:
+            intervals.append((left, right))
+    covered = 0.0
+    last_end = start
+    for left, right in sorted(intervals):
+        left = max(left, last_end)
+        if right > left:
+            covered += (right - left).total_seconds()
+            last_end = right
+    return covered
+
+
 def wait_for_update(
     path: str | Path,
     role: str,
@@ -270,6 +307,7 @@ def wait_for_update(
         raise ProtocolError("role 只能是 host 或 player")
     if poll_interval <= 0:
         raise ProtocolError("poll_interval 必须大于 0")
+    started_at = datetime.fromtimestamp(time.time(), timezone.utc)
     deadline = None if timeout is None or timeout <= 0 else time.monotonic() + timeout
     path = Path(path).expanduser().resolve()
     while True:
@@ -291,8 +329,11 @@ def wait_for_update(
                 "stop_reason": state["stop_reason"],
                 "events": events,
             }
-        if deadline is not None and time.monotonic() >= deadline:
-            raise WaitTimeout("等待超时")
+        if deadline is not None:
+            now = datetime.fromtimestamp(time.time(), timezone.utc)
+            paused = rate_limit_wait_seconds(state, started_at, now)
+            if time.monotonic() >= deadline + paused:
+                raise WaitTimeout("等待超时")
         time.sleep(poll_interval)
 
 
