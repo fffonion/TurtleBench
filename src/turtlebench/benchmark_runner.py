@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import fcntl
 import hashlib
 import http.client
 import json
@@ -29,11 +30,13 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from . import game_mailbox
+from .formula_scoring import formula_summary_from_run
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_FIXTURES = PROJECT_ROOT / "fixtures" / "fixed-v1"
-DEFAULT_RUNS = Path.cwd() / "runs"
+DEFAULT_RUNS = PROJECT_ROOT / "runs"
 DEFAULT_STATE_DB = Path.home() / ".hermes" / "state.db"
+MAILBOX_COMMAND = f"PYTHONPATH={PROJECT_ROOT / 'src'} {PROJECT_ROOT / '.venv/bin/python'} -m turtlebench.game_mailbox"
 
 
 @dataclass(frozen=True)
@@ -45,9 +48,29 @@ class RuntimePaths:
 
 RUNTIME = RuntimePaths(DEFAULT_FIXTURES, DEFAULT_RUNS, DEFAULT_STATE_DB)
 TRANSIENT_HTTP_STATUSES = frozenset({408, 425, 429, 500, 502, 503, 504})
+# Provider 429 wording differs per upstream API: Hermes HTTP envelopes, and
+# provider payloads echoed inside a failed run (SenseNova reports
+# "Error code: 429 ... rpm exhausted ... quota_exceeded_error"). All of them
+# must be recognized as a rate limit so a quota window wait replaces an
+# instant retry that burns a trial.
+RATE_LIMIT_MARKERS = (
+    "http 429",
+    "status=429",
+    "error code: 429",
+    "too many requests",
+    "rate limit",
+    "rate limited",
+    "rpm exhausted",
+    "quota_exceeded",
+)
 DEFAULT_API_RETRY_ATTEMPTS = 8
 DEFAULT_API_RETRY_BASE_SECONDS = 1.0
 DEFAULT_API_RETRY_MAX_SECONDS = 30.0
+# SenseNova's free token plan also enforces a per-minute request cap and
+# reports it as "rpm exhausted". That limit resets within a minute or two, so
+# it gets a short backoff instead of waiting for the next quota window.
+DEFAULT_RPM_BACKOFF_SECONDS = 65.0
+RPM_RATE_LIMIT_MARKERS = ("rpm exhausted", "rpm limit", "requests per minute")
 JUDGE_RETRY_BASE_SECONDS = 2.0
 JUDGE_RETRY_MAX_SECONDS = 60.0
 HOST = {"provider": "openai-codex", "model": "gpt-5.6-luna", "reasoning_effort": "max"}
@@ -71,6 +94,8 @@ PLAYER_MATRIX = [
     {"slug": "gpt-6-astra-high", "display_name": "OpenAI Codex / GPT-6 Astra high", "provider": "openai-codex", "model": "gpt-6-astra", "reasoning_effort": "high"},
     {"slug": "grok-4-6-high", "display_name": "Supplemental / Grok 4.6 high", "provider": "xai-oauth", "model": "grok-4.6", "reasoning_effort": "high"},
     {"slug": "bai-qwen3-8-flash-max", "display_name": "Bai / qwen3.8-flash max", "provider": "bai", "model": "qwen3.8-flash", "reasoning_effort": "max"},
+    {"slug": "hcnsec-qwen3-8-flash-next-xhigh", "display_name": "HCNSEC / Qwen3.8-Flash-Next xhigh", "provider": "hcnsec", "model": "Qwen3.8-Flash-Next", "reasoning_effort": "xhigh"},
+    {"slug": "sensenova-6-8-flash-lite", "display_name": "SenseNova / sensenova-6.8-flash-lite (provider default)", "provider": "sensenova", "model": "sensenova-6.8-flash-lite", "reasoning_effort": "default"},
 ]
 TERMINAL_STATES = {"solved", "max_rounds", "stopped", "error"}
 TERMINAL_VALIDITIES = {"valid", "invalid_host", "invalid_infrastructure"}
@@ -113,6 +138,21 @@ class HermesTurnResult:
     run_id: str
 
 
+def next_quota_window_epoch(
+    window_start_epoch: float,
+    window_seconds: float,
+    *,
+    now: float | None = None,
+) -> float:
+    if window_seconds <= 0:
+        raise ValueError("quota window must be positive")
+    current = time.time() if now is None else now
+    if current < window_start_epoch:
+        return window_start_epoch
+    completed_windows = math.floor((current - window_start_epoch) / window_seconds) + 1
+    return window_start_epoch + completed_windows * window_seconds
+
+
 class HermesApiClient:
     """Small synchronous client for Hermes API Server's persisted run API."""
 
@@ -124,18 +164,83 @@ class HermesApiClient:
         retry_attempts: int = DEFAULT_API_RETRY_ATTEMPTS,
         retry_base_seconds: float = DEFAULT_API_RETRY_BASE_SECONDS,
         retry_max_seconds: float = DEFAULT_API_RETRY_MAX_SECONDS,
+        quota_window_seconds: float | None = None,
+        quota_window_start_epoch: float | None = None,
+        rpm_backoff_seconds: float = DEFAULT_RPM_BACKOFF_SECONDS,
     ):
         if retry_attempts < 1:
             raise ValueError("retry attempts must be at least one")
         if retry_base_seconds < 0 or retry_max_seconds < retry_base_seconds:
             raise ValueError("retry delay bounds are invalid")
+        if rpm_backoff_seconds < 0:
+            raise ValueError("rpm backoff must not be negative")
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.poll_interval = poll_interval
         self.retry_attempts = retry_attempts
         self.retry_base_seconds = retry_base_seconds
         self.retry_max_seconds = retry_max_seconds
+        self.rpm_backoff_seconds = rpm_backoff_seconds
+        if quota_window_seconds is not None and quota_window_seconds <= 0:
+            raise ValueError("quota window must be positive")
+        self.quota_window_seconds = quota_window_seconds
+        self.quota_window_start_epoch = (
+            (time.time() if quota_window_start_epoch is None else quota_window_start_epoch)
+            if quota_window_seconds is not None else None
+        )
+        self._quota_wait_seconds_total = 0.0
         self._disabled_toolsets: list[str] | None = None
+
+    @staticmethod
+    def is_rate_limit_error(exc: BaseException) -> bool:
+        if getattr(exc, "status", None) == 429:
+            return True
+        normalized = str(exc).casefold()
+        return any(marker in normalized for marker in RATE_LIMIT_MARKERS)
+
+    @staticmethod
+    def is_rpm_rate_limit_error(exc: BaseException) -> bool:
+        normalized = str(exc).casefold()
+        return any(marker in normalized for marker in RPM_RATE_LIMIT_MARKERS)
+
+    def wait_out_rpm_limit(self) -> float:
+        delay = max(0.0, self.rpm_backoff_seconds)
+        if delay:
+            print(f"RPM limit; sleeping {delay:.0f}s before retrying", flush=True)
+            time.sleep(delay)
+            self._quota_wait_seconds_total += delay
+        return delay
+
+    def _resubmit_after_rate_limit(self, exc: BaseException) -> bool:
+        """Wait out a provider rate limit so the caller resubmits the run."""
+
+        if self.quota_window_seconds is None or not self.is_rate_limit_error(exc):
+            return False
+        if self.is_rpm_rate_limit_error(exc):
+            self.wait_out_rpm_limit()
+        else:
+            self.wait_for_next_quota_window(getattr(exc, "retry_after", None))
+        return True
+
+    def wait_for_next_quota_window(self, retry_after: float | None = None) -> float:
+        if self.quota_window_seconds is None or self.quota_window_start_epoch is None:
+            return 0.0
+        now = time.time()
+        target = next_quota_window_epoch(
+            self.quota_window_start_epoch, self.quota_window_seconds, now=now
+        )
+        if retry_after is not None:
+            target = max(target, now + max(0.0, retry_after))
+        delay = max(0.0, target - now)
+        if delay:
+            wake_at = datetime.fromtimestamp(target).astimezone().isoformat(timespec="seconds")
+            print(
+                f"HTTP 429 rate limit; sleeping {delay:.0f}s until quota window {wake_at}",
+                flush=True,
+            )
+            time.sleep(delay)
+            self._quota_wait_seconds_total += delay
+        return delay
 
     def _url(self, path: str) -> str:
         return f"{self.base_url}/{path.lstrip('/')}"
@@ -209,7 +314,8 @@ class HermesApiClient:
     ) -> dict[str, Any]:
         deadline = deadline if deadline is not None else time.monotonic() + 300
         last_error: BaseException | None = None
-        for attempt in range(self.retry_attempts):
+        attempt = 0
+        while attempt < self.retry_attempts:
             if attempt and time.monotonic() >= deadline:
                 if last_error is not None:
                     raise last_error
@@ -217,6 +323,17 @@ class HermesApiClient:
             try:
                 return self._request(method, path, payload, expected)
             except (HermesApiError, TimeoutError, OSError) as exc:
+                if self.quota_window_seconds is not None and self.is_rate_limit_error(exc):
+                    if self.is_rpm_rate_limit_error(exc):
+                        waited = self.wait_out_rpm_limit()
+                    else:
+                        waited = self.wait_for_next_quota_window(
+                            getattr(exc, "retry_after", None)
+                        )
+                    deadline += waited
+                    last_error = None
+                    attempt = 0
+                    continue
                 last_error = exc
                 if (
                     not self._is_retryable_error(exc)
@@ -227,6 +344,7 @@ class HermesApiClient:
                 if remaining <= 0:
                     raise
                 time.sleep(min(self._retry_delay(attempt, exc), remaining))
+                attempt += 1
         if last_error is not None:
             raise last_error
         raise RuntimeError("API request retry loop exited unexpectedly")
@@ -315,12 +433,17 @@ class HermesApiClient:
         timeout_s: int,
     ) -> HermesTurnResult:
         deadline = time.monotonic() + timeout_s
-        self._ensure_session(session_id, session_title, model, deadline)
-        before = self._session_usage(session_id, deadline)
+        quota_wait_at_start = self._quota_wait_seconds_total
+
+        def current_deadline() -> float:
+            return deadline + (self._quota_wait_seconds_total - quota_wait_at_start)
+
+        self._ensure_session(session_id, session_title, model, current_deadline())
+        before = self._session_usage(session_id, current_deadline())
         messages = self._request_with_retry(
             "GET",
             f"api/sessions/{urllib.parse.quote(session_id, safe='')}/messages",
-            deadline=deadline,
+            deadline=current_deadline(),
         ).get("data", [])
         body = {
             "input": prompt,
@@ -328,14 +451,15 @@ class HermesApiClient:
             "conversation_history": messages,
             "provider": provider,
             "model": model,
-            "model_options": {"reasoning_effort": reasoning},
             "skip_memory": True,
             "skip_context_files": True,
-            "disabled_toolsets": self._terminal_disabled_toolsets(deadline),
+            "disabled_toolsets": self._terminal_disabled_toolsets(current_deadline()),
             "fail_fast_on_nonretryable_429": True,
         }
+        if reasoning != "default":
+            body["model_options"] = {"reasoning_effort": reasoning}
         started = self._request_with_retry(
-            "POST", "v1/runs", body, expected=(202,), deadline=deadline
+            "POST", "v1/runs", body, expected=(202,), deadline=current_deadline()
         )
         run_id = str(started.get("run_id", ""))
         if not run_id:
@@ -345,42 +469,64 @@ class HermesApiClient:
                 retryable=False,
             )
         run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
-        while time.monotonic() < deadline:
-            try:
-                status = self._request_with_retry(
-                    "GET", run_path, deadline=deadline
-                )
-            except (TimeoutError, OSError):
-                time.sleep(min(self.poll_interval, max(0.0, deadline - time.monotonic())))
-                continue
-            state = str(status.get("status", ""))
-            if state == "completed":
-                output = str(status.get("output", "")).strip()
-                if not output:
-                    raise HermesApiError(
-                        None,
-                        f"Hermes API run {run_id} completed without output",
-                        retryable=True,
+        while True:
+            while time.monotonic() < current_deadline():
+                try:
+                    status = self._request_with_retry(
+                        "GET", run_path, deadline=current_deadline()
                     )
-                after = self._session_usage(session_id, deadline)
-                return HermesTurnResult(output, self._usage_delta(before, after), run_id)
-            if state == "waiting_for_approval":
-                self._request_with_retry(
-                    "POST", f"{run_path}/approval", {"choice": "session", "all": True},
-                    expected=(200,), deadline=deadline,
-                )
-            elif state in {"failed", "stopped", "cancelled"}:
-                detail = status.get("error") or status.get("message") or "no error detail"
+                except (TimeoutError, OSError):
+                    time.sleep(min(self.poll_interval, max(0.0, current_deadline() - time.monotonic())))
+                    continue
+                state = str(status.get("status", ""))
+                if state == "completed":
+                    output = str(status.get("output", "")).strip()
+                    if not output:
+                        raise HermesApiError(
+                            None,
+                            f"Hermes API run {run_id} completed without output",
+                            retryable=True,
+                        )
+                    after = self._session_usage(session_id, current_deadline())
+                    return HermesTurnResult(output, self._usage_delta(before, after), run_id)
+                if state == "waiting_for_approval":
+                    self._request_with_retry(
+                        "POST", f"{run_path}/approval", {"choice": "session", "all": True},
+                        expected=(200,), deadline=current_deadline(),
+                    )
+                elif state in {"failed", "stopped", "cancelled"}:
+                    detail = status.get("error") or status.get("message") or "no error detail"
+                    failure = HermesApiError(
+                        None,
+                        f"Hermes API run {run_id} ended with status={state}: {detail}",
+                        retryable=run_failure_is_retryable(str(detail)),
+                    )
+                    # A provider rate limit kills the run without consuming the
+                    # trial. Wait out the limit and submit a fresh run in the same
+                    # session so the game keeps its mailbox state.
+                    if not self._resubmit_after_rate_limit(failure):
+                        raise failure
+                    break
+                time.sleep(min(self.poll_interval, max(0.0, current_deadline() - time.monotonic())))
+            else:
+                break
+            if time.monotonic() >= current_deadline():
+                break
+            started = self._request_with_retry(
+                "POST", "v1/runs", body, expected=(202,), deadline=current_deadline()
+            )
+            run_id = str(started.get("run_id", ""))
+            if not run_id:
                 raise HermesApiError(
                     None,
-                    f"Hermes API run {run_id} ended with status={state}: {detail}",
+                    "Hermes API run response omitted run_id",
                     retryable=False,
                 )
-            time.sleep(min(self.poll_interval, max(0.0, deadline - time.monotonic())))
+            run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
         try:
             self._request_with_retry(
                 "POST", f"{run_path}/stop", {},
-                expected=(200, 202, 409), deadline=deadline,
+                expected=(200, 202, 409), deadline=current_deadline(),
             )
         except (HermesApiError, TimeoutError, OSError):
             pass
@@ -400,6 +546,28 @@ def atomic_json(path: Path, data: Any) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
+
+
+def acquire_run_lock(run_dir: Path):
+    path = run_dir / "runner.lock"
+    handle = path.open("a+", encoding="utf-8")
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        handle.close()
+        raise RuntimeError(f"run is already active: {run_dir}") from exc
+    handle.seek(0)
+    handle.truncate()
+    handle.write(f"pid={os.getpid()}\nstarted_at={now_iso()}\n")
+    handle.flush()
+    return handle
+
+
+def release_run_lock(handle) -> None:
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        handle.close()
 
 
 @dataclass(frozen=True)
@@ -477,7 +645,7 @@ class TelegramProgressSender:
             "chat_id": self.config.chat_id,
             "message_thread_id": self.config.thread_id,
             "text": text,
-            "disable_notification": "true",
+            "disable_notification": "false",
         }).encode("utf-8")
         url = self.method_url("sendMessage")
         for attempt in range(attempts):
@@ -589,6 +757,13 @@ def render_progress_message(
     run_id = str(meta.get("run_id", run_dir.name))
     run_status = str(meta.get("status", "running"))
     lines = ["TurtleBench 跑分进度", f"Run：{run_id}", f"状态：{run_status}"]
+    if "completed_players" in meta and players:
+        completed_players = {str(slug) for slug in meta.get("completed_players", [])}
+        remaining_players = [
+            player for player in players
+            if str(player.get("slug", "")) not in completed_players
+        ]
+        players = remaining_players[:1] if remaining_players else players[-1:]
     status_order = ("solved", "max_rounds", "stopped", "error")
     for player in players:
         snapshot = progress_snapshot(run_dir, player, manifest, repeats)
@@ -648,7 +823,9 @@ class ProgressReporter:
             self.run_dir, self.players, self.manifest, self.repeats
         )
         try:
-            await asyncio.to_thread(self.sender.send, text)
+            message_id = await asyncio.to_thread(self.sender.send, text)
+            if message_id is not None:
+                print(f"progress notification sent message_id={message_id}", flush=True)
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -913,6 +1090,7 @@ def archive_invalid_trials(
     player_slugs: list[str],
     archive_root: Path,
     max_trials: int | None = None,
+    puzzle_ids: set[str] | None = None,
 ) -> dict[str, int]:
     """Move invalid trial directories and stale player summaries aside for a clean retry."""
     counts: dict[str, int] = {}
@@ -920,6 +1098,8 @@ def archive_invalid_trials(
         player_root = run_dir / "games" / slug
         invalid_trials: list[Path] = []
         for score_path in sorted(player_root.glob("*/trial-[0-9][0-9]/score.json")):
+            if puzzle_ids is not None and score_path.parent.parent.name not in puzzle_ids:
+                continue
             score = load_json(score_path)
             if str(score.get("validity", "")).startswith("invalid_"):
                 invalid_trials.append(score_path.parent)
@@ -974,14 +1154,14 @@ def host_prompt(puzzle: Path, game: Path, game_id: str) -> str:
 私密题目：{puzzle}
 使用 Python json 模块读取私密题目的全部字段。
 公共邮箱：{game}
-邮箱命令：python -m turtlebench.game_mailbox
+邮箱命令：{MAILBOX_COMMAND}
 game_id={game_id}，max_rounds=50。
 
 读取题目全部字段。未猜中前，邮箱只能写汤面、是／不是／是也不是／不相关及按序提示；禁止公开汤底、未发布提示、key_facts 或内部推理。完整猜测在核心条件、必要因果链和全部异常解释上等价即可判中。
 
 判定前把问题拆为最小命题：supported=来源明确支持；contradicted=来源明确否定；unspecified=来源未限定且真假不影响核心链。全部关键命题 supported 且无错误限定答“是”；关键命题 contradicted 且无另一条主线成立答“不是”；明确 supported 主线与会改变机制的 contradicted 限定并存，或身份、时间、位置、动作、因果、范围关键错位，答“是也不是”；unspecified 且不参与核心链答“不相关”。相容性不构成肯定证据，宽泛 key_fact 不得外推。保持前后一致。
 
-启动：exchange 写 surface，role=host、type=surface、expected_revision=0、timeout=120；terminal timeout 至少150秒。循环保存最新 revision、status、round、pending_hints、提示额度与待回答问题。收到 question：猜中则写 type=answer、text="猜对了。答案：<solution>"、finish=solved；其余写四类 response 并 exchange 等待。收到 player hint 控制时按序发布下一提示；有待回答问题时先 write 提示，再回答原问题。禁止 main 人工干预。收到终局立即退出。
+启动：先 snapshot。若邮箱已有 surface、事件、非零 revision 或终态，保存现有 game_id、revision、round 和 status，禁止重新 initialize 或覆盖 surface；只有空邮箱且 expected_revision=0 时才 exchange 写 surface，role=host、type=surface、timeout=120；terminal timeout 至少150秒。循环保存最新 revision、status、round、pending_hints、提示额度与待回答问题。收到 question：猜中则写 type=answer、text="猜对了。答案：<solution>"、finish=solved；其余写四类 response 并 exchange 等待。收到 player hint 控制时按序发布下一提示；有待回答问题时先 write 提示，再回答原问题。禁止 main 人工干预。收到终局立即退出。
 
 超时或 revision 冲突：先 snapshot。自己刚写事件已存在则保存 revision 后 wait；不存在则按最新 revision 重试一次。连续3次等待无 revision 前进，尽量写 type=exit、finish=error 后退出。第50轮回应后退出。最终只返回角色、game_id、status、round、revision、是否正常退出；禁止返回私密内容。"""
 
@@ -989,7 +1169,7 @@ game_id={game_id}，max_rounds=50。
 def player_prompt(game: Path, game_id: str) -> str:
     return f"""你是海龟汤固定题组隔离玩家，只能通过带锁邮箱与主持人通信。不得向用户提问、调用子代理或使用消息平台。
 公共邮箱：{game}
-邮箱命令：python -m turtlebench.game_mailbox
+邮箱命令：{MAILBOX_COMMAND}
 game_id={game_id}，max_rounds=50，自主提示上限2。
 
 禁止读取、搜索、定位或推断私密题目、汤底、提示数组、key_facts、manifest、题组目录、出题记录或主持人上下文。只能使用邮箱公开的 surface、response 和 hint；文件名与目录不得作为线索。
@@ -1000,11 +1180,31 @@ game_id={game_id}，max_rounds=50，自主提示上限2。
 
 提示仅在连续至少3问无新增约束或无法形成高信息下一问时使用，最多2次，以 player_hints_remaining 为准。调用 control --actor player --command hint --expected-revision <rev>；成功后保存 revision 并 wait，禁止重复请求。
 
-启动：wait --role player --after-revision 0 --timeout 120；terminal timeout 至少150秒。收到 response/hint 后更新约束并继续；收到终局立即退出。超时或 revision 冲突先 snapshot；自己刚写事件已存在则保存 revision 后 wait，不存在才重试一次。连续3次无 revision 前进，尽量写 type=exit、finish=error 后退出。round达到50不得创建第51问。最终只返回角色、game_id、status、round、revision、是否正常退出；禁止包含答案、候选答案或私密信息。"""
+启动：先 snapshot。若邮箱已有 surface、事件、非零 revision 或终态，保存现有 game_id、revision、round 和 status，禁止重新 initialize；只有空邮箱时才按当前 revision wait。收到 response/hint 后更新约束并继续；收到终局立即退出。超时或 revision 冲突先 snapshot；自己刚写事件已存在则保存 revision 后 wait，不存在才重试一次。连续3次无 revision 前进，尽量写 type=exit、finish=error 后退出。round达到50不得创建第51问。最终只返回角色、game_id、status、round、revision、是否正常退出；禁止包含答案、候选答案或私密信息。"""
 
 
 def init_game(path: Path, game_id: str) -> None:
     game_mailbox.initialize(path, game_id=game_id, max_rounds=50)
+
+
+def run_failure_is_retryable(detail: str) -> bool:
+    normalized = str(detail).casefold()
+    transient_markers = (
+        "timed out",
+        "timeout",
+        "broken pipe",
+        "no sse events",
+        "connection reset",
+        "connection refused",
+        "temporarily unavailable",
+        "server busy",
+        "overloaded",
+        *RATE_LIMIT_MARKERS,
+        "http 502",
+        "http 503",
+        "http 504",
+    )
+    return any(marker in normalized for marker in transient_markers)
 
 
 def _retryable_api_exception(exc: BaseException) -> bool:
@@ -1054,8 +1254,18 @@ async def run_api_role(
         _write_api_role_failure(log_path, session_id, exc, retryable=True)
         return 124, None
     except Exception as exc:
+        rate_limited = (
+            client.quota_window_seconds is not None
+            and client.is_rate_limit_error(exc)
+        )
+        if rate_limited:
+            await asyncio.to_thread(
+                client.wait_for_next_quota_window,
+                getattr(exc, "retry_after", None),
+            )
         _write_api_role_failure(
-            log_path, session_id, exc, _retryable_api_exception(exc)
+            log_path, session_id, exc,
+            rate_limited or _retryable_api_exception(exc),
         )
         return 1, None
     log_path.write_text(
@@ -1096,6 +1306,47 @@ async def mark_error_if_needed(game_path: Path, reason: str) -> None:
         return
 
 
+def recover_terminal_preliminary(
+    trial_dir: Path,
+    player: dict[str, str],
+    puzzle: dict[str, Any],
+    game: dict[str, Any],
+) -> Path:
+    """Create missing preliminary data without rerunning a terminal mailbox."""
+    raw = compute_raw_metrics(game)
+    totals = _optional_json(trial_dir / "player_totals.json") or {}
+    usage = totals.get("player_usage")
+    if not isinstance(usage, dict):
+        usage = {
+            "session_id": None,
+            "provider": player["provider"],
+            "model": player["model"],
+            "api_call_count": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "reasoning_tokens": 0,
+        }
+    raw["player_usage"] = usage
+    process_exit = totals.get("process_exit")
+    if not isinstance(process_exit, dict):
+        process_exit = {"host": 0, "player": 0}
+    preliminary = {
+        "suite_version": "fixed-v1",
+        "puzzle_id": puzzle["id"],
+        "trial": int(trial_dir.name.removeprefix("trial-")),
+        "player": {k: player[k] for k in ("provider", "model", "reasoning_effort")},
+        "validity": "pending",
+        "status": game.get("status", "error"),
+        "raw": raw,
+        "process_exit": process_exit,
+    }
+    path = trial_dir / "preliminary.json"
+    atomic_json(path, preliminary)
+    return path
+
+
 async def run_game(
     run_dir: Path,
     player: dict[str, str],
@@ -1114,13 +1365,15 @@ async def run_game(
     preliminary_path = trial_dir / "preliminary.json"
     if not game_needs_run(game_path, preliminary_path):
         return score_path
+    existing_game: dict[str, Any] | None = None
     if game_path.exists():
         try:
-            old = load_json(game_path)
-            if old.get("status") not in TERMINAL_STATES:
-                game_path.rename(trial_dir / f"game.interrupted-{int(datetime.now().timestamp())}.json")
+            existing_game = load_json(game_path)
         except Exception:
             game_path.rename(trial_dir / f"game.invalid-{int(datetime.now().timestamp())}.json")
+    if existing_game is not None and existing_game.get("status") in TERMINAL_STATES and not preliminary_path.exists():
+        recover_terminal_preliminary(trial_dir, player, puzzle, existing_game)
+        return score_path
     if not game_path.exists():
         init_game(game_path, f"{player['slug']}-{puzzle['id']}-t{trial:02d}")
     game_id = str(load_json(game_path)["game_id"])
@@ -1181,7 +1434,7 @@ def judge_prompt(puzzle_path: Path, trial_dirs: list[Path], output_path: Path, p
 
 对每局公开问题逐条分类并输出以下字段：trial；validity；validity_reason；atomic_question_rate、useful_constraint_rate、redundant_question_rate、unsupported_story_guess_rate（0到1）；irrelevant_branch_max；contradiction_count；partial_misread_count；excluded_revisit_count；protocol_recovery_failure_count；reasoning_chain_parts（承接性、层级推进、跨异常连接、分支回收，各0到5）；question_information_parts（原子性、压缩能力、去重与聚焦，各0到5）；final_closure（0到5）；hint_effective_count；hint_ineffective_count；hint_early_count；hint_consecutive（布尔）；hint_hoarding（布尔）；failure_tags；notes。failure_tags 仅用规范标签。notes 只写可由公开轨迹核验的简短依据，禁止写汤底、未发布提示或 key_facts。
 
-将三个对象组成 JSON 数组。使用 terminal 运行 Python，把合法 UTF-8 JSON 原子写入 {output_path}。写后重新读取并验证数组恰有3项、trial为1到3。最终回复仅报告写入成功与路径。
+将三个对象组成 JSON 数组。只允许读取本消息列出的 `20260918` 路径和对应 fixed-v1 题目；禁止访问其他 matrix 目录或旧 run。必须真实执行 terminal 写文件，最终回复不能代替文件写入。使用 `/home/wow/workspace/TurtleBench/.venv/bin/python` 将合法 UTF-8 JSON 原子写入 {output_path}；写后立即用同一绝对解释器检查 `test -s`、重新读取并验证数组恰有3项、trial为1到3。只有现场文件存在且验证通过后，最终回复才报告写入成功与路径。
 玩家配置：{player['provider']} / {player['model']} / {player['reasoning_effort']}。"""
 
 
@@ -1304,16 +1557,80 @@ def speed_score(raw: dict[str, Any]) -> float:
     return 7 * clamp((60 - p50) / 55, 0, 1) + 3 * clamp((120 - p90) / 110, 0, 1)
 
 
+RESTORABLE_SCORE_KEYS = (
+    "outcome_round_efficiency",
+    "reasoning_chain",
+    "question_information",
+    "hint_strategy",
+    "consistency_recovery",
+    "final_closure",
+)
+SUBJECTIVE_SCORE_KEYS = (*RESTORABLE_SCORE_KEYS, "response_speed")
+
+
+def restore_time_inclusive_score(score: dict[str, Any]) -> bool:
+    """Restore the original score from preserved pre-normalization components and latency."""
+    if score.get("score_version") != "time-free-v1":
+        return False
+    components = score.get("score_components_90")
+    raw = score.get("raw")
+    if not isinstance(components, dict) or not isinstance(raw, dict):
+        return False
+    if any(
+        not isinstance(raw.get(key), (int, float)) or isinstance(raw.get(key), bool)
+        for key in ("player_latency_p50_s", "player_latency_p90_s")
+    ):
+        return False
+    if any(not isinstance(components.get(key), (int, float)) for key in RESTORABLE_SCORE_KEYS):
+        return False
+    parts = {key: round(float(components[key]), 1) for key in RESTORABLE_SCORE_KEYS}
+    parts["response_speed"] = round(speed_score(raw), 1)
+    score["scores"] = parts | {"total": round(sum(parts.values()), 1)}
+    score.pop("score_components_90", None)
+    score.pop("score_version", None)
+    return True
+
+
 def finalize_scores(run_dir: Path, player: dict[str, str], manifest: dict[str, Any]) -> list[dict[str, Any]]:
     scores: list[dict[str, Any]] = []
     for puzzle in manifest["puzzles"]:
         root = run_dir / "games" / player["slug"] / puzzle["id"]
+        existing_scores: dict[int, dict[str, Any]] = {}
+        all_scores_valid = True
+        for trial in (1, 2, 3):
+            score_path = root / f"trial-{trial:02d}" / "score.json"
+            if not score_path.exists():
+                all_scores_valid = False
+                break
+            try:
+                existing_score = load_json(score_path)
+            except Exception:
+                all_scores_valid = False
+                break
+            if (
+                not isinstance(existing_score, dict)
+                or existing_score.get("validity") != "valid"
+                or existing_score.get("status") not in TERMINAL_STATES
+            ):
+                all_scores_valid = False
+                break
+            existing_scores[trial] = existing_score
+        if all_scores_valid:
+            for trial in (1, 2, 3):
+                existing_score = existing_scores[trial]
+                if restore_time_inclusive_score(existing_score):
+                    atomic_json(root / f"trial-{trial:02d}" / "score.json", existing_score)
+                scores.append(existing_score)
+            continue
+
         judged = {int(x["trial"]): x for x in load_json(root / "judge.json")}
         for trial in (1, 2, 3):
             td = root / f"trial-{trial:02d}"
             score_path = td / "score.json"
             existing_score = load_json(score_path) if score_path.exists() else None
             if is_completed_score(score_path) and isinstance(existing_score, dict) and existing_score.get("validity") == "valid":
+                if restore_time_inclusive_score(existing_score):
+                    atomic_json(score_path, existing_score)
                 scores.append(existing_score)
                 continue
             pre = load_json(td / "preliminary.json")
@@ -1354,7 +1671,8 @@ def finalize_scores(run_dir: Path, player: dict[str, str], manifest: dict[str, A
             }
             parts = {k: round(v, 1) for k, v in parts.items()}
             score = {
-                "suite_version": "fixed-v1", "puzzle_id": puzzle["id"], "trial": trial,
+                "suite_version": "fixed-v1",
+                "puzzle_id": puzzle["id"], "trial": trial,
                 "player": pre["player"], "validity": validity, "status": pre["status"],
                 "raw": raw, "scores": parts | {"total": round(sum(parts.values()), 1)},
                 "failure_tags": j["failure_tags"], "notes": j["notes"],
@@ -1363,6 +1681,15 @@ def finalize_scores(run_dir: Path, player: dict[str, str], manifest: dict[str, A
             atomic_json(td / "score.json", score)
             scores.append(score)
     return scores
+
+def finalize_puzzle_scores(
+    run_dir: Path,
+    player: dict[str, str],
+    puzzle: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Finalize exactly one puzzle after its three trials are judged."""
+
+    return finalize_scores(run_dir, player, {"puzzles": [puzzle]})
 
 
 def iqr(values: list[float]) -> float:
@@ -1373,28 +1700,42 @@ def iqr(values: list[float]) -> float:
 
 def aggregate_scores(scores: list[dict[str, Any]]) -> dict[str, Any]:
     valid = [s for s in scores if s.get("validity") == "valid"]
-    by_puzzle: dict[str, list[dict[str, Any]]] = {}
+    scoreable = [
+        score for score in valid
+        if isinstance(score.get("scores"), dict)
+        and isinstance(score["scores"].get("total"), (int, float))
+        and all(isinstance(score["scores"].get(key), (int, float)) for key in SUBJECTIVE_SCORE_KEYS)
+    ]
+    scoreable_by_puzzle: dict[str, list[dict[str, Any]]] = {}
+    valid_by_puzzle: dict[str, list[dict[str, Any]]] = {}
+    for score in scoreable:
+        scoreable_by_puzzle.setdefault(score["puzzle_id"], []).append(score)
     for score in valid:
-        by_puzzle.setdefault(score["puzzle_id"], []).append(score)
+        valid_by_puzzle.setdefault(score["puzzle_id"], []).append(score)
     puzzle_summary: dict[str, Any] = {}
-    for pid, items in sorted(by_puzzle.items()):
-        totals = [float(x["scores"]["total"]) for x in items]
-        solved = [x for x in items if x["status"] == "solved"]
+    for pid, items in sorted(valid_by_puzzle.items()):
+        score_items = scoreable_by_puzzle.get(pid, [])
+        totals = [float(item["scores"]["total"]) for item in score_items]
+        solved = [item for item in items if item["status"] == "solved"]
         puzzle_summary[pid] = {
-            "score_median": round(statistics.median(totals), 1), "score_iqr": iqr(totals),
+            "score_median": round(statistics.median(totals), 1) if totals else None,
+            "score_iqr": iqr(totals) if totals else None,
             "success_rate": round(len(solved) / len(items), 3),
-            "rounds_median": round(statistics.median([x["raw"]["rounds"] for x in items]), 1),
+            "rounds_median": round(statistics.median([item["raw"]["rounds"] for item in items]), 1),
         }
     strata: dict[str, float] = {}
     for typ in ("C", "A"):
         for diff in ("E", "M", "H"):
-            vals = [v["score_median"] for pid, v in puzzle_summary.items() if f"-{typ}-{diff}-" in pid]
+            vals = [
+                summary["score_median"] for pid, summary in puzzle_summary.items()
+                if f"-{typ}-{diff}-" in pid and summary["score_median"] is not None
+            ]
             if vals:
                 strata[f"{typ}-{diff}"] = round(statistics.mean(vals), 1)
     dimensions = {}
-    keys = ["outcome_round_efficiency", "reasoning_chain", "question_information", "hint_strategy", "consistency_recovery", "final_closure", "response_speed"]
+    keys = list(SUBJECTIVE_SCORE_KEYS)
     for key in keys:
-        dimensions[key] = round(statistics.mean([float(s["scores"].get(key, 0.0)) for s in valid]), 1) if valid else None
+        dimensions[key] = round(statistics.mean([float(score["scores"][key]) for score in scoreable]), 1) if scoreable else None
     tags: dict[str, int] = {}
     for s in valid:
         for tag in s.get("failure_tags", []):
@@ -1418,6 +1759,8 @@ def aggregate_scores(scores: list[dict[str, Any]]) -> dict[str, Any]:
         "player_latency_p50_s": round(statistics.median([s["raw"]["player_latency_p50_s"] for s in valid]), 3) if valid else None,
         "player_latency_p90_s": round(statistics.median([s["raw"]["player_latency_p90_s"] for s in valid]), 3) if valid else None,
         "valid_games": len(valid), "invalid_games": len(scores) - len(valid),
+        "subjective_score_valid_games": len(scoreable),
+        "unscored_valid_games": len(valid) - len(scoreable),
         "strata": strata, "dimensions": dimensions, "failure_tags": dict(sorted(tags.items())),
         "puzzles": puzzle_summary,
         "player_resources": player_resources,
@@ -1441,12 +1784,22 @@ async def run_player(
     validate_attempt_limit(max_attempts, target_valid_games)
     state_path = run_dir / "games" / player["slug"] / "attempts.json"
     state = load_attempt_state(run_dir, player["slug"], max_attempts, target_valid_games)
+    puzzles = {str(puzzle["id"]): puzzle for puzzle in manifest["puzzles"]}
+    puzzle_order = [str(puzzle["id"]) for puzzle in manifest["puzzles"]]
     slots = {
         f"{puzzle['id']}:{trial:02d}": (puzzle, trial)
-        for trial in range(1, repeats + 1)
         for puzzle in manifest["puzzles"]
+        for trial in range(1, repeats + 1)
     }
-    semaphore = asyncio.Semaphore(api_game_concurrency(concurrency, api_run_slots))
+    puzzle_keys = {
+        puzzle_id: {f"{puzzle_id}:{trial:02d}" for trial in range(1, repeats + 1)}
+        for puzzle_id in puzzle_order
+    }
+    game_limit = api_game_concurrency(concurrency, api_run_slots)
+    semaphore = asyncio.Semaphore(game_limit)
+    game_tasks: dict[asyncio.Task[Any], str] = {}
+    judge_tasks: dict[asyncio.Task[Any], str] = {}
+    processed_puzzles: set[str] = set()
 
     async def guarded(puzzle: dict[str, Any], trial: int):
         async with semaphore:
@@ -1454,59 +1807,72 @@ async def run_player(
                 return await run_game(run_dir, player, puzzle, trial, timeout_s)
             return await run_game(run_dir, player, puzzle, trial, timeout_s, api_client=api_client)
 
-    while True:
-        pending = []
-        for key in state.get("pending_slots", []):
-            if key not in slots:
-                continue
-            puzzle, trial = slots[key]
-            trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
-            if game_needs_run(trial_dir / "game.json", trial_dir / "preliminary.json"):
-                pending.append(key)
-        missing = []
-        resumable = []
-        for key, (puzzle, trial) in slots.items():
-            trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
-            game_path = trial_dir / "game.json"
-            preliminary_path = trial_dir / "preliminary.json"
-            if not game_path.exists():
-                if key not in pending:
-                    missing.append(key)
-            elif game_needs_run(game_path, preliminary_path):
-                resumable.append(key)
-        reserved = reserve_attempt_slots(state_path, state, missing) if missing else []
-        runnable = list(dict.fromkeys([*pending, *reserved, *resumable]))
-        if runnable:
-            await asyncio.gather(*(guarded(*slots[key]) for key in runnable))
-            state["pending_slots"] = []
-            state["updated_at"] = now_iso()
-            atomic_json(state_path, state)
-
-        if api_client is None:
-            await asyncio.gather(*(run_judge(run_dir, player, p, timeout_s) for p in manifest["puzzles"]))
-        else:
-            await asyncio.gather(*(
-                run_judge(run_dir, player, p, timeout_s, api_client=api_client)
-                for p in manifest["puzzles"]
-            ))
-        scores = finalize_scores(run_dir, player, manifest)
-        valid_games = sum(score.get("validity") == "valid" for score in scores)
-        should_stop, limit_reached = retry_stop_state(
-            valid_games, target_valid_games, int(state["attempts_started"]), max_attempts
+    def score_is_valid(path: Path) -> bool:
+        data = _optional_json(path)
+        return bool(
+            data
+            and data.get("validity") == "valid"
+            and data.get("status") in TERMINAL_STATES
         )
-        if should_stop:
-            summary = aggregate_scores(scores)
-            summary.update({
-                "player": player,
-                "target_valid_games": target_valid_games,
-                "attempts_started": int(state["attempts_started"]),
-                "max_attempts": max_attempts,
-                "attempt_limit_reached": limit_reached,
-            })
-            atomic_json(run_dir / "summaries" / f"{player['slug']}.json", summary)
-            return summary
 
+    def puzzle_has_valid_scores(puzzle_id: str) -> bool:
+        return all(
+            score_is_valid(
+                run_dir / "games" / player["slug"] / puzzle_id / f"trial-{trial:02d}" / "score.json"
+            )
+            for trial in range(1, repeats + 1)
+        )
+
+    def puzzle_ready_for_judge(puzzle_id: str) -> bool:
+        return all(
+            (
+                run_dir / "games" / player["slug"] / puzzle_id / f"trial-{trial:02d}" / "preliminary.json"
+            ).exists()
+            for trial in range(1, repeats + 1)
+        )
+
+    def clear_puzzle_pending(puzzle_id: str) -> None:
+        state["pending_slots"] = [
+            key for key in state.get("pending_slots", [])
+            if key not in puzzle_keys[puzzle_id]
+        ]
+        state["updated_at"] = now_iso()
+        atomic_json(state_path, state)
+
+    def candidate_keys() -> list[str]:
+        candidates: list[str] = []
+        for key, (puzzle, trial) in slots.items():
+            puzzle_id = str(puzzle["id"])
+            if puzzle_id in processed_puzzles:
+                continue
+            if key in game_tasks.values():
+                continue
+            trial_dir = run_dir / "games" / player["slug"] / puzzle_id / f"trial-{trial:02d}"
+            if score_is_valid(trial_dir / "score.json"):
+                continue
+            if game_needs_run(trial_dir / "game.json", trial_dir / "preliminary.json"):
+                candidates.append(key)
+        return candidates
+
+    async def judge_puzzle(puzzle_id: str) -> bool:
+        puzzle = puzzles[puzzle_id]
+        if api_client is None:
+            await run_judge(run_dir, player, puzzle, timeout_s)
+        else:
+            await run_judge(run_dir, player, puzzle, timeout_s, api_client=api_client)
+        if not puzzle_ready_for_judge(puzzle_id):
+            return True
+        puzzle_scores = finalize_puzzle_scores(run_dir, player, puzzle)
+        invalid = [
+            score for score in puzzle_scores
+            if str(score.get("validity", "")).startswith("invalid_")
+        ]
+        clear_puzzle_pending(puzzle_id)
+        if not invalid:
+            return False
         remaining = max_attempts - int(state["attempts_started"])
+        if remaining <= 0:
+            return False
         state["retry_round"] = int(state.get("retry_round", 0)) + 1
         state["updated_at"] = now_iso()
         atomic_json(state_path, state)
@@ -1514,9 +1880,86 @@ async def run_player(
             run_dir / "retry-archives" / "auto" / player["slug"] /
             f"round-{state['retry_round']:03d}"
         )
-        archived = archive_invalid_trials(run_dir, [player["slug"]], archive_root, max_trials=remaining)
+        archived = archive_invalid_trials(
+            run_dir,
+            [player["slug"]],
+            archive_root,
+            max_trials=remaining,
+            puzzle_ids={puzzle_id},
+        )
         if archived[player["slug"]] == 0:
-            raise RuntimeError(f"{player['slug']} has {valid_games}/{target_valid_games} valid games but no invalid trials to retry")
+            raise RuntimeError(
+                f"{player['slug']} {puzzle_id} has invalid trials but none can be retried"
+            )
+        return True
+
+    while len(processed_puzzles) < len(puzzle_order) or game_tasks or judge_tasks:
+        for puzzle_id in puzzle_order:
+            if puzzle_id in processed_puzzles or puzzle_id in judge_tasks.values():
+                continue
+            if puzzle_has_valid_scores(puzzle_id):
+                clear_puzzle_pending(puzzle_id)
+                processed_puzzles.add(puzzle_id)
+            elif puzzle_ready_for_judge(puzzle_id):
+                task = asyncio.create_task(judge_puzzle(puzzle_id))
+                judge_tasks[task] = puzzle_id
+
+        for key in candidate_keys():
+            if len(game_tasks) >= game_limit:
+                break
+            if key not in state.get("pending_slots", []):
+                if not reserve_attempt_slots(state_path, state, [key]):
+                    break
+            puzzle, trial = slots[key]
+            task = asyncio.create_task(guarded(puzzle, trial))
+            game_tasks[task] = key
+
+        if not game_tasks and not judge_tasks:
+            if len(processed_puzzles) == len(puzzle_order):
+                break
+            raise RuntimeError(
+                f"{player['slug']} has unfinished slots but no runnable game or judge task"
+            )
+        done, _ = await asyncio.wait(
+            [*game_tasks, *judge_tasks],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for task in done:
+            if task in game_tasks:
+                game_tasks.pop(task)
+                task.result()
+            else:
+                puzzle_id = judge_tasks.pop(task)
+                retrying = task.result()
+                if not retrying:
+                    processed_puzzles.add(puzzle_id)
+
+    scores = finalize_scores(run_dir, player, manifest)
+    valid_games = sum(score.get("validity") == "valid" for score in scores)
+    _, limit_reached = retry_stop_state(
+        valid_games, target_valid_games, int(state["attempts_started"]), max_attempts
+    )
+    summary = aggregate_scores(scores)
+    formula = formula_summary_from_run(
+        run_dir,
+        player["slug"],
+        manifest,
+        repeats=repeats,
+    )
+    summary.update({
+        "subjective_score": summary.get("overall_score"),
+        "formula_score": formula["overall_score"],
+        "formula": formula,
+    })
+    summary.update({
+        "player": player,
+        "target_valid_games": target_valid_games,
+        "attempts_started": int(state["attempts_started"]),
+        "max_attempts": max_attempts,
+        "attempt_limit_reached": limit_reached,
+    })
+    atomic_json(run_dir / "summaries" / f"{player['slug']}.json", summary)
+    return summary
 
 
 def render_report(run_meta: dict[str, Any], summaries: list[dict[str, Any]]) -> str:
@@ -1528,17 +1971,132 @@ def render_report(run_meta: dict[str, Any], summaries: list[dict[str, Any]]) -> 
 
     display_names = {p["slug"]: p.get("display_name", p["slug"]) for p in PLAYER_MATRIX}
 
-    lines = ["# Situation Puzzle Baseline", "", f"- Run: `{run_meta['run_id']}`", "- Suite: `fixed-v1`", "- Host: `openai-codex / gpt-5.6-luna / max`", f"- Session source: `{run_meta['session_source']}`", f"- Repeats: {run_meta['repeats']}", ""]
-    lines += ["| Player | Score | Success | Rounds median | Hint rate | Valid/Invalid |", "|---|---:|---:|---:|---:|---:|"]
+    lines = [
+        "# Situation Puzzle Baseline", "", f"- Run: `{run_meta['run_id']}`",
+        "- Suite: `fixed-v1`", "- Host: `openai-codex / gpt-5.6-luna / max`",
+        f"- Session source: `{run_meta['session_source']}`",
+        "- Subjective score includes the response-speed dimension; price is not included.",
+        f"- Repeats: {run_meta['repeats']}", "",
+    ]
+    lines += ["| Player | Formula | Subjective | Success | Rounds median | Hint rate | Valid/Invalid |", "|---|---:|---:|---:|---:|---:|---:|"]
     for s in summaries:
         p=s["player"]
-        lines.append(f"| {display_names.get(p['slug'], p['slug'])} | {number(s['overall_score'])} | {percent(s['success_rate'])} | {number(s['rounds_median'])} | {percent(s['hints_used_rate'])} | {s['valid_games']}/{s['invalid_games']} |")
+        lines.append(f"| {display_names.get(p['slug'], p['slug'])} | {number(s.get('formula_score'))} | {number(s.get('subjective_score', s.get('overall_score')))} | {percent(s['success_rate'])} | {number(s['rounds_median'])} | {percent(s['hints_used_rate'])} | {s['valid_games']}/{s['invalid_games']} |")
     lines += ["", "## Strata", "", "| Player | C-E | C-M | C-H | A-E | A-M | A-H |", "|---|---:|---:|---:|---:|---:|---:|"]
     for s in summaries:
         st=s["strata"]
         slug = s["player"]["slug"]
         lines.append("| {} | {} | {} | {} | {} | {} | {} |".format(display_names.get(slug, slug),*[st.get(k,"-") for k in ("C-E","C-M","C-H","A-E","A-M","A-H")]))
     return "\n".join(lines)+"\n"
+
+
+def archive_run_transcripts(
+    run_dir: Path,
+    runs_root: Path,
+    players: list[dict[str, Any]],
+) -> list[Path]:
+    """Update cumulative per-model transcript archives after scoring completes."""
+
+    run_dir = Path(run_dir).resolve()
+    runs_root = Path(runs_root).resolve()
+    if not run_dir.is_relative_to(runs_root):
+        raise ValueError(f"run directory is outside runs root: {run_dir}")
+    archive_dir = runs_root / "archive"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive_fd = os.open(archive_dir, os.O_RDONLY | os.O_DIRECTORY)
+    archives: list[Path] = []
+    try:
+        fcntl.flock(archive_fd, fcntl.LOCK_EX)
+        for player in players:
+            slug = str(player["slug"])
+            if not slug or Path(slug).name != slug or slug in {".", ".."}:
+                raise ValueError(f"invalid player slug for transcript archive: {slug!r}")
+            archive_path = archive_dir / f"{slug}.zip"
+            members: dict[str, bytes] = {}
+            if archive_path.exists():
+                with zipfile.ZipFile(archive_path, "r") as existing:
+                    if existing.testzip() is not None:
+                        raise RuntimeError(f"existing transcript archive is corrupt: {archive_path}")
+                    for name in existing.namelist():
+                        if name.endswith(("score.json", "summary.json")):
+                            raise RuntimeError(f"numeric result file found in transcript archive: {archive_path}")
+                        if name.endswith("/game.json"):
+                            members[name] = existing.read(name)
+            for source_run in sorted(runs_root.iterdir()):
+                if source_run.name == "archive" or not source_run.is_dir():
+                    continue
+                if source_run.is_symlink():
+                    continue
+                source_root = source_run / "games" / slug
+                if not source_root.is_dir():
+                    continue
+                source_resolved = source_run.resolve()
+                for game_path in sorted(source_root.rglob("game.json")):
+                    if game_path.is_symlink() or not game_path.resolve().is_relative_to(source_resolved):
+                        raise ValueError(f"transcript path escapes run directory: {game_path}")
+                    member = f"transcripts/{source_run.name}/{game_path.relative_to(source_run).as_posix()}"
+                    members[member] = game_path.read_bytes()
+            if not members:
+                continue
+
+            with tempfile.NamedTemporaryFile(
+                prefix=f".{slug}.", suffix=".tmp", dir=archive_dir, delete=False
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+            expected = sorted(members)
+            try:
+                with zipfile.ZipFile(
+                    temporary_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+                ) as package:
+                    for member in expected:
+                        package.writestr(member, members[member])
+                with zipfile.ZipFile(temporary_path, "r") as package:
+                    names = package.namelist()
+                    if names != expected or package.testzip() is not None:
+                        raise RuntimeError(f"transcript archive verification failed: {archive_path}")
+                    if any(name.endswith(("score.json", "summary.json")) for name in names):
+                        raise RuntimeError(f"numeric result file entered transcript archive: {archive_path}")
+                os.replace(temporary_path, archive_path)
+            finally:
+                temporary_path.unlink(missing_ok=True)
+            archives.append(archive_path)
+
+        master_path = archive_dir / "turtlebench-transcripts-by-model.zip"
+        model_archives = sorted(
+            path for path in archive_dir.glob("*.zip") if path.name != master_path.name
+        )
+        if model_archives:
+            with tempfile.NamedTemporaryFile(
+                prefix=".turtlebench-transcripts-by-model.", suffix=".tmp",
+                dir=archive_dir, delete=False,
+            ) as temporary:
+                temporary_master = Path(temporary.name)
+            expected_master = [f"model-zips/{path.name}" for path in model_archives]
+            try:
+                with zipfile.ZipFile(
+                    temporary_master, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+                ) as package:
+                    for path, member in zip(model_archives, expected_master, strict=True):
+                        with zipfile.ZipFile(path, "r") as model_package:
+                            if model_package.testzip() is not None:
+                                raise RuntimeError(f"model transcript archive is corrupt: {path}")
+                            if any(
+                                name.endswith(("score.json", "summary.json"))
+                                for name in model_package.namelist()
+                            ):
+                                raise RuntimeError(f"numeric result file found in transcript archive: {path}")
+                        package.write(path, member)
+                with zipfile.ZipFile(temporary_master, "r") as package:
+                    names = package.namelist()
+                    if names != expected_master or package.testzip() is not None:
+                        raise RuntimeError("master transcript archive verification failed")
+                os.replace(temporary_master, master_path)
+            finally:
+                temporary_master.unlink(missing_ok=True)
+    finally:
+        fcntl.flock(archive_fd, fcntl.LOCK_UN)
+        os.close(archive_fd)
+    return archives
 
 
 async def async_main(args: argparse.Namespace) -> None:
@@ -1550,12 +2108,41 @@ async def async_main(args: argparse.Namespace) -> None:
     )
     ensure_suite(RUNTIME.fixtures)
     manifest = verify_suite(RUNTIME.fixtures)
-    api_client = HermesApiClient(args.api_url, os.environ.get("HERMES_API_KEY", ""))
-    await asyncio.to_thread(api_client.health)
     retry_failed = bool(getattr(args, "retry_failed", False))
     run_id = args.run_id or f"baseline-luna-max-host-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     run_dir = RUNTIME.runs_dir / run_id
+    meta_path = run_dir / "run.json"
+    prior_meta = load_json(meta_path) if meta_path.exists() else {}
+    requested_hours = getattr(args, "quota_window_hours", None)
+    requested_seconds = None if requested_hours is None else float(requested_hours) * 3600
+    if requested_seconds is not None and requested_seconds <= 0:
+        raise ValueError("quota window hours must be positive")
+    saved_seconds = prior_meta.get("quota_window_seconds")
+    if saved_seconds is not None:
+        if requested_seconds is not None and float(saved_seconds) != requested_seconds:
+            raise ValueError("quota window duration differs from the existing run")
+        quota_window_seconds = float(saved_seconds)
+    else:
+        quota_window_seconds = requested_seconds
+    explicit_start = getattr(args, "quota_window_start_epoch", None)
+    saved_start = prior_meta.get("quota_window_start_epoch")
+    if saved_start is not None and explicit_start is not None and float(saved_start) != float(explicit_start):
+        raise ValueError("quota window start differs from the existing run")
+    quota_window_start_epoch = (
+        float(saved_start) if saved_start is not None else
+        (float(explicit_start) if explicit_start is not None else None)
+    )
+    if quota_window_start_epoch is not None and quota_window_seconds is None:
+        raise ValueError("quota window start requires --quota-window-hours")
+    api_client = HermesApiClient(
+        args.api_url,
+        os.environ.get("HERMES_API_KEY", ""),
+        quota_window_seconds=quota_window_seconds,
+        quota_window_start_epoch=quota_window_start_epoch,
+    )
+    await asyncio.to_thread(api_client.health)
     run_dir.mkdir(parents=True, exist_ok=True)
+    run_lock = acquire_run_lock(run_dir)
     wanted = set(args.players.split(",")) if args.players else {p["slug"] for p in PLAYER_MATRIX}
     players = [p for p in PLAYER_MATRIX if p["slug"] in wanted]
     unknown = wanted - {p["slug"] for p in PLAYER_MATRIX}
@@ -1565,7 +2152,8 @@ async def async_main(args: argparse.Namespace) -> None:
     meta = load_json(meta_path) if meta_path.exists() else {
         "run_id": run_id, "suite_version": "fixed-v1", "manifest": str(RUNTIME.fixtures / "manifest.json"),
         "host": HOST, "players": players, "repeats": args.repeats, "max_rounds": 50,
-        "player_hint_limit": 2, "concurrency": args.concurrency, "session_source": SESSION_SOURCE, "started_at": now_iso(),
+        "player_hint_limit": 2, "concurrency": args.concurrency, "session_source": SESSION_SOURCE,
+        "started_at": now_iso(),
         "status": "running", "completed_players": [],
     }
     existing_source = meta.get("session_source", SESSION_SOURCE)
@@ -1573,11 +2161,21 @@ async def async_main(args: argparse.Namespace) -> None:
         raise RuntimeError(f"run source mismatch: {existing_source} != {SESSION_SOURCE}")
     meta["players"] = players
     meta["repeats"] = args.repeats
+    meta["concurrency"] = args.concurrency
     meta["max_rounds"] = 50
     meta["player_hint_limit"] = 2
     meta["session_source"] = SESSION_SOURCE
+
     meta["api_url"] = args.api_url
     meta["max_attempts_per_player"] = args.max_attempts_per_player
+    quota_seconds = getattr(api_client, "quota_window_seconds", None)
+    quota_start = getattr(api_client, "quota_window_start_epoch", None)
+    if isinstance(quota_seconds, (int, float)) and isinstance(quota_start, (int, float)):
+        meta["quota_window_seconds"] = quota_seconds
+        meta["quota_window_start_epoch"] = quota_start
+        meta["quota_window_started_at"] = datetime.fromtimestamp(
+            quota_start, timezone.utc
+        ).isoformat()
     if retry_failed and meta.get("status") == "completed":
         meta["status"] = "running"
         meta.pop("completed_at", None)
@@ -1620,12 +2218,16 @@ async def async_main(args: argparse.Namespace) -> None:
         meta["status"]="completed"; meta["completed_at"]=now_iso(); atomic_json(meta_path,meta)
         atomic_json(run_dir / "summary.json", {"run": meta, "models": summaries})
         (run_dir / "REPORT.md").write_text(render_report(meta,summaries),encoding="utf-8")
+        archived = archive_run_transcripts(run_dir, RUNTIME.runs_dir, players)
+        for archive_path in archived:
+            print(f"transcripts archived: {archive_path}")
     finally:
         if progress_reporter:
             progress_reporter.stop()
         if progress_task:
             with suppress(asyncio.CancelledError):
                 await progress_task
+        release_run_lock(run_lock)
     print(run_dir)
 
 
@@ -1643,6 +2245,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--state-db", type=Path, default=DEFAULT_STATE_DB)
     parser.add_argument("--api-url", default=os.environ.get("HERMES_API_URL", "http://127.0.0.1:8642"))
     parser.add_argument("--api-run-slots", type=int, default=8)
+    parser.add_argument("--quota-window-hours", type=float)
+    parser.add_argument("--quota-window-start-epoch", type=float)
     return parser
 
 

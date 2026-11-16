@@ -115,6 +115,10 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(args.state_db, Path("/tmp/state.db"))
         self.assertEqual(args.api_url, "http://127.0.0.1:9999")
         self.assertEqual(args.max_attempts_per_player, 100)
+        self.assertEqual(
+            br.build_parser().parse_args([]).runs_dir,
+            Path("/home/wow/workspace/TurtleBench/runs"),
+        )
 
     def test_parser_accepts_retry_failed_flag(self):
         args = br.build_parser().parse_args(["--retry-failed"])
@@ -183,6 +187,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(path, "/bottoken/sendMessage")
         self.assertIn("chat_id=-100123", body)
         self.assertIn("message_thread_id=36133", body)
+        self.assertIn("disable_notification=false", body)
         self.assertIn("%E8%BF%9B%E5%BA%A6+1%2F36", body)
 
     def test_progress_reporter_sends_at_configured_interval(self):
@@ -244,6 +249,27 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(len(messages), 1)
         self.assertIn("Model A", messages[0])
 
+    def test_progress_reporter_logs_successful_message_id(self):
+        class Sender:
+            def send(self, text):
+                return 456
+
+        with tempfile.TemporaryDirectory() as td:
+            reporter = br.ProgressReporter(
+                run_dir=Path(td),
+                players=[{"slug": "model-a", "display_name": "Model A"}],
+                manifest={"puzzles": [{"id": "P1"}]},
+                repeats=3,
+                sender=Sender(),
+                interval_seconds=3600,
+            )
+            with mock.patch("builtins.print") as print_mock:
+                asyncio.run(reporter._send_once())
+
+        print_mock.assert_called_once_with(
+            "progress notification sent message_id=456", flush=True
+        )
+
     def test_progress_message_reports_completed_active_and_pending_slots(self):
         with tempfile.TemporaryDirectory() as td:
             run_dir = Path(td)
@@ -273,6 +299,33 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertIn("待处理 0", message)
         self.assertIn("solved 1", message)
         self.assertIn("error 1", message)
+
+    def test_progress_message_only_reports_next_sequential_model(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            (run_dir / "run.json").write_text(
+                json.dumps({
+                    "run_id": "ordered-run",
+                    "status": "running",
+                    "completed_players": ["model-a"],
+                }),
+                encoding="utf-8",
+            )
+
+            message = br.render_progress_message(
+                run_dir,
+                [
+                    {"slug": "model-a", "display_name": "Model A"},
+                    {"slug": "model-b", "display_name": "Model B"},
+                    {"slug": "model-c", "display_name": "Model C"},
+                ],
+                {"puzzles": [{"id": "P1"}]},
+                repeats=3,
+            )
+
+        self.assertIn("Model B", message)
+        self.assertNotIn("Model A", message)
+        self.assertNotIn("Model C", message)
 
     def test_progress_message_stays_within_telegram_limit(self):
         with tempfile.TemporaryDirectory() as td:
@@ -362,7 +415,7 @@ class BenchmarkRunnerTests(unittest.TestCase):
     def test_player_matrix_preserves_requested_order(self):
         self.assertEqual(
             [p["slug"] for p in br.PLAYER_MATRIX],
-            ["luna-max", "luna-high", "minimax-m3-max", "openrouter-stealth-union-alpha-high", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "commandcode-deepseek-v4-1-flash-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high", "bai-qwen3-8-flash-max"],
+            ["luna-max", "luna-high", "minimax-m3-max", "openrouter-stealth-union-alpha-high", "deepseek-v4-flash-max", "deepseek-provider-v4-flash-max", "deepseek-deepseek-v4-1-flash-max", "kong-ai-gateway-zai-org-glm-5-3-high", "kong-ai-gateway-zai-org-glm-5-3-flash-high", "kong-ai-gateway-zai-org-glm-5-3-flash-max", "commandcode-deepseek-v4-1-flash-beta-high", "commandcode-deepseek-v4-1-flash-high", "claude-sonnet-5-high", "gpt-5-6-sol-high", "gpt-5-6-sol-medium", "gpt-6-astra-high", "grok-4-6-high", "bai-qwen3-8-flash-max", "hcnsec-qwen3-8-flash-next-xhigh", "sensenova-6-8-flash-lite"],
         )
 
     def test_minimax_uses_openrouter_free_route(self):
@@ -430,6 +483,18 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(qwen["provider"], "bai")
         self.assertEqual(qwen["model"], "qwen3.8-flash")
         self.assertEqual(qwen["reasoning_effort"], "max")
+
+    def test_hcnsec_qwen3_8_flash_next_uses_xhigh_route(self):
+        qwen = next(p for p in br.PLAYER_MATRIX if p["slug"] == "hcnsec-qwen3-8-flash-next-xhigh")
+        self.assertEqual(qwen["provider"], "hcnsec")
+        self.assertEqual(qwen["model"], "Qwen3.8-Flash-Next")
+        self.assertEqual(qwen["reasoning_effort"], "xhigh")
+
+    def test_sensenova_uses_provider_model_default_reasoning(self):
+        model = next(p for p in br.PLAYER_MATRIX if p["slug"] == "sensenova-6-8-flash-lite")
+        self.assertEqual(model["provider"], "sensenova")
+        self.assertEqual(model["model"], "sensenova-6.8-flash-lite")
+        self.assertEqual(model["reasoning_effort"], "default")
 
     def test_claude_sonnet_5_uses_anthropic_high(self):
         claude = next(p for p in br.PLAYER_MATRIX if p["slug"] == "claude-sonnet-5-high")
@@ -563,6 +628,185 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(result.usage["input_tokens"], 12)
         self.assertEqual(result.usage["reasoning_tokens"], 3)
 
+    def test_default_reasoning_omits_model_options(self):
+        client = br.HermesApiClient("http://api", "secret", poll_interval=0)
+        captured = {}
+
+        def request(method, path, payload=None, expected=(200,)):
+            if path == "api/sessions/tb-default":
+                return {"session": {"provider": "sensenova", "model": "sensenova-6.8-flash-lite"}}
+            if path == "api/sessions/tb-default/messages":
+                return {"data": []}
+            if path == "v1/toolsets":
+                return {"data": [{"name": "terminal"}]}
+            if path == "v1/runs":
+                captured.update(payload)
+                return {"run_id": "run-default"}
+            if path == "v1/runs/run-default":
+                return {"status": "completed", "output": "OK"}
+            raise AssertionError(f"unexpected request: {method} {path}")
+
+        with mock.patch.object(client, "_request", side_effect=request):
+            result = client.turn(
+                session_id="tb-default", session_title="TurtleBench role",
+                provider="sensenova", model="sensenova-6.8-flash-lite",
+                reasoning="default", prompt="Reply OK", timeout_s=2,
+            )
+
+        self.assertEqual(result.output, "OK")
+        self.assertNotIn("model_options", captured)
+
+    def test_quota_window_scheduler_uses_fixed_five_hour_boundaries(self):
+        self.assertEqual(br.next_quota_window_epoch(1000, 18000, now=1001), 19000)
+        self.assertEqual(br.next_quota_window_epoch(1000, 18000, now=19000), 37000)
+
+        client = br.HermesApiClient(
+            "http://api", "secret", quota_window_seconds=18000,
+            quota_window_start_epoch=1000,
+        )
+        with mock.patch.object(br.time, "time", return_value=1001), mock.patch.object(
+            br.time, "sleep"
+        ) as sleep:
+            waited = client.wait_for_next_quota_window()
+        self.assertEqual(waited, 17999)
+        sleep.assert_called_once_with(17999)
+
+    def test_api_client_retries_429_after_waiting_for_quota_window(self):
+        client = br.HermesApiClient(
+            "http://api", "secret", retry_attempts=1,
+            quota_window_seconds=18000, quota_window_start_epoch=1000,
+        )
+        state = {"calls": 0}
+
+        def request(method, path, payload=None, expected=(200,)):
+            state["calls"] += 1
+            if state["calls"] == 1:
+                raise br.HermesApiError(429, "rate limited", retryable=False)
+            return {"ok": True}
+
+        with mock.patch.object(client, "_request", side_effect=request), mock.patch.object(
+            client, "wait_for_next_quota_window", return_value=18000
+        ) as wait:
+            result = client._request_with_retry("GET", "v1/models")
+
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(state["calls"], 2)
+        wait.assert_called_once()
+
+    def test_sensenova_rpm_exhaustion_counts_as_a_rate_limit(self):
+        detail = (
+            "Error code: 429 - {'error': {'message': 'rpm exhausted', "
+            "'type': 'quota_exceeded_error', 'code': '8'}}"
+        )
+        self.assertTrue(br.run_failure_is_retryable(detail))
+        exc = br.HermesApiError(
+            None, f"Hermes API run run-x ended with status=failed: {detail}",
+            retryable=True,
+        )
+        self.assertTrue(br.HermesApiClient.is_rate_limit_error(exc))
+
+    def test_rpm_exhaustion_backs_off_minutes_instead_of_the_quota_window(self):
+        client = br.HermesApiClient(
+            "http://api", "secret", retry_attempts=1, rpm_backoff_seconds=45,
+            quota_window_seconds=18000, quota_window_start_epoch=1000,
+        )
+        state = {"calls": 0}
+
+        def request(method, path, payload=None, expected=(200,)):
+            state["calls"] += 1
+            if state["calls"] == 1:
+                raise br.HermesApiError(
+                    None,
+                    "Hermes API run run-x ended with status=failed: Error code: 429 - "
+                    "{'error': {'message': 'rpm exhausted', 'type': 'quota_exceeded_error'}}",
+                    retryable=True,
+                )
+            return {"ok": True}
+
+        with mock.patch.object(client, "_request", side_effect=request), mock.patch.object(
+            br.time, "sleep"
+        ) as sleep, mock.patch.object(
+            client, "wait_for_next_quota_window"
+        ) as window:
+            result = client._request_with_retry("GET", "v1/models")
+
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(state["calls"], 2)
+        sleep.assert_called_once_with(45)
+        window.assert_not_called()
+
+    def test_quota_window_exhaustion_still_waits_for_the_window(self):
+        client = br.HermesApiClient(
+            "http://api", "secret", retry_attempts=1, rpm_backoff_seconds=45,
+            quota_window_seconds=18000, quota_window_start_epoch=1000,
+        )
+        state = {"calls": 0}
+
+        def request(method, path, payload=None, expected=(200,)):
+            state["calls"] += 1
+            if state["calls"] == 1:
+                raise br.HermesApiError(
+                    None,
+                    "Hermes API run run-x ended with status=failed: "
+                    "HTTP 429 rate limit reached for this account",
+                    retryable=True,
+                )
+            return {"ok": True}
+
+        with mock.patch.object(client, "_request", side_effect=request), mock.patch.object(
+            client, "wait_for_next_quota_window", return_value=18000
+        ) as window, mock.patch.object(br.time, "sleep") as sleep:
+            result = client._request_with_retry("GET", "v1/models")
+
+        self.assertEqual(result, {"ok": True})
+        self.assertEqual(state["calls"], 2)
+        window.assert_called_once()
+        sleep.assert_not_called()
+
+    def test_turn_resubmits_after_a_rate_limited_run_instead_of_aborting(self):
+        client = br.HermesApiClient(
+            "http://api", "secret", poll_interval=0, retry_attempts=1,
+            rpm_backoff_seconds=45, quota_window_seconds=18000,
+            quota_window_start_epoch=1000,
+        )
+        posted: list[str] = []
+
+        def request(method, path, payload=None, expected=(200,)):
+            if path.startswith("api/sessions/tb-rpm"):
+                if path.endswith("/messages"):
+                    return {"data": []}
+                return {"session": {"provider": "sensenova", "model": "deepseek-v4-flash"}}
+            if path == "v1/toolsets":
+                return {"data": [{"name": "terminal"}]}
+            if path == "v1/runs":
+                posted.append(payload["input"])
+                return {"run_id": f"run-{len(posted)}"}
+            if path == "v1/runs/run-1":
+                return {
+                    "status": "failed",
+                    "error": (
+                        "Error code: 429 - {'error': {'message': 'rpm exhausted', "
+                        "'type': 'quota_exceeded_error', 'code': '8'}}"
+                    ),
+                }
+            if path == "v1/runs/run-2":
+                return {"status": "completed", "output": "role completed"}
+            raise AssertionError(f"unexpected request: {method} {path}")
+
+        with mock.patch.object(client, "_request", side_effect=request), mock.patch.object(
+            br.time, "sleep"
+        ) as sleep:
+            result = client.turn(
+                session_id="tb-rpm", session_title="TurtleBench player",
+                provider="sensenova", model="deepseek-v4-flash",
+                reasoning="default", prompt="run role", timeout_s=600,
+            )
+
+        self.assertEqual(result.output, "role completed")
+        self.assertEqual(result.run_id, "run-2")
+        self.assertEqual(len(posted), 2)
+        self.assertTrue(any(call.args and call.args[0] == 45 for call in sleep.call_args_list))
+
     def test_api_client_retries_transient_poll_timeout(self):
         state = {"session_exists": False, "polls": 0}
         client = br.HermesApiClient(
@@ -658,6 +902,16 @@ class BenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(state["calls"], 9)
         self.assertEqual(sleep.call_args_list, [mock.call(0.25)])
 
+    def test_failed_api_run_classifies_transient_server_errors_as_retryable(self):
+        self.assertTrue(br.run_failure_is_retryable(
+            "Non-streaming API call timed out after 90s with no response"
+        ))
+        self.assertTrue(br.run_failure_is_retryable("[Errno 32] Broken pipe"))
+        self.assertTrue(br.run_failure_is_retryable(
+            "Codex stream produced no SSE events for 12s after the first parsed event"
+        ))
+        self.assertFalse(br.run_failure_is_retryable("provider rejected the model"))
+
     def test_api_sessions_keep_turtle_soup_source(self):
         self.assertEqual(br.SESSION_SOURCE, "turtle-soup")
 
@@ -698,6 +952,14 @@ class BenchmarkRunnerTests(unittest.TestCase):
             typ, diff = prefix.split("-")
             for puzzle_no in (1, 2):
                 for trial in (1, 2, 3):
+                    score_values = {
+                        key: 0.0 for key in (
+                            "outcome_round_efficiency", "reasoning_chain", "question_information",
+                            "hint_strategy", "consistency_recovery", "final_closure", "response_speed",
+                        )
+                    }
+                    score_values["outcome_round_efficiency"] = float(value)
+                    score_values["total"] = float(value)
                     scores.append({
                         "puzzle_id": f"SPB-{typ}-{diff}-0{puzzle_no}",
                         "trial": trial,
@@ -706,16 +968,114 @@ class BenchmarkRunnerTests(unittest.TestCase):
                         "raw": {"rounds": 5, "hints_used": 0, "player_latency_p50_s": 2, "player_latency_p90_s": 3,
                                 "player_active_time_s": 12, "player_usage": {"input_tokens": 100, "output_tokens": 20,
                                 "cache_read_tokens": 80, "cache_write_tokens": 0, "reasoning_tokens": 5, "api_call_count": 2}},
-                        "scores": {"total": value},
+                        "scores": score_values,
                         "failure_tags": [],
                     })
         summary = br.aggregate_scores(scores)
         self.assertEqual(summary["overall_score"], 35.0)
+        self.assertEqual(summary["dimensions"]["response_speed"], 0.0)
         self.assertEqual(summary["success_rate"], 1.0)
         self.assertEqual(len(summary["strata"]), 6)
         self.assertEqual(summary["player_resources"]["games_with_usage"], 36)
         self.assertEqual(summary["player_resources"]["input_tokens"], 3600)
         self.assertEqual(summary["player_resources"]["player_active_time_s"], 432.0)
+
+    def test_aggregate_includes_legacy_response_speed_subjective_totals(self):
+        def score(trial: int, outcome: float, speed: float, total: float):
+            values = {
+                "outcome_round_efficiency": outcome,
+                "reasoning_chain": 0.0,
+                "question_information": 0.0,
+                "hint_strategy": 0.0,
+                "consistency_recovery": 0.0,
+                "final_closure": 0.0,
+                "response_speed": speed,
+                "total": total,
+            }
+            return {
+                "puzzle_id": "SPB-C-E-01",
+                "trial": trial,
+                "validity": "valid",
+                "status": "solved",
+                "raw": {
+                    "rounds": 10,
+                    "hints_used": 0,
+                    "player_latency_p50_s": 1,
+                    "player_latency_p90_s": 2,
+                },
+                "scores": values,
+                "failure_tags": [],
+            }
+
+        summary = br.aggregate_scores([
+            score(1, 50.0, 10.0, 60.0),
+            score(2, 70.0, 0.0, 70.0),
+        ])
+
+        self.assertEqual(summary["overall_score"], 65.0)
+        self.assertEqual(summary["valid_games"], 2)
+        self.assertEqual(summary["subjective_score_valid_games"], 2)
+        self.assertEqual(summary["unscored_valid_games"], 0)
+        self.assertEqual(summary["dimensions"]["response_speed"], 5.0)
+
+    def test_aggregate_excludes_scores_without_response_speed(self):
+        summary = br.aggregate_scores([{
+            "puzzle_id": "SPB-C-E-01",
+            "trial": 1,
+            "validity": "valid",
+            "status": "solved",
+            "raw": {"rounds": 10, "hints_used": 0, "player_latency_p50_s": 1, "player_latency_p90_s": 2},
+            "scores": {"total": 100.0, "outcome_round_efficiency": 100.0},
+            "failure_tags": [],
+        }])
+
+        self.assertIsNone(summary["overall_score"])
+        self.assertEqual(summary["valid_games"], 1)
+        self.assertEqual(summary["subjective_score_valid_games"], 0)
+        self.assertEqual(summary["unscored_valid_games"], 1)
+
+    def test_partial_games_still_compute_subjective_overall_score(self):
+        scores = []
+        for puzzle_id in (
+            "SPB-C-E-01", "SPB-C-E-02", "SPB-C-M-01",
+            "SPB-C-M-02", "SPB-C-H-01", "SPB-C-H-02",
+        ):
+            for trial in (1, 2, 3):
+                scores.append({
+                    "puzzle_id": puzzle_id,
+                    "trial": trial,
+                    "validity": "valid",
+                    "status": "solved",
+                    "raw": {
+                        "rounds": 10,
+                        "hints_used": 0,
+                        "player_latency_p50_s": 1,
+                        "player_latency_p90_s": 2,
+                        "player_active_time_s": 3,
+                        "player_usage": {
+                            "input_tokens": 0,
+                            "output_tokens": 0,
+                            "cache_read_tokens": 0,
+                            "cache_write_tokens": 0,
+                            "reasoning_tokens": 0,
+                            "api_call_count": 0,
+                        },
+                    },
+                    "scores": {
+                        "outcome_round_efficiency": 62.3,
+                        "reasoning_chain": 0.0,
+                        "question_information": 0.0,
+                        "hint_strategy": 0.0,
+                        "consistency_recovery": 0.0,
+                        "final_closure": 0.0,
+                        "response_speed": 0.0,
+                        "total": 62.3,
+                    },
+                    "failure_tags": [],
+                })
+        summary = br.aggregate_scores(scores)
+        self.assertEqual(summary["valid_games"], 18)
+        self.assertEqual(summary["overall_score"], 62.3)
 
     def test_aggregate_reports_unavailable_when_no_valid_games(self):
         scores = [{"validity": "invalid_infrastructure", "status": "error"}]
@@ -732,6 +1092,149 @@ class BenchmarkRunnerTests(unittest.TestCase):
             self.assertTrue(br.is_completed_score(score))
             score.write_text(json.dumps({"validity": "pending", "status": "running"}), encoding="utf-8")
             self.assertFalse(br.is_completed_score(score))
+
+    def test_subjective_scores_include_response_latency(self):
+        judge_item = {
+            "validity": "valid",
+            "atomic_question_rate": 1,
+            "useful_constraint_rate": 1,
+            "redundant_question_rate": 0,
+            "unsupported_story_guess_rate": 0,
+            "irrelevant_branch_max": 0,
+            "contradiction_count": 0,
+            "partial_misread_count": 0,
+            "excluded_revisit_count": 0,
+            "protocol_recovery_failure_count": 0,
+            "reasoning_chain_parts": {"continuity": 5, "progression": 5, "connection": 5, "recovery": 5},
+            "question_information_parts": {"atomicity": 5, "compression": 5, "focus": 5},
+            "final_closure": 5,
+            "hint_effective_count": 0,
+            "hint_ineffective_count": 0,
+            "hint_early_count": 0,
+            "hint_consecutive": False,
+            "hint_hoarding": False,
+            "failure_tags": [],
+            "notes": [],
+        }
+        results = []
+        with tempfile.TemporaryDirectory() as tmp:
+            for slug, p50, p90 in (("fast", 1, 2), ("slow", 180, 300)):
+                run_dir = Path(tmp) / slug
+                player = {"slug": slug, "provider": "provider", "model": "model", "reasoning_effort": "high"}
+                puzzle = {"id": "P1", "path": "P1.json", "difficulty": "简单"}
+                puzzle_root = run_dir / "games" / slug / "P1"
+                puzzle_root.mkdir(parents=True)
+                for trial in (1, 2, 3):
+                    trial_dir = puzzle_root / f"trial-{trial:02d}"
+                    trial_dir.mkdir()
+                    preliminary = {
+                        "player": player,
+                        "status": "solved",
+                        "raw": {"rounds": 1, "hints_used": 0, "player_latency_p50_s": p50, "player_latency_p90_s": p90},
+                        "process_exit": {"host": 0, "player": 0},
+                    }
+                    (trial_dir / "preliminary.json").write_text(json.dumps(preliminary), encoding="utf-8")
+                (puzzle_root / "judge.json").write_text(
+                    json.dumps([judge_item | {"trial": trial} for trial in (1, 2, 3)]),
+                    encoding="utf-8",
+                )
+                result = br.finalize_scores(run_dir, player, {"puzzles": [puzzle]})[0]
+                results.append(result)
+
+        self.assertGreater(results[0]["scores"]["total"], results[1]["scores"]["total"])
+        self.assertEqual(results[0]["scores"]["response_speed"], 10.0)
+        self.assertEqual(results[1]["scores"]["response_speed"], 0.0)
+
+    def test_finalize_preserves_existing_time_inclusive_score_components(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "run"
+            player = {"slug": "model-a", "provider": "provider", "model": "model", "reasoning_effort": "high"}
+            puzzle = {"id": "P1", "path": "P1.json", "difficulty": "简单"}
+            root = run_dir / "games" / player["slug"] / puzzle["id"]
+            for trial, speed in ((1, 10.0), (2, 5.0), (3, 0.0)):
+                trial_dir = root / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True)
+                score = {
+                    "puzzle_id": "P1",
+                    "trial": trial,
+                    "validity": "valid",
+                    "status": "solved",
+                    "scores": {
+                        "outcome_round_efficiency": 30.0,
+                        "reasoning_chain": 20.0,
+                        "question_information": 15.0,
+                        "hint_strategy": 10.0,
+                        "consistency_recovery": 10.0,
+                        "final_closure": 5.0,
+                        "response_speed": speed,
+                        "total": 90.0 + speed,
+                    },
+                }
+                (trial_dir / "score.json").write_text(json.dumps(score), encoding="utf-8")
+
+            scores = br.finalize_scores(run_dir, player, {"puzzles": [puzzle]})
+            saved = json.loads((root / "trial-01" / "score.json").read_text(encoding="utf-8"))
+
+        self.assertEqual([score["scores"]["total"] for score in scores], [100.0, 95.0, 90.0])
+        self.assertEqual([score["scores"]["response_speed"] for score in scores], [10.0, 5.0, 0.0])
+        self.assertNotIn("score_version", saved)
+
+    def test_finalize_restores_time_free_score_using_saved_components_and_latency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "run"
+            player = {"slug": "model-a", "provider": "provider", "model": "model", "reasoning_effort": "high"}
+            puzzle = {"id": "P1", "path": "P1.json", "difficulty": "简单"}
+            root = run_dir / "games" / player["slug"] / puzzle["id"]
+            components = {
+                "outcome_round_efficiency": 30.0,
+                "reasoning_chain": 20.0,
+                "question_information": 15.0,
+                "hint_strategy": 10.0,
+                "consistency_recovery": 10.0,
+                "final_closure": 5.0,
+            }
+            normalized = {key: round(value * 100.0 / 90.0, 1) for key, value in components.items()}
+            normalized["total"] = round(sum(normalized.values()), 1)
+            for trial in (1, 2, 3):
+                trial_dir = root / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True)
+                score = {
+                    "score_version": "time-free-v1",
+                    "score_components_90": components,
+                    "puzzle_id": "P1",
+                    "trial": trial,
+                    "validity": "valid",
+                    "status": "solved",
+                    "raw": {"player_latency_p50_s": 1.0, "player_latency_p90_s": 2.0},
+                    "scores": normalized,
+                }
+                (trial_dir / "score.json").write_text(json.dumps(score), encoding="utf-8")
+
+            scores = br.finalize_scores(run_dir, player, {"puzzles": [puzzle]})
+            saved = json.loads((root / "trial-01" / "score.json").read_text(encoding="utf-8"))
+
+        self.assertEqual([score["scores"]["response_speed"] for score in scores], [10.0, 10.0, 10.0])
+        self.assertEqual([score["scores"]["total"] for score in scores], [100.0, 100.0, 100.0])
+        self.assertNotIn("score_version", saved)
+        self.assertNotIn("score_components_90", saved)
+
+    def test_restore_time_free_score_requires_latency_measurements(self):
+        score = {
+            "score_version": "time-free-v1",
+            "score_components_90": {
+                "outcome_round_efficiency": 30.0,
+                "reasoning_chain": 20.0,
+                "question_information": 15.0,
+                "hint_strategy": 10.0,
+                "consistency_recovery": 10.0,
+                "final_closure": 5.0,
+            },
+            "raw": {},
+        }
+
+        self.assertFalse(br.restore_time_inclusive_score(score))
+        self.assertEqual(score["score_version"], "time-free-v1")
+        self.assertNotIn("response_speed", score.get("scores", {}))
 
     def test_finalize_preserves_existing_valid_score(self):
         with tempfile.TemporaryDirectory() as td:
@@ -759,6 +1262,24 @@ class BenchmarkRunnerTests(unittest.TestCase):
             scores = br.finalize_scores(run_dir, player, {"puzzles": [puzzle]})
 
             self.assertEqual(next(s for s in scores if s["trial"] == 1), existing)
+
+    def test_finalize_skips_missing_judge_when_all_scores_are_valid(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td) / "run"
+            player = {"slug": "model-a", "provider": "provider", "model": "model", "reasoning_effort": "high"}
+            puzzle = {"id": "P1", "path": "P1.json", "difficulty": "简单"}
+            root = run_dir / "games" / player["slug"] / puzzle["id"]
+            expected = []
+            for trial in (1, 2, 3):
+                score = {"puzzle_id": "P1", "trial": trial, "validity": "valid", "status": "solved"}
+                trial_dir = root / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True)
+                (trial_dir / "score.json").write_text(json.dumps(score), encoding="utf-8")
+                expected.append(score)
+
+            scores = br.finalize_scores(run_dir, player, {"puzzles": [puzzle]})
+
+            self.assertEqual(scores, expected)
 
     def test_judge_output_requires_complete_scoring_fields(self):
         fields = {
@@ -916,6 +1437,28 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("API call failed after retrying", text)
         self.assertIn("retryable: true", text)
 
+    async def test_api_role_waits_for_next_quota_window_on_run_429(self):
+        client = br.HermesApiClient(
+            "http://api", "secret", quota_window_seconds=18000,
+            quota_window_start_epoch=1000,
+        )
+        rate_limit = br.HermesApiError(None, "provider returned HTTP 429", retryable=True)
+        with tempfile.TemporaryDirectory() as td:
+            log = Path(td) / "rate-limit.log"
+            with mock.patch.object(client, "turn", side_effect=rate_limit), mock.patch.object(
+                client, "wait_for_next_quota_window", return_value=18000
+            ) as wait:
+                rc, usage = await br.run_api_role(
+                    client, "tb-rate-limit", "rate limit title", "sensenova",
+                    "sensenova-6.8-flash-lite", "default", "prompt", log, 2,
+                )
+            text = log.read_text(encoding="utf-8")
+
+        self.assertEqual(rc, 1)
+        self.assertIsNone(usage)
+        self.assertIn("retryable: true", text)
+        wait.assert_called_once()
+
     async def test_run_game_uses_api_sessions_for_both_roles(self):
         sessions = {}
         runs = {}
@@ -1009,6 +1552,211 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(role_sessions["player"], sessions)
         self.assertEqual(preliminary["process_exit"], {"host": 0, "player": 0})
         self.assertEqual(preliminary["raw"]["player_usage"]["session_id"], role_sessions["player"])
+
+    async def test_run_game_reuses_existing_incomplete_game_mailbox(self):
+        old_runtime = br.RUNTIME
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                fixtures = root / "fixtures"
+                fixtures.mkdir()
+                (fixtures / "puzzle.json").write_text(
+                    json.dumps({"surface": "surface", "solution": "solution"}),
+                    encoding="utf-8",
+                )
+                br.RUNTIME = br.RuntimePaths(fixtures, root / "runs", root / "state.db")
+                player = {"slug": "model-a", "provider": "test", "model": "model-a", "reasoning_effort": "high"}
+                puzzle = {"id": "P1", "path": "puzzle.json"}
+                trial = root / "run/games/model-a/P1/trial-01"
+                trial.mkdir(parents=True)
+                game = {
+                    "format_version": 1,
+                    "game_id": "existing-game",
+                    "status": "player_turn",
+                    "round": 31,
+                    "revision": 73,
+                    "events": [],
+                }
+                (trial / "game.json").write_text(json.dumps(game), encoding="utf-8")
+
+                async def fake_run_api_role(*args, **kwargs):
+                    return 0, None
+
+                async def fake_mark_error(*args, **kwargs):
+                    return None
+
+                with (
+                    mock.patch.object(br, "run_api_role", side_effect=fake_run_api_role),
+                    mock.patch.object(br, "mark_error_if_needed", side_effect=fake_mark_error),
+                ):
+                    await br.run_game(root / "run", player, puzzle, 1, 5, api_client=br.HermesApiClient("", ""))
+
+                resumed = json.loads((trial / "game.json").read_text(encoding="utf-8"))
+                self.assertEqual(resumed["game_id"], "existing-game")
+                self.assertEqual(resumed["round"], 31)
+                self.assertEqual(resumed["revision"], 73)
+                self.assertFalse(list(trial.glob("game.interrupted-*.json")))
+                self.assertTrue((trial / "preliminary.json").exists())
+        finally:
+            br.RUNTIME = old_runtime
+
+    async def test_run_game_recovers_terminal_mailbox_without_new_api_calls(self):
+        old_runtime = br.RUNTIME
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                fixtures = root / "fixtures"
+                fixtures.mkdir()
+                (fixtures / "puzzle.json").write_text(
+                    json.dumps({"surface": "surface", "solution": "solution"}),
+                    encoding="utf-8",
+                )
+                br.RUNTIME = br.RuntimePaths(fixtures, root / "runs", root / "state.db")
+                player = {"slug": "model-a", "provider": "test", "model": "model-a", "reasoning_effort": "high"}
+                puzzle = {"id": "P1", "path": "puzzle.json"}
+                trial = root / "run/games/model-a/P1/trial-01"
+                trial.mkdir(parents=True)
+                game = {
+                    "format_version": 1,
+                    "game_id": "terminal-game",
+                    "status": "max_rounds",
+                    "round": 50,
+                    "revision": 101,
+                    "events": [],
+                }
+                (trial / "game.json").write_text(json.dumps(game), encoding="utf-8")
+
+                with mock.patch.object(br, "run_api_role", side_effect=AssertionError("API must not run")):
+                    await br.run_game(
+                        root / "run", player, puzzle, 1, 5,
+                        api_client=br.HermesApiClient("", ""),
+                    )
+
+                recovered = json.loads((trial / "preliminary.json").read_text(encoding="utf-8"))
+                self.assertEqual(recovered["status"], "max_rounds")
+                self.assertEqual(recovered["raw"]["rounds"], 50)
+                self.assertFalse((trial / "sessions.json").exists())
+        finally:
+            br.RUNTIME = old_runtime
+
+    async def test_run_player_judges_each_puzzle_before_starting_next_puzzle(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            player = {
+                "slug": "model-a",
+                "provider": "test",
+                "model": "model-a",
+                "reasoning_effort": "high",
+            }
+            manifest = {
+                "puzzles": [
+                    {"id": "P1", "path": "puzzles/P1.json"},
+                    {"id": "P2", "path": "puzzles/P2.json"},
+                ]
+            }
+            events = []
+
+            async def fake_run_game(run_dir, player, puzzle, trial, timeout_s):
+                events.append(("game", puzzle["id"], trial))
+                trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True, exist_ok=True)
+                (trial_dir / "game.json").write_text(json.dumps({"status": "solved"}), encoding="utf-8")
+                (trial_dir / "preliminary.json").write_text("{}", encoding="utf-8")
+
+            async def fake_run_judge(run_dir, player, puzzle, timeout_s):
+                events.append(("judge", puzzle["id"]))
+                return run_dir / "games" / player["slug"] / puzzle["id"] / "judge.json"
+
+            def fake_finalize(run_dir, player, partial_manifest):
+                ids = tuple(puzzle["id"] for puzzle in partial_manifest["puzzles"])
+                events.append(("finalize", ids))
+                return [
+                    {"puzzle_id": puzzle_id, "trial": trial, "validity": "valid", "status": "solved"}
+                    for puzzle_id in ids
+                    for trial in (1, 2, 3)
+                ]
+
+            def fake_aggregate(scores):
+                return {"valid_games": 6, "invalid_games": 0}
+
+            with (
+                mock.patch.object(br, "run_game", side_effect=fake_run_game),
+                mock.patch.object(br, "run_judge", side_effect=fake_run_judge),
+                mock.patch.object(br, "finalize_scores", side_effect=fake_finalize),
+                mock.patch.object(br, "aggregate_scores", side_effect=fake_aggregate),
+            ):
+                summary = await br.run_player(run_dir, player, manifest, 3, 3, 10, max_attempts=6)
+
+            p1_judge = events.index(("judge", "P1"))
+            p2_game = next(index for index, event in enumerate(events) if event[:2] == ("game", "P2"))
+            self.assertLess(p1_judge, p2_game)
+            self.assertEqual(summary["valid_games"], 6)
+
+    async def test_run_player_fills_three_global_game_slots_while_puzzle_waits(self):
+        with tempfile.TemporaryDirectory() as td:
+            run_dir = Path(td)
+            player = {
+                "slug": "model-a",
+                "provider": "test",
+                "model": "model-a",
+                "reasoning_effort": "high",
+            }
+            manifest = {
+                "puzzles": [
+                    {"id": "P1", "path": "puzzles/P1.json"},
+                    {"id": "P2", "path": "puzzles/P2.json"},
+                ]
+            }
+            for trial in (2, 3):
+                trial_dir = run_dir / "games/model-a/P1" / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True, exist_ok=True)
+                (trial_dir / "game.json").write_text(json.dumps({"status": "solved"}), encoding="utf-8")
+                (trial_dir / "preliminary.json").write_text("{}", encoding="utf-8")
+            events = []
+            active = 0
+            max_active = 0
+
+            async def fake_run_game(run_dir, player, puzzle, trial, timeout_s):
+                nonlocal active, max_active
+                active += 1
+                max_active = max(max_active, active)
+                events.append(("game", puzzle["id"], trial))
+                await asyncio.sleep(0.01)
+                trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
+                trial_dir.mkdir(parents=True, exist_ok=True)
+                (trial_dir / "game.json").write_text(json.dumps({"status": "solved"}), encoding="utf-8")
+                (trial_dir / "preliminary.json").write_text("{}", encoding="utf-8")
+                active -= 1
+
+            async def fake_run_judge(run_dir, player, puzzle, timeout_s):
+                events.append(("judge", puzzle["id"]))
+                return run_dir / "games" / player["slug"] / puzzle["id"] / "judge.json"
+
+            def fake_finalize(run_dir, player, partial_manifest):
+                ids = tuple(puzzle["id"] for puzzle in partial_manifest["puzzles"])
+                events.append(("finalize", ids))
+                return [
+                    {"puzzle_id": puzzle_id, "trial": trial, "validity": "valid", "status": "solved"}
+                    for puzzle_id in ids
+                    for trial in (1, 2, 3)
+                ]
+
+            def fake_aggregate(scores):
+                return {"valid_games": 6, "invalid_games": 0}
+
+            with (
+                mock.patch.object(br, "run_game", side_effect=fake_run_game),
+                mock.patch.object(br, "run_judge", side_effect=fake_run_judge),
+                mock.patch.object(br, "finalize_scores", side_effect=fake_finalize),
+                mock.patch.object(br, "aggregate_scores", side_effect=fake_aggregate),
+            ):
+                summary = await br.run_player(run_dir, player, manifest, 3, 3, 10, max_attempts=6)
+
+            p1_judge = events.index(("judge", "P1"))
+            p2_game = next(index for index, event in enumerate(events) if event[:2] == ("game", "P2"))
+            self.assertEqual(max_active, 3)
+            self.assertLess(p2_game, p1_judge)
+            self.assertEqual(summary["valid_games"], 6)
 
     async def test_run_player_requeues_only_invalid_slots(self):
         with tempfile.TemporaryDirectory() as td:
@@ -1209,6 +1957,131 @@ class BenchmarkRunnerAsyncTests(unittest.IsolatedAsyncioTestCase):
                 [call.args[0] for call in sleep.await_args_list],
                 [2.0, 4.0],
             )
+
+    def test_archive_run_transcripts_per_model_without_numeric_results(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            run_dir = root / "runs" / "run-example"
+            slug = "demo-model-high"
+            game_dir = run_dir / "games" / slug / "SPB-C-E-01" / "trial-01"
+            game_dir.mkdir(parents=True)
+            transcript = game_dir / "game.json"
+            transcript.write_text('{"events":[{"type":"question"}]}', encoding="utf-8")
+            score = game_dir / "score.json"
+            score.write_text('{"scores":{"total":99}}', encoding="utf-8")
+            summary = run_dir / "summary.json"
+            summary.write_text('{"models":[{"overall_score":99}]}', encoding="utf-8")
+
+            archives = br.archive_run_transcripts(
+                run_dir,
+                root / "runs",
+                [{"slug": slug}],
+            )
+
+            archive = root / "runs" / "archive" / f"{slug}.zip"
+            self.assertEqual(archives, [archive])
+            with br.zipfile.ZipFile(archive) as package:
+                member = f"transcripts/run-example/games/{slug}/SPB-C-E-01/trial-01/game.json"
+                self.assertEqual(package.namelist(), [member])
+                self.assertEqual(package.read(member), transcript.read_bytes())
+                self.assertIsNone(package.testzip())
+            master = root / "runs" / "archive" / "turtlebench-transcripts-by-model.zip"
+            with br.zipfile.ZipFile(master) as package:
+                self.assertEqual(package.namelist(), [f"model-zips/{slug}.zip"])
+                self.assertIsNone(package.testzip())
+            self.assertEqual(score.read_text(encoding="utf-8"), '{"scores":{"total":99}}')
+            self.assertTrue(summary.exists())
+
+    def test_archive_run_transcripts_rebuilds_cumulative_model_archive(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            runs_root = root / "runs"
+            slug = "demo-model-high"
+            player = [{"slug": slug}]
+            first_run = runs_root / "run-one"
+            first_dir = first_run / "games" / slug / "SPB-C-E-01" / "trial-01"
+            first_dir.mkdir(parents=True)
+            first_transcript = first_dir / "game.json"
+            first_transcript.write_text('{"events":[]}', encoding="utf-8")
+
+            archive = br.archive_run_transcripts(first_run, runs_root, player)[0]
+            first_transcript.write_text('{"events":[{"type":"response"}]}', encoding="utf-8")
+            self.assertEqual(br.archive_run_transcripts(first_run, runs_root, player)[0], archive)
+
+            second_run = runs_root / "run-two"
+            second_dir = second_run / "games" / slug / "SPB-C-E-02" / "trial-02"
+            second_dir.mkdir(parents=True)
+            second_transcript = second_dir / "game.json"
+            second_transcript.write_text('{"events":[{"type":"question"}]}', encoding="utf-8")
+            self.assertEqual(br.archive_run_transcripts(second_run, runs_root, player)[0], archive)
+
+            first_member = f"transcripts/run-one/games/{slug}/SPB-C-E-01/trial-01/game.json"
+            second_member = f"transcripts/run-two/games/{slug}/SPB-C-E-02/trial-02/game.json"
+            with br.zipfile.ZipFile(archive) as package:
+                self.assertEqual(package.namelist(), [first_member, second_member])
+                self.assertEqual(package.read(first_member), first_transcript.read_bytes())
+                self.assertEqual(package.read(second_member), second_transcript.read_bytes())
+                self.assertIsNone(package.testzip())
+
+    async def test_async_main_archives_after_summary_and_report(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            runs_dir = root / "runs"
+            fixtures = root / "fixtures"
+            fixtures.mkdir()
+            player = {
+                "slug": "archive-smoke",
+                "display_name": "Archive smoke",
+                "provider": "demo",
+                "model": "demo-model",
+                "reasoning_effort": "high",
+            }
+            args = br.build_parser().parse_args([
+                "--run-id", "archive-smoke-run",
+                "--players", player["slug"],
+                "--fixtures", str(fixtures),
+                "--runs-dir", str(runs_dir),
+                "--state-db", str(root / "state.db"),
+            ])
+            summary = {
+                "player": player,
+                "overall_score": 50.0,
+                "success_rate": 0.5,
+                "rounds_median": 3.0,
+                "hints_used_rate": 0.0,
+                "valid_games": 1,
+                "invalid_games": 0,
+                "strata": {},
+            }
+
+            async def fake_run_player(run_dir, selected_player, manifest, *args, **kwargs):
+                trial = run_dir / "games" / selected_player["slug"] / "SPB-C-E-01" / "trial-01"
+                trial.mkdir(parents=True)
+                (trial / "game.json").write_text('{"events":[]}', encoding="utf-8")
+                (trial / "score.json").write_text('{"scores":{"total":50}}', encoding="utf-8")
+                return summary
+
+            real_archive = br.archive_run_transcripts
+            def verify_order_then_archive(run_dir, archive_root, players):
+                self.assertTrue((run_dir / "summary.json").is_file())
+                self.assertTrue((run_dir / "REPORT.md").is_file())
+                return real_archive(run_dir, archive_root, players)
+
+            client = mock.Mock()
+            with (
+                mock.patch.object(br, "PLAYER_MATRIX", [player]),
+                mock.patch.object(br, "ensure_suite"),
+                mock.patch.object(br, "verify_suite", return_value={"puzzles": []}),
+                mock.patch.object(br, "HermesApiClient", return_value=client),
+                mock.patch.object(br, "load_progress_config", return_value=None),
+                mock.patch.object(br, "run_player", side_effect=fake_run_player),
+                mock.patch.object(br, "archive_run_transcripts", side_effect=verify_order_then_archive),
+            ):
+                await br.async_main(args)
+
+            archive = runs_dir / "archive" / "archive-smoke.zip"
+            self.assertTrue(archive.is_file())
+            self.assertTrue((runs_dir / "archive-smoke-run/games/archive-smoke/SPB-C-E-01/trial-01/score.json").is_file())
 
 
 if __name__ == "__main__":
