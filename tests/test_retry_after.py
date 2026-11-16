@@ -179,7 +179,7 @@ class RateLimitRoleTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("retryable: false", logged)
 
 
-    async def test_game_closes_its_peer_before_propagating_a_quota_pause(self):
+    async def test_game_pauses_its_peer_before_propagating_a_quota_pause(self):
         client = br.HermesApiClient("http://example.invalid", "")
         error = br.HermesApiError(429, "Token plan limit reached")
         player = {"slug": "player-a", "provider": "provider-a", "model": "model-a", "reasoning_effort": "max"}
@@ -194,7 +194,7 @@ class RateLimitRoleTests(unittest.IsolatedAsyncioTestCase):
                 if session_id.endswith("-player"):
                     raise error
                 peers.append(asyncio.current_task())
-                while br.load_json(game_path)["status"] != "error":
+                while not br.load_json(game_path).get("infrastructure_pause"):
                     await asyncio.sleep(0)
                 state["peer_finished"] = True
                 return 0, {}
@@ -202,7 +202,9 @@ class RateLimitRoleTests(unittest.IsolatedAsyncioTestCase):
             caught = None
             with mock.patch.object(br, "run_api_role", side_effect=role), mock.patch.object(
                 br, "host_prompt", return_value="host instructions",
-            ), mock.patch.object(br, "player_prompt", return_value="player instructions"):
+            ), mock.patch.object(br, "player_prompt", return_value="player instructions"), mock.patch.object(
+                client, "_session_usage", return_value={"api_call_count": 0},
+            ):
                 try:
                     await asyncio.wait_for(br.run_game(root, player, puzzle, 1, 10, client), 1)
                 except Exception as failure:
@@ -215,7 +217,7 @@ class RateLimitRoleTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.gather(*peers, return_exceptions=True)
 
         self.assertIs(caught, error)
-        self.assertEqual(game_status, "error")
+        self.assertEqual(game_status, "awaiting_host")
         self.assertTrue(finished)
 
 if __name__ == "__main__":

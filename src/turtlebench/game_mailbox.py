@@ -156,6 +156,8 @@ def append_event(
         _check_revision(state, expected_revision)
         if state["status"] in TERMINAL_STATUSES:
             raise ProtocolError(f"游戏已经结束：{state['status']}")
+        if state.get("infrastructure_pause"):
+            raise ProtocolError("Game paused after an API interruption; resume before writing.")
 
         status = state["status"]
         if event_type == "surface":
@@ -222,6 +224,8 @@ def add_control(
         _check_revision(state, expected_revision)
         if state["status"] in TERMINAL_STATUSES:
             return state
+        if command == "hint" and state.get("infrastructure_pause"):
+            raise ProtocolError("Game paused after an API interruption; resume before requesting hints.")
         if command == "hint":
             limit = state.setdefault("player_hint_limit", 2)
             used = state.setdefault("player_hints_used", 0)
@@ -258,6 +262,36 @@ def _relevant(event: dict[str, Any], role: str) -> bool:
     }
 
 
+def pause_for_infrastructure(path: Path, reason: str) -> dict[str, Any]:
+    """Freeze an interrupted game without changing its public transcript."""
+    with _locked(path, exclusive=True):
+        state = _read_unlocked(path)
+        if state["status"] in TERMINAL_STATUSES or state.get("infrastructure_pause"):
+            return state
+        started_at = _now()
+        state["infrastructure_pause"] = {"started_at": started_at, "reason": reason}
+        state.setdefault("rate_limit_waits", []).append({
+            "actor": "player", "started_at": started_at,
+            "source": "infrastructure_pause",
+        })
+        _write_unlocked(path, state)
+        return state
+
+
+def resume_after_infrastructure(path: Path) -> dict[str, Any]:
+    """Unfreeze the same game and close its recorded external wait."""
+    with _locked(path, exclusive=True):
+        state = _read_unlocked(path)
+        pause = state.pop("infrastructure_pause", None)
+        if pause is not None:
+            ended_at = _now()
+            for wait in state.get("rate_limit_waits", []):
+                if wait.get("source") == "infrastructure_pause" and wait["started_at"] == pause["started_at"]:
+                    wait["ended_at"] = ended_at
+            _write_unlocked(path, state)
+        return state
+
+
 def record_rate_limit_wait(path: Path, actor: str, wait: dict[str, Any]) -> None:
     """Persist an observed runner wait without adding a public game event."""
     with _locked(path, exclusive=True):
@@ -282,7 +316,7 @@ def rate_limit_wait_seconds(
         if actor is not None and wait["actor"] != actor:
             continue
         left = max(start, datetime.fromisoformat(wait["started_at"]))
-        right = min(end, datetime.fromisoformat(wait.get("ended_at") or wait["until"]))
+        right = min(end, datetime.fromisoformat(wait.get("ended_at") or wait.get("until") or end.isoformat()))
         if right > left:
             intervals.append((left, right))
     covered = 0.0
@@ -316,8 +350,9 @@ def wait_for_update(
             event for event in state["events"]
             if event["seq"] > after_revision and _relevant(event, role)
         ]
-        if events or state["status"] in TERMINAL_STATUSES:
+        if events or state["status"] in TERMINAL_STATUSES or state.get("infrastructure_pause"):
             return {
+                **({"paused": True} if state.get("infrastructure_pause") else {}),
                 "timeout": False,
                 "revision": state["revision"],
                 "status": state["status"],

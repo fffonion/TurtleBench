@@ -227,11 +227,23 @@ class HermesApiClient:
         normalized = str(exc).casefold()
         return any(marker in normalized for marker in RPM_RATE_LIMIT_MARKERS)
 
+    def _check_cancelled(self) -> None:
+        event = getattr(self._retry_state, "cancellation_event", None)
+        if event is not None and event.is_set():
+            raise asyncio.CancelledError()
+
+    def _sleep(self, seconds: float) -> None:
+        event = getattr(self._retry_state, "cancellation_event", None)
+        if event is None:
+            time.sleep(seconds)
+        elif event.wait(seconds):
+            raise asyncio.CancelledError()
+
     def wait_out_rpm_limit(self) -> float:
         delay = max(0.0, self.rpm_backoff_seconds)
         if delay:
             print(f"RPM limit; sleeping {delay:.0f}s before retrying", flush=True)
-            time.sleep(delay)
+            self._sleep(delay)
             self._quota_wait_seconds_total += delay
         return delay
 
@@ -262,7 +274,7 @@ class HermesApiClient:
                 f"HTTP 429 rate limit; sleeping {delay:.0f}s until quota window {wake_at}",
                 flush=True,
             )
-            time.sleep(delay)
+            self._sleep(delay)
             self._quota_wait_seconds_total += delay
         return delay
 
@@ -341,7 +353,7 @@ class HermesApiClient:
         if callback is not None:
             callback(event)
         try:
-            time.sleep(max(0.0, delay))
+            self._sleep(max(0.0, delay))
         finally:
             waited = max(0.0, time.monotonic() - started)
             self._quota_wait_seconds_total += waited
@@ -362,6 +374,7 @@ class HermesApiClient:
         last_error: BaseException | None = None
         attempt = 0
         while attempt < self.retry_attempts:
+            self._check_cancelled()
             if time.monotonic() >= deadline:
                 if last_error is not None:
                     raise last_error
@@ -396,7 +409,7 @@ class HermesApiClient:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise
-                time.sleep(min(self._retry_delay(attempt, exc), remaining))
+                self._sleep(min(self._retry_delay(attempt, exc), remaining))
                 attempt += 1
         if last_error is not None:
             raise last_error
@@ -476,13 +489,25 @@ class HermesApiClient:
 
     def turn(
         self, *, on_rate_limit_wait: Callable[[dict[str, Any]], None] | None = None,
+        cancellation_event: threading.Event | None = None,
         **kwargs: Any,
     ) -> HermesTurnResult:
         self._retry_state.on_rate_limit_wait = on_rate_limit_wait
+        self._retry_state.cancellation_event = cancellation_event
+        self._retry_state.active_run_id = None
         try:
             return self._turn(**kwargs)
         finally:
+            run_id = self._retry_state.active_run_id
+            self._retry_state.cancellation_event = None
             self._retry_state.on_rate_limit_wait = None
+            self._retry_state.active_run_id = None
+            if run_id and cancellation_event is not None and cancellation_event.is_set():
+                with suppress(HermesApiError, TimeoutError, OSError):
+                    self._request_with_retry(
+                        "POST", f"v1/runs/{urllib.parse.quote(run_id, safe='')}/stop", {},
+                        expected=(200, 202, 409), deadline=time.monotonic() + 30,
+                    )
 
     def _turn(
         self,
@@ -501,6 +526,7 @@ class HermesApiClient:
         def current_deadline() -> float:
             return deadline + (self._quota_wait_seconds_total - quota_wait_at_start)
 
+        self._check_cancelled()
         self._ensure_session(session_id, session_title, model, current_deadline())
         before = self._session_usage(session_id, current_deadline())
         messages = self._request_with_retry(
@@ -531,6 +557,7 @@ class HermesApiClient:
                 "Hermes API run response omitted run_id",
                 retryable=False,
             )
+        self._retry_state.active_run_id = run_id
         run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
         while True:
             while time.monotonic() < current_deadline():
@@ -539,7 +566,7 @@ class HermesApiClient:
                         "GET", run_path, deadline=current_deadline()
                     )
                 except (TimeoutError, OSError):
-                    time.sleep(min(self.poll_interval, max(0.0, current_deadline() - time.monotonic())))
+                    self._sleep(min(self.poll_interval, max(0.0, current_deadline() - time.monotonic())))
                     continue
                 state = str(status.get("status", ""))
                 if state == "completed":
@@ -570,11 +597,15 @@ class HermesApiClient:
                     if not self._resubmit_after_rate_limit(failure):
                         raise failure
                     break
-                time.sleep(min(self.poll_interval, max(0.0, current_deadline() - time.monotonic())))
+                self._sleep(min(self.poll_interval, max(0.0, current_deadline() - time.monotonic())))
             else:
                 break
             if time.monotonic() >= current_deadline():
                 break
+            body["conversation_history"] = self._request_with_retry(
+                "GET", f"api/sessions/{urllib.parse.quote(session_id, safe='')}/messages",
+                deadline=current_deadline(),
+            ).get("data", [])
             started = self._request_with_retry(
                 "POST", "v1/runs", body, expected=(202,), deadline=current_deadline()
             )
@@ -585,6 +616,7 @@ class HermesApiClient:
                     "Hermes API run response omitted run_id",
                     retryable=False,
                 )
+            self._retry_state.active_run_id = run_id
             run_path = f"v1/runs/{urllib.parse.quote(run_id, safe='')}"
         try:
             self._request_with_retry(
@@ -1309,9 +1341,12 @@ async def run_api_role(
     prompt: str,
     log_path: Path,
     timeout_s: int,
+    cancellation_event: threading.Event | None = None,
 ) -> tuple[int, dict[str, Any] | None]:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     turn_options: dict[str, Any] = {}
+    if cancellation_event is not None:
+        turn_options["cancellation_event"] = cancellation_event
     game_path = log_path.parent / "game.json"
     if log_path.stem in {"host", "player"} and game_path.is_file():
         turn_options["on_rate_limit_wait"] = lambda wait: game_mailbox.record_rate_limit_wait(
@@ -1331,8 +1366,16 @@ async def run_api_role(
         )
     except TimeoutError as exc:
         _write_api_role_failure(log_path, session_id, exc, retryable=True)
+        if log_path.stem in {"host", "player"} and game_path.is_file():
+            raise
         return 124, None
     except Exception as exc:
+        if log_path.stem in {"host", "player"} and game_path.is_file():
+            retryable = _retryable_api_exception(exc)
+            if client.is_rate_limit_error(exc) and getattr(exc, "retry_after", None) is None and client.quota_window_seconds is None:
+                retryable = False
+            _write_api_role_failure(log_path, session_id, exc, retryable)
+            raise
         if (
             client.is_rate_limit_error(exc)
             and getattr(exc, "retry_after", None) is None
@@ -1433,6 +1476,18 @@ def recover_terminal_preliminary(
     return path
 
 
+def save_game_player_totals(trial_dir: Path, usage: dict[str, Any] | None) -> dict[str, Any]:
+    game = load_json(trial_dir / "game.json")
+    raw = compute_raw_metrics(game)
+    raw["player_usage"] = usage
+    atomic_json(trial_dir / "player_totals.json", {
+        "game_id": game.get("game_id"), "status": game.get("status"),
+        "player_active_time_s": raw["player_active_time_s"],
+        "total_wall_time_s": raw["total_wall_time_s"], "player_usage": usage,
+    })
+    return raw
+
+
 async def run_game(
     run_dir: Path,
     player: dict[str, str],
@@ -1463,46 +1518,87 @@ async def run_game(
     if not game_path.exists():
         init_game(game_path, f"{player['slug']}-{puzzle['id']}-t{trial:02d}")
     game_id = str(load_json(game_path)["game_id"])
+    session_path = trial_dir / "sessions.json"
+    resuming_session = session_path.exists()
     session_suffix = uuid.uuid4().hex[:12]
-    sessions = {
-        "source": SESSION_SOURCE,
-        "host": f"tb-{session_suffix}-host",
-        "player": f"tb-{session_suffix}-player",
-    }
-    atomic_json(trial_dir / "sessions.json", sessions)
+    if resuming_session:
+        sessions = load_json(session_path)
+        history = trial_dir / "resume-history" / session_suffix
+        for role in ("host", "player"):
+            log = trial_dir / f"{role}.log"
+            if log.is_file():
+                history.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(log, history / log.name)
+        game_mailbox.resume_after_infrastructure(game_path)
+    else:
+        sessions = {
+            "source": SESSION_SOURCE,
+            "host": f"tb-{session_suffix}-host",
+            "player": f"tb-{session_suffix}-player",
+        }
+        atomic_json(session_path, sessions)
+    resume_note = (
+        "\nContinue the same game after an API interruption. Snapshot first. "
+        "When it is your turn, act on the already saved question or response; "
+        "otherwise wait. Do not replay committed questions, answers or hint requests."
+    ) if resuming_session else ""
+    cancellation_event = threading.Event()
     host_task = asyncio.create_task(run_api_role(
         api_client,
         sessions["host"],
         f"TurtleBench host {player['slug']} {puzzle['id']} t{trial:02d} {session_suffix}",
         HOST["provider"], HOST["model"], HOST["reasoning_effort"],
-        host_prompt(RUNTIME.fixtures / puzzle["path"], game_path, game_id),
-        trial_dir / "host.log", timeout_s,
+        host_prompt(RUNTIME.fixtures / puzzle["path"], game_path, game_id) + resume_note,
+        trial_dir / "host.log", timeout_s, cancellation_event=cancellation_event,
     ))
     player_task = asyncio.create_task(run_api_role(
         api_client,
         sessions["player"],
         f"TurtleBench player {player['slug']} {puzzle['id']} t{trial:02d} {session_suffix}",
         player["provider"], player["model"], player["reasoning_effort"],
-        player_prompt(game_path, game_id),
-        trial_dir / "player.log", timeout_s,
+        player_prompt(game_path, game_id) + resume_note,
+        trial_dir / "player.log", timeout_s, cancellation_event=cancellation_event,
     ))
     try:
         (host_rc, _host_usage), (player_rc, player_usage) = await asyncio.gather(host_task, player_task)
-    except HermesApiError as exc:
-        await mark_error_if_needed(game_path, str(exc))
-        await asyncio.gather(host_task, player_task, return_exceptions=True)
-        raise
+    except BaseException as exc:
+        game_mailbox.pause_for_infrastructure(game_path, "api_interruption")
+        cancellation_event.set()
+        results = await asyncio.gather(host_task, player_task, return_exceptions=True)
+        usage = (_optional_json(trial_dir / "player_totals.json") or {}).get("player_usage")
+        try:
+            usage = await asyncio.to_thread(
+                api_client._session_usage, sessions["player"], time.monotonic() + 30,
+            )
+        except (HermesApiError, TimeoutError, OSError):
+            pass
+        save_game_player_totals(trial_dir, usage)
+        game = load_json(game_path)
+        if not isinstance(exc, (HermesApiError, TimeoutError, OSError)) or game["status"] not in {"solved", "max_rounds"}:
+            raise
+        host_rc, player_rc = [
+            result[0] if isinstance(result, tuple) else (124 if isinstance(result, TimeoutError) else 1)
+            for result in results
+        ]
+        player_usage = usage
+        history = trial_dir / "resume-history" / uuid.uuid4().hex[:12]
+        for role in ("host", "player"):
+            log = trial_dir / f"{role}.log"
+            if has_infrastructure_api_failure(log):
+                history.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(log, history / log.name)
+                log.write_text(
+                    f"session_id: {sessions[role]}\nMailbox completed: {game['status']}\n"
+                    f"Original transport log: {history / log.name}\n",
+                    encoding="utf-8",
+                )
     await mark_error_if_needed(game_path, f"角色进程提前退出 host={host_rc} player={player_rc}")
     game = load_json(game_path)
-    raw = compute_raw_metrics(game)
-    raw["player_usage"] = player_usage
-    atomic_json(trial_dir / "player_totals.json", {
-        "game_id": game.get("game_id"),
-        "status": game.get("status"),
-        "player_active_time_s": raw["player_active_time_s"],
-        "total_wall_time_s": raw["total_wall_time_s"],
-        "player_usage": raw["player_usage"],
-    })
+    if resuming_session:
+        player_usage = await asyncio.to_thread(
+            api_client._session_usage, sessions["player"], time.monotonic() + 30,
+        )
+    raw = save_game_player_totals(trial_dir, player_usage)
     preliminary = {
         "suite_version": "fixed-v1", "puzzle_id": puzzle["id"], "trial": trial,
         "player": {k: player[k] for k in ("provider", "model", "reasoning_effort")},
