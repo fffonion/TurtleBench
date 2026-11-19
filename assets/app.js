@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "ernie-20261113T081424Z";
+const DATA_CACHE_BUSTER = "hy4flash-20261119T154749Z";
 
 const MESSAGES = {
   zh: {
