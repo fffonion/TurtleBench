@@ -2,6 +2,60 @@
   "run_id": "fixed-v1-unified-comparison-20260924",
   "models": [
     {
+      "slug": "openai-codex-gpt-6-2-sol-high",
+      "name": "OpenAI Codex / GPT-6.2 Sol High",
+      "provider": "openai-codex",
+      "model": "gpt-6.2-sol",
+      "family": "gpt-6.2-sol",
+      "reasoning_effort": "high",
+      "overall_score": 93.1,
+      "subjective_score": 93.1,
+      "formula_score": 88.65,
+      "formula_score_version": "single",
+      "formula_provisional": false,
+      "formula_rank_eligible": true,
+      "formula_coverage": 1.0,
+      "formula_observed_coverage": 1.0,
+      "formula_baseline_component": 38.56,
+      "formula_solve_rate_coefficient": 0.500871780911417,
+      "formula_solve_component": 50.09,
+      "question_quality_score": 9.364,
+      "formula_trial_records": 36,
+      "formula_terminal_trial_records": 36,
+      "formula_expected_trials": 36,
+      "formula_solved_trials": 36,
+      "formula_solve_rate": 1.0,
+      "formula_puzzles_covered": 12,
+      "formula_puzzles_observed": 12,
+      "formula_puzzles_total": 12,
+      "formula_infrastructure_trials": 0,
+      "formula_pending_trials": 0,
+      "formula_solved_puzzles": 12,
+      "formula_mixed_puzzles": 0,
+      "formula_stability_score": 1.0,
+      "formula_repeat_consistency": 1.0,
+      "formula_question_quality_score": 9.364,
+      "formula_strata": {},
+      "games": 36,
+      "active_time_s": 5084.162,
+      "compression_time_s": 0.0,
+      "tokens": {
+        "total": 8723598,
+        "input": 3824978,
+        "output": 117564,
+        "cache_read": 4781056,
+        "cache_write": 0
+      },
+      "price_usd": null,
+      "pricing": null,
+      "behavior": {
+        "solve_rate": 1.0,
+        "rounds_median": 13.0,
+        "hints_median": 0.0,
+        "samples": 36
+      }
+    },
+    {
       "slug": "gpt-6-astra-high",
       "name": "OpenAI Codex / GPT-6 Astra",
       "provider": "openai-codex",
@@ -3232,5 +3286,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-11-19T15:47:49.374291+00:00"
+  "published_at": "2026-11-21T19:25:19.538551+00:00"
 }
