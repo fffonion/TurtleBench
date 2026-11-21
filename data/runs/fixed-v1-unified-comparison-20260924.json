@@ -3,7 +3,7 @@
   "models": [
     {
       "slug": "openai-codex-gpt-6-2-sol-high",
-      "name": "OpenAI Codex / GPT-6.2 Sol High",
+      "name": "OpenAI Codex / GPT-6.2 Sol",
       "provider": "openai-codex",
       "model": "gpt-6.2-sol",
       "family": "gpt-6.2-sol",
@@ -46,14 +46,34 @@
         "cache_read": 4781056,
         "cache_write": 0
       },
-      "price_usd": null,
-      "pricing": null,
+      "price_usd": {
+        "input": 7.649956,
+        "output": 1.17564,
+        "cache_read": 0.4781056,
+        "cache_write": 0.0,
+        "total": 9.3037016
+      },
+      "pricing": {
+        "source": "https://models.dev",
+        "source_model_id": "openai/gpt-6.2-sol",
+        "source_provider_id": "openai",
+        "fetched_at": "2026-11-21T00:00:00+00:00",
+        "usd_per_million_tokens": {
+          "input": 2.0,
+          "output": 10.0,
+          "cache_read": 0.1,
+          "cache_write": 2.5
+        }
+      },
       "behavior": {
         "solve_rate": 1.0,
         "rounds_median": 13.0,
         "hints_median": 0.0,
         "samples": 36
-      }
+      },
+      "status": "completed",
+      "partial": false,
+      "stop_reason": null
     },
     {
       "slug": "gpt-6-astra-high",
@@ -3286,5 +3306,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-11-21T19:25:19.538551+00:00"
+  "published_at": "2026-11-21T19:41:46.092893+00:00"
 }
