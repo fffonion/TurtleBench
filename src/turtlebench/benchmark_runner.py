@@ -101,6 +101,46 @@ PLAYER_MATRIX = [
 ]
 TERMINAL_STATES = {"solved", "max_rounds", "stopped", "error"}
 TERMINAL_VALIDITIES = {"valid", "invalid_host", "invalid_infrastructure"}
+RESUMED_PAUSE_MARKERS = ("infrastructure_pause", "rate_limit_wait")
+NON_RESUMABLE_FAULT_MARKERS = (
+    "主持泄露", "泄露", "关键矛盾", "矛盾", "提前退出", "轨迹不足", "协议错误",
+)
+FAULT_NEGATIONS = ("未见", "未发现", "未出现", "不存在", "没有", "未经")
+
+
+def mentions_unresolved_fault(reason: str) -> bool:
+    """True when the reason asserts a non-infrastructure fault, ignoring negated clauses."""
+
+    for sentence in re.split(r"[；;。\n]", str(reason or "")):
+        if any(negation in sentence for negation in FAULT_NEGATIONS):
+            continue
+        if any(marker in sentence for marker in NON_RESUMABLE_FAULT_MARKERS):
+            return True
+    return False
+
+
+def settle_infrastructure_validity(
+    status: Any, failed_roles: list[str], judge_validity: Any, judge_reason: Any = "",
+) -> str:
+    """Settle a judge infrastructure verdict when the pause was already resumed.
+
+    A paused game that later reached a terminal state on the same session is not an
+    infrastructure failure: the pause record only proves the run survived a rate limit.
+    """
+
+    if failed_roles:
+        return "invalid_infrastructure"
+    verdict = str(judge_validity or "valid")
+    reason = str(judge_reason or "")
+    if verdict != "invalid_infrastructure":
+        return verdict
+    if str(status) not in {"solved", "max_rounds"}:
+        return verdict
+    if mentions_unresolved_fault(reason):
+        return verdict
+    if not any(marker in reason for marker in RESUMED_PAUSE_MARKERS):
+        return verdict
+    return "valid"
 SESSION_SOURCE = "turtle-soup"
 TARGET_VALID_GAMES = 36
 FIXTURE_RELEASE_URL = "https://github.com/fffonion/TurtleBench/releases/download/fixtures-v1/turtlebench-fixed-v1.zip"
@@ -1619,6 +1659,8 @@ def judge_prompt(puzzle_path: Path, trial_dirs: list[Path], output_path: Path, p
 
 读取题目 solution/key_facts 仅用于核验主持判断及最终闭合度；不得把私密内容写入输出。逐局检查：主持泄露、关键矛盾、把 unspecified 反复判为“是也不是”、提示顺序、提前退出。validity 只能为 valid、invalid_host、invalid_infrastructure。玩家自身失败、拒绝、协议错误仍为 valid。
 
+若某局最终 status 为 solved 或 max_rounds，且 host.log、player.log 未见角色中途失败退出，则 game.json 元数据中 source=infrastructure_pause 的 rate_limit_wait 记录代表一次已被同局续跑消化的暂停（同一 game_id、同一 session、轮次连续），validity 必须为 valid：不得因该暂停记录判 invalid_infrastructure。仅当该局未终局、公开日志显示角色中途失败退出，或出现主持泄露、关键矛盾、提前退出时，才判 invalid_infrastructure。
+
 对每局公开问题逐条分类并输出以下字段：trial；validity；validity_reason；atomic_question_rate、useful_constraint_rate、redundant_question_rate、unsupported_story_guess_rate（0到1）；irrelevant_branch_max；contradiction_count；partial_misread_count；excluded_revisit_count；protocol_recovery_failure_count；reasoning_chain_parts（承接性、层级推进、跨异常连接、分支回收，各0到5）；question_information_parts（原子性、压缩能力、去重与聚焦，各0到5）；final_closure（0到5）；hint_effective_count；hint_ineffective_count；hint_early_count；hint_consecutive（布尔）；hint_hoarding（布尔）；failure_tags；notes。failure_tags 仅用规范标签。notes 只写可由公开轨迹核验的简短依据，禁止写汤底、未发布提示或 key_facts。
 
 将三个对象组成 JSON 数组。只允许读取本消息列出的 `20260918` 路径和对应 fixed-v1 题目；禁止访问其他 matrix 目录或旧 run。必须真实执行 terminal 写文件，最终回复不能代替文件写入。使用 `/home/wow/workspace/TurtleBench/.venv/bin/python` 将合法 UTF-8 JSON 原子写入 {output_path}；写后立即用同一绝对解释器检查 `test -s`、重新读取并验证数组恰有3项、trial为1到3。只有现场文件存在且验证通过后，最终回复才报告写入成功与路径。
@@ -1842,11 +1884,18 @@ def finalize_scores(run_dir: Path, player: dict[str, str], manifest: dict[str, A
                 role for role in ("host", "player")
                 if has_infrastructure_api_failure(td / f"{role}.log")
             ]
-            validity = "invalid_infrastructure" if failed_roles else j["validity"]
+            validity = settle_infrastructure_validity(
+                pre["status"], failed_roles, j["validity"], j.get("validity_reason", ""),
+            )
             validity_reason = (
                 f"{', '.join(failed_roles)} API call failed before normal completion"
                 if failed_roles else j.get("validity_reason", "")
             )
+            if validity == "valid" and str(j["validity"]) == "invalid_infrastructure":
+                validity_reason = (
+                    "该局已正常终局，公开元数据中的 infrastructure_pause 记录属于同局续跑后已消化的暂停，"
+                    "不构成基础设施故障。"
+                )
             parts = {
                 "outcome_round_efficiency": outcome_score(pre["status"], int(raw["rounds"]), puzzle["difficulty"]),
                 "reasoning_chain": reasoning,
