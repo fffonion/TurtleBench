@@ -1552,6 +1552,17 @@ async def run_game(
             existing_game = load_json(game_path)
         except Exception:
             game_path.rename(trial_dir / f"game.invalid-{int(datetime.now().timestamp())}.json")
+    if existing_game is not None and existing_game.get("status") == "error" and (
+        (trial_dir / "sessions.json").exists() and not preliminary_path.exists()
+    ):
+        reopened = game_mailbox.reopen_interrupted_game(game_path)
+        if reopened.get("status") != "error":
+            print(
+                f"reopened interrupted {puzzle['id']} t{trial:02d} as {reopened['status']} "
+                f"after {reopened.get('round')} rounds",
+                flush=True,
+            )
+            existing_game = reopened
     if existing_game is not None and existing_game.get("status") in TERMINAL_STATES and not preliminary_path.exists():
         recover_terminal_preliminary(trial_dir, player, puzzle, existing_game)
         return score_path

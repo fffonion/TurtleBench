@@ -292,6 +292,48 @@ def resume_after_infrastructure(path: Path) -> dict[str, Any]:
         return state
 
 
+HOST_TIMEOUT_EXIT_MARKERS = ("等待超时", "等待玩家输入超时", "等待主持输入超时")
+
+
+def reopen_interrupted_game(path: Path) -> dict[str, Any]:
+    """Roll back an idle-host timeout exit so the same session can keep playing.
+
+    When a runner dies mid-game the surviving host side sees no player input and
+    closes the mailbox as ``error``. That closure is an artifact of the runner
+    being down, not a player failure, so the frozen exit event is dropped and the
+    game returns to whichever side was about to move.
+    """
+
+    with _locked(path, exclusive=True):
+        state = _read_unlocked(path)
+        if state.get("status") != "error":
+            return state
+        events = list(state.get("events", []))
+        if not events:
+            return state
+        last = events[-1]
+        if last.get("type") != "exit" or not any(
+            marker in str(last.get("text", "")) for marker in HOST_TIMEOUT_EXIT_MARKERS
+        ):
+            return state
+        prior = next(
+            (event for event in reversed(events[:-1]) if event.get("type") != "exit"),
+            None,
+        )
+        if prior is None:
+            return state
+        state["events"] = events[:-1]
+        state["status"] = "player_turn" if prior.get("actor") == "host" else "host_turn"
+        state["revision"] = int(state.get("revision", 1)) + 1
+        started_at = _now()
+        state["infrastructure_pause"] = {"started_at": started_at, "reason": "host_timeout_exit"}
+        state.setdefault("rate_limit_waits", []).append({
+            "actor": "player", "started_at": started_at, "source": "infrastructure_pause",
+        })
+        _write_unlocked(path, state)
+        return state
+
+
 def record_rate_limit_wait(path: Path, actor: str, wait: dict[str, Any]) -> None:
     """Persist an observed runner wait without adding a public game event."""
     with _locked(path, exclusive=True):
