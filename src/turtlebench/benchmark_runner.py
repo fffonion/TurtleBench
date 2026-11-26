@@ -1271,6 +1271,48 @@ def archive_invalid_trials(
     return counts
 
 
+def reopen_timeout_aborted_game(
+    trial_dir: Path,
+    game_path: Path,
+    score_path: Path,
+    preliminary_path: Path,
+    puzzle: dict[str, Any],
+    trial: int,
+) -> dict[str, Any] | None:
+    """Reopen a game an idle host closed on timeout and clear its aborted scoring files.
+
+    A host only reports ``等待超时`` after minutes without player input, which is what
+    happens when the runner was killed or restarted mid-game. The rounds are preserved
+    and the aborted attempt's stale score/preliminary evidence is moved aside so the
+    game can be scored again after it actually finishes.
+    """
+
+    if not game_path.exists():
+        return None
+    try:
+        state = load_json(game_path)
+    except Exception:
+        return None
+    if state.get("status") != "error":
+        return None
+    reopened = game_mailbox.reopen_interrupted_game(game_path)
+    if reopened.get("status") == "error":
+        return None
+    stale = [path for path in (score_path, preliminary_path) if path.exists()]
+    if stale:
+        target = trial_dir / f"aborted-{int(datetime.now().timestamp())}"
+        target.mkdir(parents=True, exist_ok=True)
+        for path in stale:
+            shutil.copy2(path, target / path.name)
+            path.unlink()
+    print(
+        f"reopened timeout-aborted {puzzle['id']} t{trial:02d} as {reopened['status']} "
+        f"after {reopened.get('round')} rounds",
+        flush=True,
+    )
+    return reopened
+
+
 def game_needs_run(game_path: Path, preliminary_path: Path) -> bool:
     if not game_path.exists() or not preliminary_path.exists():
         return True
@@ -1540,29 +1582,19 @@ async def run_game(
         raise RuntimeError("Hermes API client is required")
     trial_dir = run_dir / "games" / player["slug"] / puzzle["id"] / f"trial-{trial:02d}"
     score_path = trial_dir / "score.json"
-    if is_completed_score(score_path):
-        return score_path
     game_path = trial_dir / "game.json"
     preliminary_path = trial_dir / "preliminary.json"
+    reopened_game = reopen_timeout_aborted_game(trial_dir, game_path, score_path, preliminary_path, puzzle, trial)
+    if is_completed_score(score_path):
+        return score_path
     if not game_needs_run(game_path, preliminary_path):
         return score_path
-    existing_game: dict[str, Any] | None = None
-    if game_path.exists():
+    existing_game: dict[str, Any] | None = reopened_game
+    if existing_game is None and game_path.exists():
         try:
             existing_game = load_json(game_path)
         except Exception:
             game_path.rename(trial_dir / f"game.invalid-{int(datetime.now().timestamp())}.json")
-    if existing_game is not None and existing_game.get("status") == "error" and (
-        (trial_dir / "sessions.json").exists() and not preliminary_path.exists()
-    ):
-        reopened = game_mailbox.reopen_interrupted_game(game_path)
-        if reopened.get("status") != "error":
-            print(
-                f"reopened interrupted {puzzle['id']} t{trial:02d} as {reopened['status']} "
-                f"after {reopened.get('round')} rounds",
-                flush=True,
-            )
-            existing_game = reopened
     if existing_game is not None and existing_game.get("status") in TERMINAL_STATES and not preliminary_path.exists():
         recover_terminal_preliminary(trial_dir, player, puzzle, existing_game)
         return score_path
