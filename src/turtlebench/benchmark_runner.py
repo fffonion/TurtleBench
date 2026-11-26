@@ -2070,6 +2070,18 @@ async def run_player(
         for puzzle in manifest["puzzles"]
         for trial in range(1, repeats + 1)
     }
+    for slot_puzzle, slot_trial in slots.values():
+        slot_dir = (
+            run_dir / "games" / player["slug"] / slot_puzzle["id"] / f"trial-{slot_trial:02d}"
+        )
+        reopen_timeout_aborted_game(
+            slot_dir,
+            slot_dir / "game.json",
+            slot_dir / "score.json",
+            slot_dir / "preliminary.json",
+            slot_puzzle,
+            slot_trial,
+        )
     puzzle_keys = {
         puzzle_id: {f"{puzzle_id}:{trial:02d}" for trial in range(1, repeats + 1)}
         for puzzle_id in puzzle_order
