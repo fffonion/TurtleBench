@@ -745,80 +745,6 @@
       "subjective_score_status": "raw_components_unavailable"
     },
     {
-      "slug": "agy-gemini-4-hydrogen-xhigh",
-      "name": "Antigravity / Gemini 4 Hydrogen",
-      "provider": "Antigravity",
-      "model": "gemini-4-hydrogen",
-      "family": "gemini-4-hydrogen",
-      "reasoning_effort": "xhigh",
-      "overall_score": 83.6,
-      "subjective_score": 83.6,
-      "formula_score": 88.65,
-      "formula_score_version": "single",
-      "formula_provisional": false,
-      "formula_rank_eligible": true,
-      "formula_coverage": 1.0,
-      "formula_observed_coverage": 1.0,
-      "formula_baseline_component": 38.56,
-      "formula_solve_rate_coefficient": 0.500871780911417,
-      "formula_solve_component": 50.09,
-      "question_quality_score": 9.078,
-      "formula_trial_records": 36,
-      "formula_terminal_trial_records": 36,
-      "formula_expected_trials": 36,
-      "formula_solved_trials": 36,
-      "formula_solve_rate": 1.0,
-      "formula_puzzles_covered": 12,
-      "formula_puzzles_observed": 12,
-      "formula_puzzles_total": 12,
-      "formula_infrastructure_trials": 0,
-      "formula_pending_trials": 0,
-      "formula_solved_puzzles": 12,
-      "formula_mixed_puzzles": 0,
-      "formula_stability_score": 1.0,
-      "formula_repeat_consistency": 1.0,
-      "formula_question_quality_score": 9.078,
-      "formula_strata": {},
-      "games": 36,
-      "active_time_s": 54652.015,
-      "compression_time_s": 0.0,
-      "tokens": {
-        "total": 76443704,
-        "input": 15824667,
-        "output": 4342929,
-        "cache_read": 56276108,
-        "cache_write": 0
-      },
-      "price_usd": {
-        "input": 23.7370005,
-        "output": 32.5719675,
-        "cache_read": 4.2207081,
-        "cache_write": 0.0,
-        "total": 60.5296761
-      },
-      "pricing": {
-        "source": "https://models.dev",
-        "source_model_id": "google/gemini-4-hydrogen",
-        "source_provider_id": "google",
-        "fetched_at": "2026-11-27T00:00:00+00:00",
-        "usd_per_million_tokens": {
-          "input": 1.5,
-          "output": 7.5,
-          "cache_read": 0.075,
-          "cache_write": null
-        }
-      },
-      "behavior": {
-        "solve_rate": 1.0,
-        "rounds_median": 17.5,
-        "hints_median": 0.0,
-        "samples": 36
-      },
-      "status": "completed",
-      "partial": false,
-      "stop_reason": null
-    },
-    {
       "slug": "bai-qwen3-8-flash-max",
       "name": "bai / Qwen3.8 Flash",
       "provider": "bai",
@@ -3528,5 +3454,5 @@
   "puzzle_count": 12,
   "repeats": 3,
   "started_at": "2026-09-03T08:17:19.752358+00:00",
-  "published_at": "2026-11-27T19:23:19.498400+00:00"
+  "published_at": "2026-11-27T19:46:08.953692+00:00"
 }
