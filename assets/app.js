@@ -1,5 +1,5 @@
 const LANGUAGE_STORAGE_KEY = "turtlebench-language";
-const DATA_CACHE_BUSTER = "mvp2-20261127T183903Z";
+const DATA_CACHE_BUSTER = "agy2-20261127T192319Z";
 
 const MESSAGES = {
   zh: {
